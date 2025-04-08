@@ -1,0 +1,42 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: #F5F5F5;
+    color: #333;
+}
+
+header {
+    background: #4CAF50;
+    padding: 1rem;
+    text-align: center;
+}
+
+.hero {
+    text-align: center;
+    padding: 2rem;
+}
+
+.car-card {
+    background: white;
+    margin: 1rem;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.buy-button {
+    background: #FF6D00;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Адаптивность */
+@media (max-width: 600px) {
+    .catalog {
+        display: flex;
+        flex-direction: column;
+    }
+}
