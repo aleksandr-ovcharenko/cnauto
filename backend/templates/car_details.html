@@ -1,45 +1,65 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
-{% block title %}{{ car.model }} - CN-Auto{% endblock %}
+{% block title %}{{ car.model }} — CN-Auto{% endblock %}
 
 {% block content %}
 <section class="car-details">
     <div class="container">
         <div class="car-details__header">
             <h1>{{ car.model }}</h1>
-            <p class="price">{{ car.price }} ₽</p>
+            <p class="price">{{ car.formatted_price }}</p>
         </div>
 
         <div class="car-details__gallery">
             <img src="{{ url_for('static', filename='images/cars/' + car.image) }}"
                  alt="{{ car.model }}" class="main-image">
 
-            <!-- Дополнительные изображения (если есть) -->
+            {% if car.images %}
             <div class="thumbnails">
-                {% if car.images and car.images is iterable %}
-                    {% for img in car.images %}
-                    <img src="{{ url_for('static', filename='images/cars/thumbs/' + img) }}"
-                         alt="{{ car.model }} фото {{ loop.index }}">
-                    {% endfor %}
-                {% endif %}
+                {% for img in car.images %}
+                <img src="{{ url_for('static', filename='images/cars/' + img) }}" alt="thumb">
+                {% endfor %}
             </div>
+            {% endif %}
         </div>
 
+        {% if car.description %}
         <div class="car-details__specs">
-            <h2>Характеристики</h2>
+            <h3>Описание</h3>
+            <p>{{ car.description }}</p>
+        </div>
+        {% endif %}
+
+        {% if car.specs %}
+        <div class="car-details__specs">
+            <h3>Характеристики</h3>
             <ul>
-                {% if car.specs %}
-                {% for spec in car.specs.split(',') %}
-                <li>{{ spec.strip() }}</li>
+                {% for spec in car.specs %}
+                <li>{{ spec }}</li>
                 {% endfor %}
-                {% endif %}
             </ul>
         </div>
+        {% endif %}
 
-        <div class="car-details__actions">
-            <button class="btn btn-primary">Оставить заявку</button>
-            <a href="/catalog" class="btn btn-outline">Вернуться в каталог</a>
-        </div>
+        {% if car.brand_logo %}
+        <img src="{{ url_for('static', filename='images/brands/' + car.brand_logo) }}" alt="{{ car.model }} бренд" class="brand-logo">
+        {% endif %}
+
+        <a href="/catalog" class="btn btn-small">← Назад в каталог</a>
+        <a href="#contact-form" class="btn">Оформить заказ</a>
+    </div>
+</section>
+
+<!-- Форма заявки -->
+<section class="contact-form-section" id="contact-form">
+    <div class="container">
+        <h2>Оформить заказ</h2>
+        <form class="contact-form">
+            <input type="text" name="name" placeholder="Ваше имя" required>
+            <input type="tel" name="phone" placeholder="Телефон" required>
+            <textarea name="message" placeholder="Комментарий (необязательно)"></textarea>
+            <button type="submit" class="btn">Отправить заявку</button>
+        </form>
     </div>
 </section>
 {% endblock %}

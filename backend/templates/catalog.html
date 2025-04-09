@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}Каталог — CN-Auto{% endblock %}
+
+{% block content %}
+{% for category in categories %}
+<li>
+    <a href="/catalog/{{ category.slug }}">
+        <img src="{{ url_for('static', filename='images/categories/' + category.icon) }}"
+             alt="{{ category.name }}" class="category-icon">
+        {{ category.name }}
+    </a>
+</li>
+{% endfor %}
+
+<section class="catalog">
+    <div class="container">
+        <h2>Каталог автомобилей</h2>
+        <div class="cars-grid">
+            {% for car in cars %}
+            <div class="car-card">
+                <img src="{{ url_for('static', filename='images/cars/' + car.image) }}" alt="{{ car.model }}">
+                <h3>{{ car.model }}</h3>
+                <p class="price">{{ car.formatted_price }}</p>
+                <a href="/car/{{ car.id }}" class="btn">Подробнее</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

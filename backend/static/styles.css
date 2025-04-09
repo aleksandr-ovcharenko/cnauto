@@ -22,7 +22,7 @@ body {
 /* Шапка */
 .header {
     background: white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     padding: 1rem 0;
 }
 
@@ -45,13 +45,13 @@ body {
     background: white;
     padding: 1rem;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     text-align: center;
 }
 
 .logo-img {
     height: 50px; /* Фиксированная высота, ширина подстроится автоматически */
-    width: auto;  /* Сохраняет пропорции */
+    width: auto; /* Сохраняет пропорции */
     transition: all 0.3s ease; /* Плавное изменение при наведении */
 }
 
@@ -70,7 +70,7 @@ body {
 .catalog-categories {
     background: white;
     padding: 20px 0;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .categories-grid {
@@ -378,6 +378,32 @@ body {
 
 .thumbnails img.active {
     border: 2px solid var(--green);
+}
+
+.contact-form-section {
+    padding: 60px 0;
+    background: #fff;
+}
+
+.contact-form input,
+.contact-form textarea {
+    width: 100%;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+}
+
+.contact-form textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.brand-logo {
+    width: 40px;
+    height: auto;
+    margin-bottom: 10px;
 }
 
 
