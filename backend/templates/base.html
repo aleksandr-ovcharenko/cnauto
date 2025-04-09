@@ -10,6 +10,8 @@
     <title>{% block title %}CN-Auto - Авто из Китая{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     {% block extra_css %}{% endblock %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
+
 </head>
 <body>
 <!-- Хедер -->
@@ -84,8 +86,10 @@
             <p>&copy; 2024 CN-Auto. Все права защищены</p>
             <div class="social-links">
                 <a href="#"><img src="{{ url_for('static', filename='images/social/vk.png') }}" alt="VK"></a>
-                <a href="#"><img src="{{ url_for('static', filename='images/social/telegram.png') }}" alt="Telegram"></a>
-                <a href="#"><img src="{{ url_for('static', filename='images/social/whatsapp.png') }}" alt="WhatsApp"></a>
+                <a href="#"><img src="{{ url_for('static', filename='images/social/telegram.png') }}"
+                                 alt="Telegram"></a>
+                <a href="#"><img src="{{ url_for('static', filename='images/social/whatsapp.png') }}"
+                                 alt="WhatsApp"></a>
             </div>
         </div>
     </div>
@@ -93,6 +97,39 @@
 
 <!-- Скрипты -->
 <script src="{{ url_for('static', filename='script.js') }}"></script>
-{% block extra_js %}{% endblock %}
+{% block extra_js %}
+<script>
+    // Популярные авто
+    new Swiper('.swiper-popular', {
+        loop: true,
+        spaceBetween: 20,
+        slidesPerView: 1,
+        navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev'
+        },
+        autoplay: {
+            delay: 3000,
+            disableOnInteraction: false,
+        },
+        breakpoints: {
+            768: {slidesPerView: 2},
+            1024: {slidesPerView: 3}
+        }
+    });
+
+    // Каталог авто
+    new Swiper('.swiper-catalog', {
+        spaceBetween: 20,
+        slidesPerView: 1.1,
+        breakpoints: {
+            768: {slidesPerView: 2},
+            1024: {slidesPerView: 3}
+        }
+    });
+</script>
+{% endblock %}
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
 </body>
 </html>

@@ -53,3 +53,51 @@ window.addEventListener('scroll', function() {
         header.classList.remove('sticky');
     }
 });
+
+// Swiper для популярных авто
+new Swiper('.swiper-popular', {
+    loop: true,
+    spaceBetween: 20,
+    slidesPerView: 1,
+    navigation: {
+        nextEl: '.swiper-button-next',
+        prevEl: '.swiper-button-prev'
+    },
+    autoplay: {
+        delay: 3000,
+        disableOnInteraction: false,
+    },
+    breakpoints: {
+        768: { slidesPerView: 2 },
+        1024: { slidesPerView: 3 }
+    }
+});
+
+// Swiper для каталога
+new Swiper('.swiper-catalog', {
+    spaceBetween: 20,
+    slidesPerView: 1.1,
+    breakpoints: {
+        768: { slidesPerView: 2 },
+        1024: { slidesPerView: 3 }
+    }
+});
+
+thumbs.forEach(thumb => {
+    thumb.addEventListener('click', function () {
+        mainImage.src = this.src.replace('/thumbs/', '/');
+
+        thumbs.forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+    });
+});
+
+fetch("https://cn-auto-backend.onrender.com/api/cars")
+    .then(res => res.json())
+    .then(data => {
+        console.log(data);
+        // update UI here if needed
+    })
+    .catch(err => {
+        console.error("Ошибка при получении данных:", err);
+    });

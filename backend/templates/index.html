@@ -12,6 +12,32 @@
     </div>
 </section>
 
+<!-- Популярные авто (слайдер) -->
+<section class="popular-slider">
+    <div class="container">
+        <h2>Популярные авто</h2>
+        <div class="swiper swiper-popular">
+            <div class="swiper-wrapper">
+                {% for car in cars[:5] %} {# показываем 5 машин #}
+                <div class="swiper-slide">
+                    <div class="car-card">
+                        <img src="{{ url_for('static', filename='images/cars/' + car.image) }}"
+                             alt="{{ car.model }}">
+                        <h3>{{ car.model }}</h3>
+                        <p class="price">{{ car.formatted_price }}</p>
+                        <a href="/car/{{ car.id }}" class="btn">Подробнее</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <!-- Навигация -->
+            <div class="swiper-button-next"></div>
+            <div class="swiper-button-prev"></div>
+        </div>
+    </div>
+</section>
+
+
 <!-- Категории -->
 <section class="catalog-categories">
     <div class="container">
@@ -33,24 +59,20 @@
 <section id="catalog" class="catalog">
     <div class="container">
         <h2>Каталог автомобилей</h2>
-        <div class="cars-grid">
-            {% for car in cars %}
-            <div class="car-card">
-                <img src="{{ url_for('static', filename='images/cars/' + car.image) }}"
-                     alt="{{ car.model }}"
-                     loading="lazy">
-                <h3>{{ car.model }}</h3>
-                <p class="price">{{ car.formatted_price }}</p>
-                {% if car.specs %}
-                <ul class="specs">
-                    {% for spec in car.specs %}
-                    <li>{{ spec }}</li>
-                    {% endfor %}
-                </ul>
-                {% endif %}
-                <a href="/car/{{ car.id }}" class="btn">Подробнее</a>
+        <div class="swiper swiper-catalog">
+            <div class="swiper-wrapper">
+                {% for car in cars %}
+                <div class="swiper-slide">
+                    <div class="car-card">
+                        <img src="{{ url_for('static', filename='images/cars/' + car.image) }}"
+                             alt="{{ car.model }}">
+                        <h3>{{ car.model }}</h3>
+                        <p class="price">{{ car.formatted_price }}</p>
+                        <a href="/car/{{ car.id }}" class="btn">Подробнее</a>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
     </div>
 </section>

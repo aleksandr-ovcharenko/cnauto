@@ -352,6 +352,35 @@ body {
     opacity: 1;
 }
 
+/* Кнопки Swiper */
+.swiper-button-next,
+.swiper-button-prev {
+    color: var(--green);
+    top: 45%;
+}
+
+.swiper-button-next::after,
+.swiper-button-prev::after {
+    font-size: 24px;
+}
+
+/* Контейнер для популярного слайдера */
+.popular-slider {
+    background: #fff;
+    padding: 40px 0;
+}
+
+/* Обёртка карточек внутри Swiper */
+.swiper-slide .car-card {
+    width: 100%;
+    max-width: 300px;
+}
+
+.thumbnails img.active {
+    border: 2px solid var(--green);
+}
+
+
 /* ----------- Адаптивность ---------------- */
 
 /* Адаптивность */
