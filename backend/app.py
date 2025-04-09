@@ -7,7 +7,8 @@ from flask import render_template
 from admin import init_admin
 from config_dev import DevConfig
 from config_prod import ProdConfig
-from models import db, Car, Category
+from models import Car, Category
+from models import db
 
 load_dotenv()  # Загружает переменные из .env
 
@@ -44,10 +45,10 @@ def catalog():
 
 if __name__ == '__main__':
     with app.app_context():
-        instance_path = os.path.join(Config.basedir, 'instance')  # ← удобно
+
+        # Instance папка
+        instance_path = os.path.join(app.instance_path)
         if not os.path.exists(instance_path):
             os.makedirs(instance_path)
-
-        db.create_all()
 
     app.run(debug=True)
