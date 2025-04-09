@@ -1,48 +1,31 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CN-Auto — Авто из Китая под ключ</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-<body>
-<!-- Шапка -->
-<header class="header">
-    <div class="container">
-        <div class="logo">
-            <h1>CN-Auto</h1>
-            <p>Авто из Китая под ключ</p>
-        </div>
-        <nav class="nav">
-            <a href="#catalog">Каталог</a>
-            <a href="#delivery">Доставка</a>
-            <a href="#contacts">Контакты</a>
-        </nav>
-    </div>
-    <section class="catalog-categories">
-        <div class="container">
-            <ul class="categories-grid">
-                {% for category in categories %}
-                <li>
-                    <a href="/catalog/{{ category.slug }}">
-                        <img src="{{ url_for('static', filename='images/categories/' + (category.icon or 'default.png')) }}"
-                             alt="{{ category.name }}" class="category-icon">
-                        {{ category.name }}
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-    </section>
-</header>
+{% extends 'base.html' %}
 
+{% block title %}Главная — CN-Auto{% endblock %}
+
+{% block content %}
 <!-- Главный баннер -->
 <section class="hero">
     <div class="container">
         <h2>Официальный импортер китайских авто</h2>
         <p>BYD, Chery, Geely, Haval и другие марки с гарантией</p>
         <a href="#catalog" class="btn btn-orange">Смотреть каталог</a>
+    </div>
+</section>
+
+<!-- Категории -->
+<section class="catalog-categories">
+    <div class="container">
+        <ul class="categories-grid">
+            {% for category in categories %}
+            <li>
+                <a href="/catalog/{{ category.slug }}">
+                    <img src="{{ url_for('static', filename='images/categories/' + (category.icon or 'default.png')) }}"
+                         alt="{{ category.name }}" class="category-icon">
+                    {{ category.name }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
     </div>
 </section>
 
@@ -53,17 +36,18 @@
         <div class="cars-grid">
             {% for car in cars %}
             <div class="car-card">
-                <img
-                        src="{{ url_for('static', filename='images/cars/' + car.image) }}"
-                        alt="{{ car.model }}"
-                        loading="lazy">
+                <img src="{{ url_for('static', filename='images/cars/' + car.image) }}"
+                     alt="{{ car.model }}"
+                     loading="lazy">
                 <h3>{{ car.model }}</h3>
-                <p class="price">{{ car.price }}</p>
+                <p class="price">{{ car.formatted_price }}</p>
+                {% if car.specs %}
                 <ul class="specs">
                     {% for spec in car.specs %}
                     <li>{{ spec }}</li>
                     {% endfor %}
                 </ul>
+                {% endif %}
                 <a href="/car/{{ car.id }}" class="btn">Подробнее</a>
             </div>
             {% endfor %}
@@ -94,18 +78,4 @@
         </div>
     </div>
 </section>
-
-<!-- Футер -->
-<footer class="footer">
-    <div class="container">
-        <p>© 2024 CN-Auto. Все права защищены</p>
-        <div class="contacts">
-            <a href="tel:+78005005050">8 (800) 500-50-50</a>
-            <a href="mailto:info@cn-auto.ru">info@cn-auto.ru</a>
-        </div>
-    </div>
-</footer>
-
-<script src="{{ url_for('static', filename='script.js') }}"></script>
-</body>
-</html>
+{% endblock %}
