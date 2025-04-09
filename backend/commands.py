@@ -1,4 +1,4 @@
-from models import db, Category
+from backend.models import db, Category
 
 def init_categories():
     categories = [

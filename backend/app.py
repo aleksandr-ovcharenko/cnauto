@@ -4,11 +4,11 @@ from dotenv import load_dotenv
 from flask import Flask
 from flask import render_template
 
-from admin import init_admin
-from config_dev import DevConfig
-from config_prod import ProdConfig
-from models import Car, Category
-from models import db
+from backend.admin import init_admin
+from backend.config_dev import DevConfig
+from backend.config_prod import ProdConfig
+from backend.models import Car, Category
+from backend.models import db
 
 load_dotenv()  # Загружает переменные из .env
 
