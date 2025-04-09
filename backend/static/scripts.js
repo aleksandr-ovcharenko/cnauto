@@ -43,3 +43,13 @@ mobileLinks.forEach(link => {
         mobileMenuToggle.classList.remove('active');
     });
 });
+
+// Скрипт для изменения класса sticky при прокрутке страницы
+window.addEventListener('scroll', function() {
+    const header = document.querySelector('.header');
+    if (window.scrollY > 50) { // Если прокрутка больше 50px
+        header.classList.add('sticky');
+    } else {
+        header.classList.remove('sticky');
+    }
+});
