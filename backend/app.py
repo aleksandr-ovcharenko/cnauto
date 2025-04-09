@@ -1,10 +1,22 @@
-from flask import Flask, render_template
+from flask import Flask
+from models import db
+from admin import init_admin
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cars.db'
+app.config['SECRET_KEY'] = 'your-secret-key'
 
-@app.route("/")
+# Сначала инициализируем db
+db.init_app(app)
+
+# Затем админку
+init_admin(app)
+
+@app.route('/')
 def home():
-    return render_template("index.html")  # Теперь Flask найдёт файл
+    return "Главная страница"
 
-if __name__ == "__main__":
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)

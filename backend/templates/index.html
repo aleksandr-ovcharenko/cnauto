@@ -20,6 +20,21 @@
             <a href="#contacts">Контакты</a>
         </nav>
     </div>
+    <section class="catalog-categories">
+        <div class="container">
+            <ul class="categories-grid">
+                {% for category in categories %}
+                <li>
+                    <a href="/catalog/{{ category.slug }}">
+                        <img src="{{ url_for('static', filename='images/categories/' + category.icon) }}"
+                             alt="{{ category.name }}" class="category-icon">
+                        {{ category.name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </section>
 </header>
 
 <!-- Главный баннер -->
@@ -34,33 +49,24 @@
 <!-- Каталог авто -->
 <section id="catalog" class="catalog">
     <div class="container">
-        <h2>Популярные модели</h2>
+        <h2>Каталог автомобилей</h2>
         <div class="cars-grid">
-            <!-- Карточка авто 1 -->
+            {% for car in cars %}
             <div class="car-card">
-                <img src="{{ url_for('static', filename='images/byd-song.jpg') }}" alt="BYD Song Plus">
-                <h3>BYD Song Plus</h3>
-                <p class="price">от 3.2 млн ₽</p>
+                <img
+                        src="{{ url_for('static', filename='images/' + car.image) }}"
+                        alt="{{ car.model }}"
+                        loading="lazy">
+                <h3>{{ car.model }}</h3>
+                <p class="price">{{ car.price }}</p>
                 <ul class="specs">
-                    <li>Двигатель: 1.5L Turbo</li>
-                    <li>Разгон: 8.5 сек до 100 км/ч</li>
-                    <li>Запас хода: 1200 км</li>
+                    {% for spec in car.specs %}
+                    <li>{{ spec }}</li>
+                    {% endfor %}
                 </ul>
-                <a href="#" class="btn btn-green">Подробнее</a>
+                <a href="/car/{{ car.id }}" class="btn">Подробнее</a>
             </div>
-
-            <!-- Карточка авто 2 -->
-            <div class="car-card">
-                <img src="{{ url_for('static', filename='images/chery-tiggo8.jpg') }}" alt="Chery Tiggo 8">
-                <h3>Chery Tiggo 8 Pro</h3>
-                <p class="price">от 2.8 млн ₽</p>
-                <ul class="specs">
-                    <li>Двигатель: 2.0L Turbo</li>
-                    <li>Привод: Полный</li>
-                    <li>Комплектация: Premium</li>
-                </ul>
-                <a href="#" class="btn btn-green">Подробнее</a>
-            </div>
+            {% endfor %}
         </div>
     </div>
 </section>
