@@ -54,7 +54,7 @@
             {% for car in cars %}
             <div class="car-card">
                 <img
-                        src="{{ url_for('static', filename='images/' + car.image) }}"
+                        src="{{ url_for('static', filename='images/cars/' + car.image) }}"
                         alt="{{ car.model }}"
                         loading="lazy">
                 <h3>{{ car.model }}</h3>
