@@ -22,7 +22,8 @@ class Car(db.Model):
     price = db.Column(db.Float, nullable=False)
     image = db.Column(db.String(200))
     brand_logo = db.Column(db.String(200))
-    description = db.Column(db.Text)
+    images = db.Column(db.JSON)  # Для хранения списка дополнительных изображений
+    description = db.Column(db.Text)  # Подробное описание
     in_stock = db.Column(db.Boolean, default=False)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
     category = db.relationship('Category', backref='cars')

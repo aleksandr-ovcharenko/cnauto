@@ -23,6 +23,11 @@ def home():
     categories = Category.query.all()  # Или Car.query.limit(10).all() для ограничения количества
     return render_template('index.html', cars=cars, categories=categories)
 
+@app.route('/car/<int:car_id>')
+def car_details(car_id):
+    car = Car.query.get_or_404(car_id)
+    return render_template('car_details.html', car=car)
+
 if __name__ == '__main__':
     with app.app_context():
         # Создаем папку instance если ее нет

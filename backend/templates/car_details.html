@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}{{ car.model }} - CN-Auto{% endblock %}
+
+{% block content %}
+<section class="car-details">
+    <div class="container">
+        <div class="car-details__header">
+            <h1>{{ car.model }}</h1>
+            <p class="price">{{ car.price }} ₽</p>
+        </div>
+
+        <div class="car-details__gallery">
+            <img src="{{ url_for('static', filename='images/cars/' + car.image) }}"
+                 alt="{{ car.model }}" class="main-image">
+
+            <!-- Дополнительные изображения (если есть) -->
+            <div class="thumbnails">
+                {% if car.images and car.images is iterable %}
+                    {% for img in car.images %}
+                    <img src="{{ url_for('static', filename='images/cars/thumbs/' + img) }}"
+                         alt="{{ car.model }} фото {{ loop.index }}">
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="car-details__specs">
+            <h2>Характеристики</h2>
+            <ul>
+                {% if car.specs %}
+                {% for spec in car.specs.split(',') %}
+                <li>{{ spec.strip() }}</li>
+                {% endfor %}
+                {% endif %}
+            </ul>
+        </div>
+
+        <div class="car-details__actions">
+            <button class="btn btn-primary">Оставить заявку</button>
+            <a href="/catalog" class="btn btn-outline">Вернуться в каталог</a>
+        </div>
+    </div>
+</section>
+{% endblock %}
