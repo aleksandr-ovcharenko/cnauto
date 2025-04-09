@@ -1,17 +1,20 @@
+import os
+
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
+from flask_admin.contrib.sqla.fields import QuerySelectField
 from flask_admin.form.upload import FileUploadField
-from wtforms.fields import SelectField
+
 from models import db, Category, Car
-import os
 
 # Настройки загрузки изображений
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'images', 'cars')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+
 class CarAdmin(ModelView):
     # Поля для отображения в списке
-    column_list = ['model', 'price', 'category', 'in_stock', 'is_electric']
+    column_list = ['model', 'price', 'category', 'in_stock']
     column_searchable_list = ['model']
     column_filters = ['price', 'in_stock']
 
@@ -20,12 +23,20 @@ class CarAdmin(ModelView):
         'image': FileUploadField(
             'Изображение',
             base_path=UPLOAD_FOLDER,
-            allowed_extensions=['jpg', 'jpeg', 'png']
-        ),
-        'category': SelectField(
-            'Категория',
-            choices=lambda: [(c.id, c.name) for c in Category.query.all()]
+            allowed_extensions=['jpg', 'jpeg', 'png', 'webp']
         )
+    }
+
+    form_overrides = {
+        'category': QuerySelectField
+    }
+
+    form_args = {
+        'category': {
+            'query_factory': lambda: db.session.query(Category).order_by(Category.name),
+            'get_label': 'name',
+            'allow_blank': False
+        }
     }
 
     # Настройки страницы
@@ -33,7 +44,8 @@ class CarAdmin(ModelView):
     can_view_details = True
     can_export = True
 
+
 def init_admin(app):
     admin = Admin(app, name='CN-Auto Admin', template_mode='bootstrap3')
-    admin.add_view(ModelView(Category, db.session, name='Категории'))
     admin.add_view(CarAdmin(Car, db.session, name='Автомобили'))
+    admin.add_view(ModelView(Category, db.session, name='Категории'))
