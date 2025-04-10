@@ -1,0 +1,47 @@
+{% extends 'admin/model/edit.html' %}
+
+{% block page_body %}
+
+<div class="row" style="margin-bottom: 15px;">
+    <div class="col-md-12 text-center">
+        {% if prev_id %}
+        <a href="{{ url_for('.edit_view', id=prev_id) }}" class="btn btn-sm btn-outline-primary">
+            ← Предыдущий
+        </a>
+        {% endif %}
+        {% if next_id %}
+        <a href="{{ url_for('.edit_view', id=next_id) }}" class="btn btn-sm btn-outline-primary">
+            Следующий →
+        </a>
+        {% endif %}
+        {% if request.args.get('id') %}
+        <a href="{{ url_for('.duplicate_view', id=request.args.get('id')) }}" class="btn btn-sm btn-warning">
+            📄 Копировать
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{{ super() }}
+
+<div class="row" style="margin-bottom: 15px;">
+    <div class="col-md-12 text-center">
+        {% if prev_id %}
+        <a href="{{ url_for('.edit_view', id=prev_id) }}" class="btn btn-sm btn-outline-primary">
+            ← Предыдущий
+        </a>
+        {% endif %}
+        {% if next_id %}
+        <a href="{{ url_for('.edit_view', id=next_id) }}" class="btn btn-sm btn-outline-primary">
+            Следующий →
+        </a>
+        {% endif %}
+        {% if request.args.get('id') %}
+        <a href="{{ url_for('.duplicate_view', id=request.args.get('id')) }}" class="btn btn-sm btn-warning">
+            📄 Копировать
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

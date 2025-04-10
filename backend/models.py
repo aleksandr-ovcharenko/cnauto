@@ -66,8 +66,9 @@ class Brand(db.Model):
     country = db.relationship('Country', backref='brands')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    def __repr__(self):
-        return f'<Brand {self.name}>'
+
+    def __str__(self):
+        return self.name
 
 
 class CarType(db.Model):
@@ -78,8 +79,8 @@ class CarType(db.Model):
     icon = db.Column(db.String(200))  # путь к иконке
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    def __repr__(self):
-        return f'<CarType {self.name}>'
+    def __str__(self):
+        return self.name
 
 
 class Country(db.Model):
