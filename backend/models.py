@@ -58,6 +58,7 @@ class Brand(db.Model):
     name = db.Column(db.String(50), unique=True, nullable=False)
     slug = db.Column(db.String(50), unique=True, nullable=False)
     logo = db.Column(db.String(200))
+    category = db.Column(db.String(50))  # Пример: "Китай", "Германия", "Япония"
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):

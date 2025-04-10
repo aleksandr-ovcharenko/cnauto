@@ -42,11 +42,28 @@
 <section class="catalog-categories">
     <div class="container">
         <ul class="categories-grid">
+            <li>
+                <a href="/catalog">
+                    <img src="{{ url_for('static', filename='images/categories/all.png') }}">
+                    Весь автопарк
+                </a>
+            </li>
+            <li>
+                <a href="/catalog?condition=new">
+                    <img src="{{ url_for('static', filename='images/categories/new.png') }}">
+                    Новые авто
+                </a>
+            </li>
+            <li>
+                <a href="/catalog?condition=used">
+                    <img src="{{ url_for('static', filename='images/categories/used.png') }}">
+                    Б/У авто
+                </a>
+            </li>
             {% for category in categories %}
             <li>
                 <a href="/catalog/{{ category.slug }}">
-                    <img src="{{ url_for('static', filename='images/categories/' + (category.icon or 'default.png')) }}"
-                         alt="{{ category.name }}" class="category-icon">
+                    <img src="{{ url_for('static', filename='images/categories/' + (category.icon or 'default.png')) }}">
                     {{ category.name }}
                 </a>
             </li>

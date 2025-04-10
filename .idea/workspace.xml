@@ -4,16 +4,88 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b609525c-105d-4d62-9bbe-dc6a033b63df" name="Changes" comment="Add catalog page and refreshed car details page">
-      <change afterPath="$PROJECT_DIR$/backend/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/seed_data.py" afterDir="false" />
+    <list default="true" id="b609525c-105d-4d62-9bbe-dc6a033b63df" name="Changes" comment="Changed DB migrations&#10;Added brands and car types&#10;Added import file&#10;Added project package backend">
+      <change afterPath="$PROJECT_DIR$/backend/brands.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/seed_brands.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/seed_categories.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/audi-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/autohomecar-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/avatr-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/baic-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/black_car-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/bmw_logo-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/buick-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/byd-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/cadillac-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/changan-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/chery-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/chevrolet-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/citroen-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/close-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/denza-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/dongfeng-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/exeed-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/faw-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/ford-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/forthing-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/gac-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/geely-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/gw-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/haval-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/hiphi-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/honda-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/hongqi-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/huawei-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/hyundai-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/infiniti-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/jaguar-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/jetour-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/jetta-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/jishi-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/kia-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/landrover-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/leamotor_logo-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/lexus-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/lincoln-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/lixiang-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/logo-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/lotus-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/lynk-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/mazda-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/mercedes-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/mg-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/mini-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/mitsubishi-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/neta-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/nio-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/nissan-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/peugeot-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/placeholder-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/pngimg.com-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/polestar-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/service-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/skoda-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/smart-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/tank-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/tesla-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/toyota-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/venucia-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/volkswagen-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/volvo-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/voyah-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/wuling-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/xiaomi-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/xpeno-logo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/images/brands/zeekr-logo.webp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/admin.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/admin.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/commands.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/migrations/versions/73dce5e93a26_add_images_column_for_car.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/migrations/versions/a5e6eec51a86_add_brand_logo_field.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/seed_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/seed_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/static/scripts.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/static/scripts.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/static/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/backend/static/styles.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/backend/templates/base.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/templates/car_details.html" beforeDir="false" afterPath="$PROJECT_DIR$/backend/templates/car_details.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/backend/templates/index.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -61,33 +133,33 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.admin.executor": "Run",
-    "Python.app.executor": "Run",
-    "Python.env.executor": "Run",
-    "Python.main.executor": "Run",
-    "Python.models.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "/home/aleks/dev/cnauto-site",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Project",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "preferences.lookFeel",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.admin.executor&quot;: &quot;Run&quot;,
+    &quot;Python.app.executor&quot;: &quot;Run&quot;,
+    &quot;Python.env.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.models.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/aleks/dev/cnauto-site/backend&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/backend" />
+      <recent name="$PROJECT_DIR$" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/backend" />
@@ -151,7 +223,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1744129976191</updated>
-      <workItem from="1744129977274" duration="20379000" />
+      <workItem from="1744129977274" duration="31119000" />
     </task>
     <task id="LOCAL-00001" summary="Added backend, db support, categories and cars in models">
       <option name="closed" value="true" />
@@ -241,7 +313,15 @@
       <option name="project" value="LOCAL" />
       <updated>1744219390755</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="Changed DB migrations&#10;Added brands and car types&#10;Added import file&#10;Added project package backend">
+      <option name="closed" value="true" />
+      <created>1744224236395</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1744224236395</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -272,13 +352,14 @@
     <MESSAGE value="Updated FE with common base part" />
     <MESSAGE value="Updated FE part: js, swiper, base scripts" />
     <MESSAGE value="Add catalog page and refreshed car details page" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add catalog page and refreshed car details page" />
+    <MESSAGE value="Changed DB migrations&#10;Added brands and car types&#10;Added import file&#10;Added project package backend" />
+    <option name="LAST_COMMIT_MESSAGE" value="Changed DB migrations&#10;Added brands and car types&#10;Added import file&#10;Added project package backend" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/cnauto_site$models.coverage" NAME="models Coverage Results" MODIFIED="1744130322329" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend" />
     <SUITE FILE_PATH="coverage/cnauto_site$admin.coverage" NAME="admin Coverage Results" MODIFIED="1744205018456" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend" />
     <SUITE FILE_PATH="coverage/cnauto_site$app.coverage" NAME="main Coverage Results" MODIFIED="1744214039586" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend" />
-    <SUITE FILE_PATH="coverage/cnauto_site$main.coverage" NAME="main Coverage Results" MODIFIED="1744224082030" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend" />
+    <SUITE FILE_PATH="coverage/cnauto_site$main.coverage" NAME="main Coverage Results" MODIFIED="1744287316846" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend" />
     <SUITE FILE_PATH="coverage/cnauto_site$env.coverage" NAME="env Coverage Results" MODIFIED="1744204314490" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/migrations" />
   </component>
 </project>

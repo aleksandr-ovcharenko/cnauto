@@ -101,3 +101,31 @@ fetch("https://cn-auto-backend.onrender.com/api/cars")
     .catch(err => {
         console.error("Ошибка при получении данных:", err);
     });
+
+console.log("main image", document.querySelector('.main-image'));
+console.log("thumbnails", document.querySelectorAll('.thumbnails img'));
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    const mainImage = document.querySelector('.main-image');
+    const thumbnails = document.querySelectorAll('.thumbnails img');
+
+    console.log("Main:", mainImage, "Thumbnails:", thumbnails);
+
+    if (mainImage && thumbnails.length) {
+        thumbnails.forEach(thumb => {
+            thumb.addEventListener('click', function () {
+                mainImage.src = this.src;
+            });
+        });
+    }
+});
+
+thumbnails.forEach(thumb => {
+    thumb.addEventListener('click', function () {
+        mainImage.src = this.src;
+
+        thumbnails.forEach(t => t.classList.remove('selected'));
+        this.classList.add('selected');
+    });
+});

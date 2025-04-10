@@ -11,13 +11,14 @@
         </div>
 
         <div class="car-details__gallery">
-            <img src="{{ url_for('static', filename='images/cars/' + car.image) }}"
-                 alt="{{ car.model }}" class="main-image">
-
             {% if car.images %}
+            <!-- Главное изображение -->
+            <img class="main-image" src="{{ url_for('static', filename='images/cars/' + car.images[0]) }}" alt="{{ car.model }}">
+
+            <!-- Миниатюры -->
             <div class="thumbnails">
                 {% for img in car.images %}
-                <img src="{{ url_for('static', filename='images/cars/' + img) }}" alt="thumb">
+                <img src="{{ url_for('static', filename='images/cars/' + img) }}" alt="Thumbnail {{ loop.index }}">
                 {% endfor %}
             </div>
             {% endif %}

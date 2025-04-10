@@ -11,6 +11,8 @@ with app.app_context():
         {"name": "Geely", "slug": "geely", "logo": "geely.png"},
         {"name": "BMW", "slug": "bmw", "logo": "bmw.png"},
         {"name": "Volkswagen", "slug": "vw", "logo": "vw.png"},
+        {"name": "Mercedes-Benz", "slug": "mb", "logo": "mb.png"},
+        {"name": "Audi", "slug": "audi", "logo": "audi.png"},
         {"name": "Toyota", "slug": "toyota", "logo": "toyota.png"},
     ]
 
