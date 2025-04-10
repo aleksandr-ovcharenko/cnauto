@@ -16,17 +16,26 @@ def seed_brands():
                     print(f"❌ Страна не найдена: {row['country']}")
                     continue
 
-                if not Brand.query.filter_by(slug=row["slug"]).first():
+                brand = Brand.query.filter_by(slug=row["slug"]).first()
+                if brand:
+                    # Обновим существующий бренд
+                    brand.name = row["name"]
+                    brand.logo = row["logo"]
+                    brand.country = country
+                    print(f"🔄 Обновлён бренд: {brand.slug}")
+                else:
+                    # Создаём новый
                     brand = Brand(
-                        name=row["slug"].capitalize(),
+                        name=row["name"],
                         slug=row["slug"],
                         logo=row["logo"],
                         country=country
                     )
                     db.session.add(brand)
+                    print(f"➕ Добавлен бренд: {brand.slug}")
 
         db.session.commit()
-        print("✅ Бренды успешно добавлены")
+        print("✅ Бренды успешно добавлены/обновлены")
 
 if __name__ == "__main__":
     seed_brands()
