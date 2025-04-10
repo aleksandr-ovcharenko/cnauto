@@ -31,7 +31,11 @@ class Car(db.Model):
     images = db.Column(db.JSON)
     description = db.Column(db.Text)
     in_stock = db.Column(db.Boolean, default=False)
-
+    year = db.Column(db.String(50))
+    mileage = db.Column(db.String(50))
+    engine = db.Column(db.String(100))
+    extras = db.Column(db.Text)
+    price_fob = db.Column(db.String(100))
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
     category = db.relationship('Category', backref='cars')
 
@@ -58,7 +62,8 @@ class Brand(db.Model):
     name = db.Column(db.String(50), unique=True, nullable=False)
     slug = db.Column(db.String(50), unique=True, nullable=False)
     logo = db.Column(db.String(200))
-    category = db.Column(db.String(50))  # Пример: "Китай", "Германия", "Япония"
+    country_id = db.Column(db.Integer, db.ForeignKey('countries.id'))
+    country = db.relationship('Country', backref='brands')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
@@ -75,3 +80,12 @@ class CarType(db.Model):
 
     def __repr__(self):
         return f'<CarType {self.name}>'
+
+
+class Country(db.Model):
+    __tablename__ = 'countries'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+
+    def __str__(self):
+        return self.name

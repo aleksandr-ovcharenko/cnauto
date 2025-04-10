@@ -445,6 +445,43 @@ body {
     transform: scale(1.05);
 }
 
+.car-card img {
+    width: 100%;
+    height: 180px;
+    object-fit: contain; /* или cover */
+    background-color: #fff;
+    border-radius: 4px;
+}
+
+.swiper-slide img {
+    width: 100%;
+    height: 200px;
+    object-fit: contain;
+    border-radius: 4px;
+    background-color: #fff;
+}
+
+.car-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.brand-logo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.brand-logo img {
+    height: 32px;
+    object-fit: contain;
+    max-width: 80px;
+    opacity: 0.85;
+}
+
 
 /* ----------- Адаптивность ---------------- */
 

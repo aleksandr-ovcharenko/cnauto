@@ -19,10 +19,16 @@
         <div class="cars-grid">
             {% for car in cars %}
             <div class="car-card">
-                <img src="{{ url_for('static', filename='images/cars/' + car.image) }}" alt="{{ car.model }}">
+                {% if car.brand_slug %}
+                <div class="brand-logo">
+                    <img src="{{ url_for('static', filename='images/brands/' + car.brand_slug + '.webp') }}"
+                         alt="{{ car.brand_slug }}" title="{{ car.brand_slug }}">
+                </div>
+                {% endif %}
+
+                <img src="{{ url_for('static', filename='images/cars/' + (car.image or 'placeholder.webp')) }}" alt="{{ car.model }}">
                 <h3>{{ car.model }}</h3>
-                <p class="price">{{ car.formatted_price }}</p>
-                <a href="/car/{{ car.id }}" class="btn">Подробнее</a>
+                <p class="price">{{ car.price }}</p>
             </div>
             {% endfor %}
         </div>

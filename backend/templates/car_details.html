@@ -46,6 +46,14 @@
         <img src="{{ url_for('static', filename='images/brands/' + car.brand_logo) }}" alt="{{ car.model }} бренд" class="brand-logo">
         {% endif %}
 
+        <ul class="spec-list">
+            <li><strong>Год выпуска:</strong> {{ car.year }}</li>
+            <li><strong>Пробег:</strong> {{ car.mileage }}</li>
+            <li><strong>Двигатель:</strong> {{ car.engine }}</li>
+            <li><strong>FOB:</strong> {{ car.price_fob }}</li>
+            <li><strong>Дополнительно:</strong> {{ car.extras }}</li>
+        </ul>
+
         <a href="/catalog" class="btn btn-small">← Назад в каталог</a>
         <a href="#contact-form" class="btn">Оформить заказ</a>
     </div>
