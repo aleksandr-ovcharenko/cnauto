@@ -7,7 +7,7 @@ def seed_cars():
         {
             "model": "GLC 300 L 4MATIC Luxury",
             "price": 33700,
-            "brand_slug": "mercedes",
+            "brand": "mercedes",
             "car_type_name": "Гибрид",
             "year": 2022,
             "mileage": 35000,
@@ -18,7 +18,7 @@ def seed_cars():
         {
             "model": "GLE 450 4MATIC Dynamic",
             "price": 65600,
-            "brand_slug": "mercedes",
+            "brand": "mercedes",
             "car_type_name": "Гибрид",
             "year": 2024,
             "mileage": 9000,
@@ -29,7 +29,7 @@ def seed_cars():
         {
             "model": "BYD Han EV Flagship",
             "price": 28900,
-            "brand_slug": "byd",
+            "brand": "byd",
             "car_type_name": "Электро",
             "year": 2023,
             "mileage": 12000,
@@ -40,7 +40,7 @@ def seed_cars():
     ]
 
     for data in cars_data:
-        brand = Brand.query.filter_by(slug=data["brand_slug"]).first()
+        brand = Brand.query.filter_by(slug=data["brand"]).first()
         car_type = CarType.query.filter_by(name=data["car_type_name"]).first()
 
         if not brand or not car_type:

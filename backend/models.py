@@ -44,8 +44,6 @@ class Car(db.Model):
 
     car_type_id = db.Column(db.Integer, db.ForeignKey('car_types.id'))
     car_type = db.relationship('CarType', backref='cars')
-
-    brand_slug = db.Column(db.String(50))
     car_type_slug = db.Column(db.String(50))
 
     def __str__(self):

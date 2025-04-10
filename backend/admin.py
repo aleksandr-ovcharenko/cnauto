@@ -4,13 +4,12 @@ from flask import flash, request, redirect, url_for
 from flask_admin import Admin, expose
 from flask_admin.actions import action
 from flask_admin.contrib.sqla import ModelView
-from flask_admin.contrib.sqla.fields import QuerySelectField
 from flask_admin.form.upload import FileUploadField
 from flask_admin.helpers import get_url
 from markupsafe import Markup
 from werkzeug.utils import secure_filename
 from wtforms import MultipleFileField
-from wtforms.fields import SelectField
+from wtforms_sqlalchemy.fields import QuerySelectField
 
 from backend.models import db, Car, Category, Brand, CarType, Country
 
@@ -24,7 +23,7 @@ class CarAdmin(ModelView):
     column_labels = {'image_preview': 'Фото', 'brand_preview': 'Бренд'}
 
     column_searchable_list = ['model']
-    column_filters = ['price', 'brand_slug', 'car_type_slug', 'in_stock']
+    column_filters = ['price', 'car_type', 'in_stock']
     page_size = 20
     can_view_details = True
     can_export = True
@@ -58,34 +57,9 @@ class CarAdmin(ModelView):
     }
 
     form_overrides = {
-        'brand_slug': SelectField,
-        'car_type_slug': SelectField,
+        'brand': QuerySelectField,
+        'car_type': QuerySelectField,
     }
-
-    def create_form(self, obj=None):
-        form = super().create_form(obj)
-        form.brand_slug.choices = [
-            (b.slug, b.name) for b in db.session.query(Brand).order_by(Brand.name).all()
-        ]
-        form.car_type_slug.choices = [
-            (t.slug, t.name) for t in db.session.query(CarType).order_by(CarType.name).all()
-        ]
-        return form
-
-    def edit_form(self, obj=None):
-        form = super().edit_form(obj)
-        form.brand_slug.choices = [
-            (b.slug, b.name) for b in db.session.query(Brand).order_by(Brand.name).all()
-        ]
-        form.car_type_slug.choices = [
-            (t.slug, t.name) for t in db.session.query(CarType).order_by(CarType.name).all()
-        ]
-        return form
-
-    def on_form_prefill(self, form, id):
-        # Устанавливаем актуальные choices здесь
-        form.brand_slug.choices = [(b.slug, b.name) for b in Brand.query.order_by(Brand.name)]
-        form.car_type_slug.choices = [(t.slug, t.name) for t in CarType.query.order_by(CarType.name)]
 
     edit_template = 'admin/edit_with_nav.html'  # кастомный шаблон
 
@@ -107,8 +81,8 @@ class CarAdmin(ModelView):
             kwargs.update({'prev_id': prev_id, 'next_id': next_id})
         return super().render(template, **kwargs)
 
-    form_columns = ['model', 'price', 'brand', 'car_type', 'image', 'description', 'year', 'mileage', 'engine',
-                    'in_stock']
+    form_columns = ['model', 'price', 'brand', 'car_type', 'image', 'images_upload', 'description', 'year', 'mileage',
+                    'engine', 'in_stock']
 
     form_args = {
         'brand': {

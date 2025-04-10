@@ -39,14 +39,14 @@ def car_details(car_id):
 
 @app.route("/catalog")
 def catalog():
-    brand_slug = request.args.get("brand")
+    brand = request.args.get("brand")
     country_name = request.args.get("country")
     car_type_name = request.args.get("type")
 
     query = Car.query
 
-    if brand_slug:
-        query = query.join(Car.brand).filter(Brand.slug == brand_slug)
+    if brand:
+        query = query.join(Car.brand).filter(Brand.slug == brand)
     if country_name:
         query = query.join(Car.brand).join(Brand.country).filter(Country.name == country_name)
     if car_type_name:
