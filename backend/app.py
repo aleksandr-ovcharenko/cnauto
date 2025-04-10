@@ -1,13 +1,13 @@
 import os
 
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, request
 from flask import render_template
 
 from backend.admin import init_admin
 from backend.config_dev import DevConfig
 from backend.config_prod import ProdConfig
-from backend.models import Car, Category
+from backend.models import Car, Category, Brand, Country, CarType
 from backend.models import db
 
 load_dotenv()  # Загружает переменные из .env
@@ -37,10 +37,27 @@ def car_details(car_id):
     return render_template('car_details.html', car=car)
 
 
-@app.route('/catalog')
+@app.route("/catalog")
 def catalog():
-    cars = Car.query.all()
-    return render_template('catalog.html', cars=cars)
+    brand_slug = request.args.get("brand")
+    country_name = request.args.get("country")
+    car_type_name = request.args.get("type")
+
+    query = Car.query
+
+    if brand_slug:
+        query = query.join(Car.brand).filter(Brand.slug == brand_slug)
+    if country_name:
+        query = query.join(Car.brand).join(Brand.country).filter(Country.name == country_name)
+    if car_type_name:
+        query = query.join(Car.car_type).filter(CarType.name == car_type_name)
+
+    cars = query.all()
+    brands = Brand.query.order_by(Brand.name).all()
+    countries = Country.query.order_by(Country.name).all()
+
+    return render_template("catalog.html", cars=cars, brands=brands, countries=countries)
+
 
 
 if __name__ == '__main__':

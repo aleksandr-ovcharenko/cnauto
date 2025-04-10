@@ -1,36 +1,72 @@
-from backend.app import app
-from backend.models import db, Car
+from backend.models import db, Car, Brand, CarType
+from datetime import datetime
 
-cars = [
-    {
-        "model": "Рестайлинг GLC 300 L 4MATIC Luxury",
-        "price": 33700,
-        "year": "Июнь 2022 года",
-        "mileage": "35 000 км",
-        "engine": "2.0T (турбо), 258 л.с., полный привод (4WD)",
-        "extras": "Отличное состояние, система полного привода (4MATIC)",
-        "price_fob": "$33 700 долларов США",
-        "brand_slug": "mercedes",
-        "image": "glc300.webp"
-    },
-    {
-        "model": "Рестайлинг GLE 450 4MATIC Dynamic",
-        "price": 65600,
-        "year": "Сентябрь 2024 года",
-        "mileage": "9 000 км",
-        "engine": "2.5T (турбо), 367 л.с., полный привод (4WD)",
-        "extras": "Оригинальная краска, переднемоторная компоновка с полным приводом",
-        "price_fob": "$65 600 долларов США",
-        "brand_slug": "mercedes",
-        "image": "gle450.webp"
-    }
-]
 
-with app.app_context():
-    for car_data in cars:
-        car = Car.query.filter_by(model=car_data['model']).first()
-        if not car:
-            car = Car(**car_data)
-            db.session.add(car)
+def seed_cars():
+    cars_data = [
+        {
+            "model": "GLC 300 L 4MATIC Luxury",
+            "price": 33700,
+            "brand_slug": "mercedes",
+            "car_type_name": "Гибрид",
+            "year": 2022,
+            "mileage": 35000,
+            "engine": "2.0T (турбо), 258 л.с.",
+            "description": "Отличное состояние, система полного привода (4MATIC)",
+            "image": "mercedes-glc-300.jpg"
+        },
+        {
+            "model": "GLE 450 4MATIC Dynamic",
+            "price": 65600,
+            "brand_slug": "mercedes",
+            "car_type_name": "Гибрид",
+            "year": 2024,
+            "mileage": 9000,
+            "engine": "2.5T (турбо), 367 л.с.",
+            "description": "Оригинальная краска, переднемоторная компоновка с полным приводом",
+            "image": "mercedes-gle-450.jpg"
+        },
+        {
+            "model": "BYD Han EV Flagship",
+            "price": 28900,
+            "brand_slug": "byd",
+            "car_type_name": "Электро",
+            "year": 2023,
+            "mileage": 12000,
+            "engine": "Электродвигатель, 510 л.с.",
+            "description": "Полный привод, топовая комплектация",
+            "image": "byd-han.jpg"
+        }
+    ]
+
+    for data in cars_data:
+        brand = Brand.query.filter_by(slug=data["brand_slug"]).first()
+        car_type = CarType.query.filter_by(name=data["car_type_name"]).first()
+
+        if not brand or not car_type:
+            print(f"❌ Пропущено: {data['model']} (нет бренда или типа)")
+            continue
+
+        car = Car(
+            model=data["model"],
+            price=data["price"],
+            image=data["image"],
+            description=data["description"],
+            in_stock=True,
+            brand=brand,
+            car_type=car_type,
+            year=data["year"],
+            mileage=data["mileage"],
+            engine=data["engine"],
+        )
+        db.session.add(car)
+
     db.session.commit()
-    print("✅ Автомобили добавлены")
+    print("✅ Машины успешно добавлены.")
+
+
+if __name__ == "__main__":
+    from backend.app import app
+
+    with app.app_context():
+        seed_cars()
