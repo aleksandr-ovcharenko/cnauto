@@ -43,25 +43,34 @@
             </div>
 
             <!-- Фильтр по типу -->
-            <div class="filter-group" data-facet="type">
+            <div class="filter-group">
                 <h4>Тип авто</h4>
-                <div class="facet-items">
-                    {% for car_type in car_types %}
-                    <label class="facet-item {% if loop.index > 5 %}hidden{% endif %}">
-                        <input type="radio" name="type" value="{{ car_type.slug }}"
-                               {% if request.args.get('type') == car_type.slug %}checked{% endif %}>
-                        {{ car_type.name }}
-                    </label>
-                    {% endfor %}
-                </div>
+                {% for car_type in car_types %}
+                <label class="facet-item {% if loop.index > 5 %}hidden{% endif %}">
+                    <input type="checkbox" name="type" value="{{ car_type.slug }}" onchange="this.form.submit()"
+                           {% if car_type.slug in request.args.getlist('type') %}checked{% endif %}>
+                    {% if car_type.icon %}
+                        <img src="{{ url_for('static', filename='images/types/' + car_type.icon) }}"
+                             alt="{{ car_type.name }}" class="type-icon">
+                    {% endif %}
+                    {{ car_type.name }}
+                </label>
+                {% endfor %}
                 {% if car_types|length > 5 %}
                 <button type="button" class="facet-toggle" data-target="type">Показать ещё</button>
                 {% endif %}
             </div>
 
+
             <div class="filter-buttons">
                 <button type="submit" class="btn">Применить</button>
-                <a href="{{ url_for('catalog') }}" class="btn btn-reset">Сбросить</a>
+                <a href="{{ url_for('catalog') }}" class="btn btn-reset">Сбросить всё</a>
+
+                {% if request.args.getlist('type') %}
+                <a href="{{ reset_type_url }}" class="btn btn-reset">
+                    Сбросить тип авто
+                </a>
+                {% endif %}
             </div>
         </form>
     </aside>

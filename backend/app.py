@@ -1,8 +1,9 @@
 import os
 
 from dotenv import load_dotenv
-from flask import Flask, request
+from flask import Flask
 from flask import render_template
+from flask import request, url_for
 
 from backend.admin import init_admin
 from backend.config_dev import DevConfig
@@ -41,7 +42,7 @@ def car_details(car_id):
 def catalog():
     brand = request.args.get("brand")
     country_name = request.args.get("country")
-    car_type_name = request.args.get("type")
+    type_slugs = request.args.getlist('type')
 
     query = Car.query
 
@@ -49,16 +50,21 @@ def catalog():
         query = query.join(Car.brand).filter(Brand.slug == brand)
     if country_name:
         query = query.join(Car.brand).join(Brand.country).filter(Country.name == country_name)
-    if car_type_name:
-        query = query.join(Car.car_type).filter(CarType.name == car_type_name)
+    if type_slugs:
+        query = query.join(Car.car_type).filter(CarType.slug.in_(type_slugs))
 
     cars = query.all()
     brands = Brand.query.order_by(Brand.name).all()
     countries = Country.query.order_by(Country.name).all()
     car_types = CarType.query.order_by(CarType.name).all()
 
-    return render_template("catalog.html", cars=cars, brands=brands, countries=countries, car_types=car_types)
+    query_args = request.args.to_dict(flat=False)
+    reset_type_args = query_args.copy()
+    reset_type_args.pop('type', None)
+    reset_type_url = url_for('catalog', **reset_type_args)
 
+    return render_template("catalog.html", cars=cars, brands=brands, countries=countries, car_types=car_types,
+                           reset_type_url=reset_type_url)
 
 
 if __name__ == '__main__':

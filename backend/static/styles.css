@@ -551,6 +551,12 @@ body {
     text-decoration: underline;
 }
 
+.type-icon {
+    height: 20px;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
 
 /* ----------- Адаптивность ---------------- */
 
