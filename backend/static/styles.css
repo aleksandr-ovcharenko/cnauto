@@ -112,6 +112,33 @@ a:hover {
     border-bottom: 1px solid #eee;
 }
 
+/* ---------------- hero ---------------- */
+
+.hero {
+    background: #fff;
+    padding: 60px 0;
+    text-align: center;
+}
+
+.hero h2 {
+    font-size: 2.2rem;
+    margin-bottom: 10px;
+}
+
+.hero p {
+    font-size: 1.1rem;
+    color: #555;
+    margin-bottom: 20px;
+}
+
+.hero .btn-orange {
+    background-color: var(--orange);
+    color: #fff;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: bold;
+}
+
 /* ---------------- advantages ---------------- */
 
 .advantages {
