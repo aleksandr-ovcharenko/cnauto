@@ -20,7 +20,7 @@
             <div class="swiper-wrapper">
                 {% for car in cars[:5] %} {# показываем 5 машин #}
                 <div class="swiper-slide">
-                    <div class="car-card">
+                    <div class="car-card car-card--slider">
                         <img src="{{ url_for('static', filename='images/cars/' + car.image) }}"
                              alt="{{ car.model }}">
                         <h3>{{ car.model }}</h3>
@@ -33,63 +33,6 @@
             <!-- Навигация -->
             <div class="swiper-button-next"></div>
             <div class="swiper-button-prev"></div>
-        </div>
-    </div>
-</section>
-
-
-<!-- Категории -->
-<section class="catalog-categories">
-    <div class="container">
-        <ul class="categories-grid">
-            <li>
-                <a href="/catalog">
-                    <img src="{{ url_for('static', filename='images/categories/all.png') }}">
-                    Весь автопарк
-                </a>
-            </li>
-            <li>
-                <a href="/catalog?condition=new">
-                    <img src="{{ url_for('static', filename='images/categories/new.png') }}">
-                    Новые авто
-                </a>
-            </li>
-            <li>
-                <a href="/catalog?condition=used">
-                    <img src="{{ url_for('static', filename='images/categories/used.png') }}">
-                    Б/У авто
-                </a>
-            </li>
-            {% for category in categories %}
-            <li>
-                <a href="/catalog/{{ category.slug }}">
-                    <img src="{{ url_for('static', filename='images/categories/' + (category.icon or 'default.png')) }}">
-                    {{ category.name }}
-                </a>
-            </li>
-            {% endfor %}
-        </ul>
-    </div>
-</section>
-
-<!-- Каталог авто -->
-<section id="catalog" class="catalog">
-    <div class="container">
-        <h2>Каталог автомобилей</h2>
-        <div class="swiper swiper-catalog">
-            <div class="swiper-wrapper">
-                {% for car in cars %}
-                <div class="swiper-slide">
-                    <div class="car-card">
-                        <img src="{{ url_for('static', filename='images/cars/' + car.image) }}"
-                             alt="{{ car.model }}">
-                        <h3>{{ car.model }}</h3>
-                        <p class="price">{{ car.formatted_price }}</p>
-                        <a href="/car/{{ car.id }}" class="btn">Подробнее</a>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
         </div>
     </div>
 </section>
