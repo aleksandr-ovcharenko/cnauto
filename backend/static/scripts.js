@@ -129,3 +129,5 @@ thumbnails.forEach(thumb => {
         this.classList.add('selected');
     });
 });
+
+

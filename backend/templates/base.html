@@ -130,6 +130,32 @@
         }
     });
 </script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll('.facet-group').forEach(group => {
+            const toggle = group.querySelector('.facet-toggle');
+            const items = group.querySelectorAll('.facet-item');
+
+            if (toggle) {
+                toggle.addEventListener('click', () => {
+                    const expanded = toggle.dataset.expanded === 'true';
+
+                    items.forEach((item, idx) => {
+                        if (idx >= 5) {
+                            item.classList.toggle('hidden', expanded);
+                            item.classList.toggle('shown', !expanded);
+                        }
+                    });
+
+                    toggle.textContent = expanded ? 'Показать ещё' : 'Скрыть';
+                    toggle.dataset.expanded = (!expanded).toString();
+                });
+            }
+        });
+    });
+</script>
+
 {% endblock %}
 
 </body>

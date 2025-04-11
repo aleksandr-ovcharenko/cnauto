@@ -7,32 +7,41 @@
     <!-- Фильтры -->
     <aside class="filters-sidebar">
         <form method="get">
-            <div class="filter-group">
+            <!-- Фильтр по бренду -->
+            <div class="filter-group facet-group">
                 <h4>Бренд</h4>
                 {% for brand in brands %}
-                <label>
+                <label class="facet-item {% if loop.index > 5 %}hidden{% endif %}">
                     <input type="radio" name="brand" value="{{ brand.slug }}"
                            {% if request.args.get('brand') == brand.slug %}checked{% endif %}>
                     {{ brand.name }}
                 </label>
                 {% endfor %}
+                {% if brands|length > 5 %}
+                <button type="button" class="facet-toggle" data-expanded="false">Показать ещё</button>
+                {% endif %}
             </div>
 
-            <div class="filter-group">
+            <!-- Фильтр по стране -->
+            <div class="filter-group facet-group" data-facet="country">
                 <h4>Страна</h4>
                 {% for country in countries %}
-                <label>
+                <label class="facet-item{% if loop.index > 5 %} hidden{% endif %}">
                     <input type="radio" name="country" value="{{ country.name }}"
                            {% if request.args.get('country') == country.name %}checked{% endif %}>
                     {{ country.name }}
                 </label>
                 {% endfor %}
+                {% if countries|length > 5 %}
+                <button type="button" class="facet-toggle" data-expanded="false">Показать ещё</button>
+                {% endif %}
             </div>
 
-            <div class="filter-group">
+            <!-- Фильтр по типу -->
+            <div class="filter-group facet-group" data-facet="type">
                 <h4>Тип авто</h4>
                 {% for t in ['ДВС', 'Гибрид', 'Электро'] %}
-                <label>
+                <label class="facet-item{% if loop.index > 5 %} hidden{% endif %}">
                     <input type="radio" name="type" value="{{ t }}"
                            {% if request.args.get('type') == t %}checked{% endif %}>
                     {{ t }}
@@ -46,6 +55,7 @@
             </div>
         </form>
     </aside>
+
 
     <!-- Каталог авто -->
     <section class="catalog-results">
@@ -70,10 +80,18 @@
                 <p class="price">{{ car.price | round }} ₽</p>
 
                 <ul class="specs">
-                    {% if car.year %}<li><strong>Год:</strong> {{ car.year }}</li>{% endif %}
-                    {% if car.engine %}<li><strong>Двигатель:</strong> {{ car.engine }}</li>{% endif %}
-                    {% if car.mileage %}<li><strong>Пробег:</strong> {{ car.mileage }}</li>{% endif %}
-                    {% if car.car_type %}<li><strong>Тип:</strong> {{ car.car_type.name }}</li>{% endif %}
+                    {% if car.year %}
+                    <li><strong>Год:</strong> {{ car.year }}</li>
+                    {% endif %}
+                    {% if car.engine %}
+                    <li><strong>Двигатель:</strong> {{ car.engine }}</li>
+                    {% endif %}
+                    {% if car.mileage %}
+                    <li><strong>Пробег:</strong> {{ car.mileage }}</li>
+                    {% endif %}
+                    {% if car.car_type %}
+                    <li><strong>Тип:</strong> {{ car.car_type.name }}</li>
+                    {% endif %}
                 </ul>
 
                 <a href="/car/{{ car.id }}" class="btn">Подробнее</a>
