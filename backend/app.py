@@ -50,10 +50,10 @@ def admin_login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
-        if user and user.check_password(form.password.data) and user.is_admin:
+        if user and user.check_password(form.password.data) and user.has_role('admin'):
             login_user(user, remember=form.remember.data)
             return redirect(url_for('admin.index'))
-        flash('Неверные данные для входа', 'error')
+        flash('рные данные для входа или недостаточно прав', 'error')
     return render_template('admin/login.html', form=form)
 
 

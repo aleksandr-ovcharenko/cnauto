@@ -83,10 +83,43 @@ class UserAdmin(SecureModelView):
     }
 
     def on_model_change(self, form, model, is_created):
+        print(">> Сработал on_model_change", form.password.data)
         if form.password.data:
-            model.password_hash = generate_password_hash(form.password.data)
+            model.password_hash = generate_password_hash(form.password.data, method='pbkdf2:sha256')
 
     column_exclude_list = ['password_hash']
+
+    @expose('/duplicate/<int:id>')
+    def duplicate_view(self, id):
+        user = User.query.get_or_404(id)
+
+        new_user = User(
+            username=user.username + "_copy",
+            email=user.email + "_copy@example.com",
+            password_hash=generate_password_hash("newpassword123", method='pbkdf2:sha256'),
+            roles=user.roles[:]  # копируем список ролей
+        )
+        db.session.add(new_user)
+        db.session.commit()
+
+        flash(f'✅ Пользователь "{new_user.username}" скопирован. Пароль: newpassword123', 'success')
+        return redirect(url_for('.edit_view', id=new_user.id))
+
+    @action('duplicate', 'Копировать', 'Вы уверены, что хотите скопировать выбранных пользователей?')
+    def action_duplicate(self, ids):
+        for user_id in ids:
+            user = User.query.get(user_id)
+            if not user:
+                continue
+            new_user = User(
+                username=user.username + "_copy",
+                email=user.email + "_copy@example.com",
+                password_hash=generate_password_hash("newpassword123", method='pbkdf2:sha256'),
+                roles=user.roles[:]
+            )
+            db.session.add(new_user)
+        db.session.commit()
+        flash(f'✅ Скопировано: {len(ids)} пользователей. Пароль у всех: newpassword123', 'success')
 
 
 class CarAdmin(SecureModelView):
