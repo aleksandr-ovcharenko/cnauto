@@ -53,7 +53,7 @@ def admin_login():
         if user and user.check_password(form.password.data) and user.has_role('admin'):
             login_user(user, remember=form.remember.data)
             return redirect(url_for('admin.index'))
-        flash('рные данные для входа или недостаточно прав', 'error')
+        flash('Неверные данные для входа или недостаточно прав', 'error')
     return render_template('admin/login.html', form=form)
 
 

@@ -2,65 +2,69 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Вход в админку</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            font-family: sans-serif;
-        }
-        .login-box {
-            max-width: 400px;
-            width: 100%;
-            padding: 2rem;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-        }
-        input {
-            width: 100%;
-            padding: 0.5rem;
-            margin-top: 0.5rem;
-        }
-        button {
-            margin-top: 1rem;
-            width: 100%;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в админ-панель | CN-Auto</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
 </head>
-<body>
-{% with messages = get_flashed_messages(with_categories=true) %}
-{% if messages %}
-{% for category, message in messages %}
-<div class="alert alert-{{ category }}">{{ message }}</div>
-{% endfor %}
-{% endif %}
-{% endwith %}
-<div class="login-box">
-    <h2>Вход</h2>
-    <form method="POST">
-        {{ form.hidden_tag() }}
-        <div>
-            {{ form.username.label }}<br>
-            {{ form.username(size=32) }}
+<body class="admin-login">
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <img src="{{ url_for('static', filename='images/logo-admin.png') }}" alt="CN-Auto" class="login-logo">
+            <h1>Административная панель</h1>
         </div>
-        <div style="margin-top: 1rem;">
-            {{ form.password.label }}<br>
-            {{ form.password(size=32) }}
-        </div>
-        {% if form.errors %}
-        <div style="color: red; margin-top: 1rem;">
-            {% for field_errors in form.errors.values() %}
-            {% for error in field_errors %}
-            <p>{{ error }}</p>
-            {% endfor %}
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+                                <span class="alert-icon">
+                                    {% if category == 'error' %}⚠️{% else %}ℹ️{% endif %}
+                                </span>
+                {{ message }}
+            </div>
             {% endfor %}
         </div>
         {% endif %}
-        <button type="submit" class="btn">Войти</button>
-    </form>
+        {% endwith %}
+
+        <form method="POST" class="login-form">
+            {{ form.hidden_tag() }}
+
+            <div class="form-group">
+                {{ form.username.label(class="form-label") }}
+                <div class="input-wrapper">
+                    {{ form.username(class="form-input", placeholder="Введите логин") }}
+                    <span class="input-icon">👤</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                {{ form.password.label(class="form-label") }}
+                <div class="input-wrapper">
+                    {{ form.password(class="form-input", placeholder="Введите пароль") }}
+                    <span class="input-icon">🔒</span>
+                </div>
+            </div>
+
+            <div class="form-options">
+                <label class="remember-me">
+                    {{ form.remember() }}
+                    <span>Запомнить меня</span>
+                </label>
+            </div>
+
+            <button type="submit" class="login-btn">
+                <span class="btn-text">Войти</span>
+                <span class="btn-icon">→</span>
+            </button>
+        </form>
+    </div>
+
+    <div class="login-footer">
+        <p>© 2024 CN-Auto. Все права защищены</p>
+    </div>
 </div>
 </body>
 </html>
