@@ -238,8 +238,26 @@ class BrandAdmin(ModelView):
 
 
 class CarTypeAdmin(ModelView):
-    column_list = ['name', 'slug']
+    column_list = ['icon_preview', 'name', 'slug']
+    column_labels = {'icon_preview': 'Иконка'}
     form_columns = ['name', 'slug', 'icon']
+
+    def _icon_preview(view, context, model, name):
+        if model.icon:
+            return Markup(f'<img src="{get_url("static", filename="images/types/" + model.icon)}" height="30">')
+        return ''
+
+    column_formatters = {
+        'icon_preview': _icon_preview
+    }
+
+    form_extra_fields = {
+        'icon': FileUploadField(
+            'Иконка',
+            base_path=os.path.join(os.path.dirname(__file__), 'static', 'images', 'types'),
+            allowed_extensions=['jpg', 'jpeg', 'png', 'webp']
+        ),
+    }
 
 
 def init_admin(app):
