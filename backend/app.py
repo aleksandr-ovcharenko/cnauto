@@ -2,13 +2,18 @@ import os
 
 from dotenv import load_dotenv
 from flask import Flask
-from flask import render_template
-from flask import request, url_for
+from flask import render_template, redirect, url_for, flash, request
+from flask_login import LoginManager, current_user
+from flask_login import login_user, logout_user, login_required
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, BooleanField
+from wtforms.validators import InputRequired
 
 from backend.admin import init_admin
 from backend.config_dev import DevConfig
 from backend.config_prod import ProdConfig
 from backend.models import Car, Category, Brand, Country, CarType
+from backend.models import User
 from backend.models import db
 
 load_dotenv()  # Загружает переменные из .env
@@ -23,6 +28,41 @@ db.init_app(app)
 
 # Инициализация админки
 init_admin(app)
+
+login_manager = LoginManager()
+login_manager.login_view = 'admin_login'
+login_manager.init_app(app)
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+
+class LoginForm(FlaskForm):
+    username = StringField('Логин', validators=[InputRequired()])
+    password = PasswordField('Пароль', validators=[InputRequired()])
+    remember = BooleanField('Запомнить меня')
+
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user and user.check_password(form.password.data) and user.is_admin:
+            login_user(user, remember=form.remember.data)
+            return redirect(url_for('admin.index'))
+        flash('Неверные данные для входа', 'error')
+    return render_template('admin/login.html', form=form)
+
+
+@app.route('/admin/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('Вы вышли из системы', 'info')
+    return redirect(url_for('admin_login'))
 
 
 @app.route('/')

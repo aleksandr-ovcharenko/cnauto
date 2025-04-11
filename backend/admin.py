@@ -2,10 +2,12 @@ import os
 
 from flask import flash, request, redirect, url_for
 from flask_admin import Admin, expose
+from flask_admin import AdminIndexView
 from flask_admin.actions import action
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.form.upload import FileUploadField
 from flask_admin.helpers import get_url
+from flask_login import current_user
 from markupsafe import Markup
 from werkzeug.utils import secure_filename
 from wtforms import MultipleFileField
@@ -17,6 +19,29 @@ from backend.models import db, Car, Category, Brand, CarType, Country
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'images', 'cars')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+
+class SecureAdminIndexView(AdminIndexView):
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.has_role('admin')
+
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect(url_for('login', next=request.url))
+
+    def render(self, template, **kwargs):
+        self._template_args['current_user'] = current_user
+        return super().render('admin/custom_master.html', **kwargs)
+
+
+class SecureModelView(ModelView):
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.has_role('admin')
+
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect(url_for('login', next=request.url))
+
+    def render(self, template, **kwargs):
+        self._template_args['current_user'] = current_user
+        return super().render(template, **kwargs)
 
 class CarAdmin(ModelView):
     column_list = ['image_preview', 'model', 'price', 'brand_preview', 'car_type']
@@ -261,7 +286,7 @@ class CarTypeAdmin(ModelView):
 
 
 def init_admin(app):
-    admin = Admin(app, name='CN-Auto Admin', template_mode='bootstrap3')
+    admin = Admin(app, name='CN-Auto Admin', template_mode='bootstrap3', index_view=SecureAdminIndexView())
     admin.add_view(CarAdmin(Car, db.session, name='Автомобили'))
     admin.add_view(CategoryAdmin(Category, db.session, name='Категории'))
     admin.add_view(BrandAdmin(Brand, db.session, name='Бренды'))

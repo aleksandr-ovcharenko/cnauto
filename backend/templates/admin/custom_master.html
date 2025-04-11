@@ -1,0 +1,11 @@
+{% extends 'admin/base.html' %}
+
+{% block navbar %}
+{{ super() }}
+{% if current_user.is_authenticated %}
+<div class="navbar-right" style="margin-right: 1rem;">
+    👋 {{ current_user.username }} |
+    <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm">Выйти</a>
+</div>
+{% endif %}
+{% endblock %}
