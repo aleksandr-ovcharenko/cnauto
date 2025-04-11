@@ -9,10 +9,13 @@ from flask_admin.form.upload import FileUploadField
 from flask_admin.helpers import get_url
 from flask_login import current_user
 from markupsafe import Markup
+from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
 from wtforms import MultipleFileField
-from wtforms_sqlalchemy.fields import QuerySelectField
+from wtforms import PasswordField
+from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
 
+from backend.models import Role, User
 from backend.models import db, Car, Category, Brand, CarType, Country
 
 # Папка для изображений автомобилей
@@ -28,7 +31,7 @@ class SecureAdminIndexView(AdminIndexView):
         return redirect(url_for('login', next=request.url))
 
     def render(self, template, **kwargs):
-        self._template_args['current_user'] = current_user
+        kwargs['current_user'] = current_user
         return super().render(template, **kwargs)
 
     @expose('/')
@@ -46,8 +49,44 @@ class SecureModelView(ModelView):
         return redirect(url_for('login', next=request.url))
 
     def render(self, template, **kwargs):
-        self._template_args['current_user'] = current_user
+        kwargs['current_user'] = current_user
         return super().render(template, **kwargs)
+
+
+class UserAdmin(SecureModelView):
+    column_list = ['username', 'email', 'roles']
+    column_searchable_list = ['username', 'email']
+    column_filters = ['roles.name']
+    column_labels = {
+        'username': 'Имя пользователя',
+        'email': 'Email',
+        'roles': 'Роли'
+    }
+    column_formatters = {
+        'roles': lambda v, c, m, p: ', '.join([r.name for r in m.roles]) if m.roles else '—'
+    }
+
+    form_columns = ['username', 'email', 'password', 'roles']
+    form_extra_fields = {
+        'password': PasswordField('Пароль (оставьте пустым, если не менять)')
+    }
+
+    form_overrides = {
+        'roles': QuerySelectMultipleField
+    }
+
+    form_args = {
+        'roles': {
+            'query_factory': lambda: db.session.query(Role).order_by(Role.name),
+            'get_label': 'name'
+        }
+    }
+
+    def on_model_change(self, form, model, is_created):
+        if form.password.data:
+            model.password_hash = generate_password_hash(form.password.data)
+
+    column_exclude_list = ['password_hash']
 
 
 class CarAdmin(SecureModelView):
@@ -203,15 +242,12 @@ class CategoryAdmin(SecureModelView):
     form_columns = ['name', 'slug', 'icon']
 
 
-
 class CountryAdmin(SecureModelView):
     column_list = ['id', 'name']
     form_columns = ['name']
 
     # Не показываем ID
     form_excluded_columns = ['id']
-
-
 
 
 class BrandAdmin(SecureModelView):
@@ -221,7 +257,6 @@ class BrandAdmin(SecureModelView):
     form_columns = ['name', 'slug', 'logo', 'country']
     column_searchable_list = ['name', 'slug']
     column_filters = ['country.name']
-
 
     can_export = True
     page_size = 30
@@ -313,3 +348,4 @@ def init_admin(app):
     admin.add_view(BrandAdmin(Brand, db.session, name='Бренды'))
     admin.add_view(CarTypeAdmin(CarType, db.session, name='Типы авто'))
     admin.add_view(CountryAdmin(Country, db.session, name='Страны'))
+    admin.add_view(UserAdmin(User, db.session, name='Пользователи'))

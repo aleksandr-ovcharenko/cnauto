@@ -21,7 +21,7 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(128), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
 
-    roles = db.relationship('Role', secondary=user_roles, backref='users')
+    roles = db.relationship('Role', secondary=user_roles, backref='users', lazy='subquery')
 
     def get_roles_display(self):
         return ', '.join(role.name for role in self.roles)
