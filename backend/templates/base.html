@@ -132,26 +132,25 @@
 </script>
 
 <script>
+
+
     document.addEventListener("DOMContentLoaded", function () {
-        document.querySelectorAll('.facet-group').forEach(group => {
-            const toggle = group.querySelector('.facet-toggle');
-            const items = group.querySelectorAll('.facet-item');
+        const toggles = document.querySelectorAll('.facet-toggle');
 
-            if (toggle) {
-                toggle.addEventListener('click', () => {
-                    const expanded = toggle.dataset.expanded === 'true';
+        toggles.forEach(button => {
+            const group = button.previousElementSibling; // .facet-items
 
-                    items.forEach((item, idx) => {
-                        if (idx >= 5) {
-                            item.classList.toggle('hidden', expanded);
-                            item.classList.toggle('shown', !expanded);
-                        }
-                    });
+            // Начальное состояние
+            group.classList.add('collapsed');
+            button.dataset.expanded = "false";
 
-                    toggle.textContent = expanded ? 'Показать ещё' : 'Скрыть';
-                    toggle.dataset.expanded = (!expanded).toString();
-                });
-            }
+            button.addEventListener("click", () => {
+                const expanded = button.dataset.expanded === "true";
+
+                group.classList.toggle("collapsed", expanded);
+                button.dataset.expanded = (!expanded).toString();
+                button.textContent = expanded ? "Показать ещё" : "Скрыть";
+            });
         });
     });
 </script>

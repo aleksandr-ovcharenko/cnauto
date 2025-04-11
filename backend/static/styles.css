@@ -526,22 +526,29 @@ body {
     flex: 1;
 }
 
-.facet-item.hidden {
-    display: none;
+
+
+.facet-items {
+    max-height: 300px;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
 }
 
-.facet-item.shown {
-    display: block;
+.facet-items.collapsed {
+    max-height: 130px; /* примерно 5 элементов */
 }
 
 .facet-toggle {
+    margin-top: 10px;
     background: none;
+    color: #007BFF;
     border: none;
-    color: #007bff;
     cursor: pointer;
     font-size: 14px;
-    margin-top: 8px;
-    padding: 0;
+}
+
+.facet-toggle:hover {
+    text-decoration: underline;
 }
 
 

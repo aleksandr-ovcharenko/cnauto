@@ -8,32 +8,37 @@
     <aside class="filters-sidebar">
         <form method="get">
             <!-- Фильтр по бренду -->
-            <div class="filter-group facet-group">
+            <div class="filter-group">
                 <h4>Бренд</h4>
-                {% for brand in brands %}
-                <label class="facet-item {% if loop.index > 5 %}hidden{% endif %}">
-                    <input type="radio" name="brand" value="{{ brand.slug }}"
-                           {% if request.args.get('brand') == brand.slug %}checked{% endif %}>
-                    {{ brand.name }}
-                </label>
-                {% endfor %}
+                <div class="facet-items">
+                    {% for brand in brands %}
+                    <label class="facet-item {% if loop.index > 5 %}hidden{% endif %}">
+                        <input type="radio" name="brand" value="{{ brand.slug }}"
+                               {% if request.args.get('brand') == brand.slug %}checked{% endif %}>
+                        {{ brand.name }}
+                    </label>
+                    {% endfor %}
+                </div>
                 {% if brands|length > 5 %}
-                <button type="button" class="facet-toggle" data-expanded="false">Показать ещё</button>
+                <button type="button" class="facet-toggle" data-target="brand">Показать ещё</button>
                 {% endif %}
             </div>
 
+
             <!-- Фильтр по стране -->
-            <div class="filter-group facet-group" data-facet="country">
+            <div class="filter-group" data-facet="country">
                 <h4>Страна</h4>
-                {% for country in countries %}
-                <label class="facet-item{% if loop.index > 5 %} hidden{% endif %}">
-                    <input type="radio" name="country" value="{{ country.name }}"
-                           {% if request.args.get('country') == country.name %}checked{% endif %}>
-                    {{ country.name }}
-                </label>
-                {% endfor %}
+                <div class="facet-items">
+                    {% for country in countries %}
+                    <label class="facet-item{% if loop.index > 5 %} hidden{% endif %}">
+                        <input type="radio" name="country" value="{{ country.name }}"
+                               {% if request.args.get('country') == country.name %}checked{% endif %}>
+                        {{ country.name }}
+                    </label>
+                    {% endfor %}
+                </div>
                 {% if countries|length > 5 %}
-                <button type="button" class="facet-toggle" data-expanded="false">Показать ещё</button>
+                <button type="button" class="facet-toggle" data-target="country">Показать ещё</button>
                 {% endif %}
             </div>
 
