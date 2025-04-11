@@ -43,15 +43,20 @@
             </div>
 
             <!-- Фильтр по типу -->
-            <div class="filter-group facet-group" data-facet="type">
+            <div class="filter-group" data-facet="type">
                 <h4>Тип авто</h4>
-                {% for t in ['ДВС', 'Гибрид', 'Электро'] %}
-                <label class="facet-item{% if loop.index > 5 %} hidden{% endif %}">
-                    <input type="radio" name="type" value="{{ t }}"
-                           {% if request.args.get('type') == t %}checked{% endif %}>
-                    {{ t }}
-                </label>
-                {% endfor %}
+                <div class="facet-items">
+                    {% for car_type in car_types %}
+                    <label class="facet-item {% if loop.index > 5 %}hidden{% endif %}">
+                        <input type="radio" name="type" value="{{ car_type.slug }}"
+                               {% if request.args.get('type') == car_type.slug %}checked{% endif %}>
+                        {{ car_type.name }}
+                    </label>
+                    {% endfor %}
+                </div>
+                {% if car_types|length > 5 %}
+                <button type="button" class="facet-toggle" data-target="type">Показать ещё</button>
+                {% endif %}
             </div>
 
             <div class="filter-buttons">

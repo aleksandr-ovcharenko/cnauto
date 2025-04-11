@@ -55,8 +55,9 @@ def catalog():
     cars = query.all()
     brands = Brand.query.order_by(Brand.name).all()
     countries = Country.query.order_by(Country.name).all()
+    car_types = CarType.query.order_by(CarType.name).all()
 
-    return render_template("catalog.html", cars=cars, brands=brands, countries=countries)
+    return render_template("catalog.html", cars=cars, brands=brands, countries=countries, car_types=car_types)
 
 
 
