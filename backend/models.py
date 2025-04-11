@@ -23,6 +23,9 @@ class User(db.Model, UserMixin):
 
     roles = db.relationship('Role', secondary=user_roles, backref='users')
 
+    def get_roles_display(self):
+        return ', '.join(role.name for role in self.roles)
+
     def set_password(self, password):
         from werkzeug.security import generate_password_hash
         self.password_hash = generate_password_hash(password)

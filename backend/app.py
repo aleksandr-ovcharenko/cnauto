@@ -59,7 +59,7 @@ def admin_login():
 
 @app.route('/admin/logout')
 @login_required
-def logout():
+def admin_logout():
     logout_user()
     flash('Вы вышли из системы', 'info')
     return redirect(url_for('admin_login'))

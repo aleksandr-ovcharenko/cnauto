@@ -29,10 +29,16 @@ class SecureAdminIndexView(AdminIndexView):
 
     def render(self, template, **kwargs):
         self._template_args['current_user'] = current_user
-        return super().render('admin/custom_master.html', **kwargs)
+        return super().render(template, **kwargs)
+
+    @expose('/')
+    def index(self):
+        return self.render('admin/custom_admin_base.html')
 
 
 class SecureModelView(ModelView):
+    base_template = 'admin/custom_admin_base.html'
+
     def is_accessible(self):
         return current_user.is_authenticated and current_user.has_role('admin')
 
@@ -43,7 +49,8 @@ class SecureModelView(ModelView):
         self._template_args['current_user'] = current_user
         return super().render(template, **kwargs)
 
-class CarAdmin(ModelView):
+
+class CarAdmin(SecureModelView):
     column_list = ['image_preview', 'model', 'price', 'brand_preview', 'car_type']
     column_labels = {'image_preview': 'Фото', 'brand_preview': 'Бренд'}
 
@@ -191,12 +198,13 @@ class CarAdmin(ModelView):
             flash(f"❌ Ошибка при копировании: {e}", "error")
 
 
-class CategoryAdmin(ModelView):
+class CategoryAdmin(SecureModelView):
     column_list = ['name', 'slug']
     form_columns = ['name', 'slug', 'icon']
 
 
-class CountryAdmin(ModelView):
+
+class CountryAdmin(SecureModelView):
     column_list = ['id', 'name']
     form_columns = ['name']
 
@@ -204,13 +212,16 @@ class CountryAdmin(ModelView):
     form_excluded_columns = ['id']
 
 
-class BrandAdmin(ModelView):
+
+
+class BrandAdmin(SecureModelView):
     column_list = ['logo_preview', 'name', 'slug', 'country']
     column_labels = {'logo_preview': 'Логотип'}
 
     form_columns = ['name', 'slug', 'logo', 'country']
     column_searchable_list = ['name', 'slug']
     column_filters = ['country.name']
+
 
     can_export = True
     page_size = 30
@@ -262,7 +273,7 @@ class BrandAdmin(ModelView):
     #     return form
 
 
-class CarTypeAdmin(ModelView):
+class CarTypeAdmin(SecureModelView):
     column_list = ['icon_preview', 'name', 'slug']
     column_labels = {'icon_preview': 'Иконка'}
     form_columns = ['name', 'slug', 'icon']
@@ -286,7 +297,17 @@ class CarTypeAdmin(ModelView):
 
 
 def init_admin(app):
-    admin = Admin(app, name='CN-Auto Admin', template_mode='bootstrap3', index_view=SecureAdminIndexView())
+    admin = Admin(
+        app,
+        name='CN-Auto Admin',
+        template_mode='bootstrap3',
+        index_view=SecureAdminIndexView()
+    )
+
+    @app.context_processor
+    def inject_user():
+        return dict(current_user=current_user)
+
     admin.add_view(CarAdmin(Car, db.session, name='Автомобили'))
     admin.add_view(CategoryAdmin(Category, db.session, name='Категории'))
     admin.add_view(BrandAdmin(Brand, db.session, name='Бренды'))
