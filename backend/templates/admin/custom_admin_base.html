@@ -1,5 +1,10 @@
 {% extends 'admin/base.html' %}
 
+{% block head_css %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+{% endblock %}
+
 {% block body %}
 <div class="admin-header">
     {% if current_user.is_authenticated %}
@@ -13,6 +18,5 @@
     </div>
     {% endif %}
 </div>
-
 {{ super() }}
 {% endblock %}
