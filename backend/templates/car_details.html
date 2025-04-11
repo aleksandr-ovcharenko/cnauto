@@ -3,72 +3,53 @@
 {% block title %}{{ car.model }} — CN-Auto{% endblock %}
 
 {% block content %}
-<section class="car-details">
-    <div class="container">
-        <div class="car-details__header">
-            <h1>{{ car.model }}</h1>
-            <p class="price">{{ car.formatted_price }}</p>
-        </div>
-
-        <div class="car-details__gallery">
-            {% if car.images %}
-            <!-- Главное изображение -->
-            <img class="main-image" src="{{ url_for('static', filename='images/cars/' + car.images[0]) }}" alt="{{ car.model }}">
-
-            <!-- Миниатюры -->
-            <div class="thumbnails">
+<section class="product-detail">
+    <div class="product-left">
+        <div class="product-media">
+            <div class="product-thumbs">
                 {% for img in car.images %}
-                <img src="{{ url_for('static', filename='images/cars/' + img) }}" alt="Thumbnail {{ loop.index }}">
+                <img src="{{ url_for('static', filename='images/cars/' + img) }}" alt="thumb">
                 {% endfor %}
             </div>
+            <div class="product-image">
+                <img src="{{ url_for('static', filename='images/cars/' + car.image) }}"
+                     alt="{{ car.model }}">
+            </div>
+        </div>
+
+
+        <div class="product-specs-grid">
+            {% if car.engine %}<div><strong>Двигатель:</strong> {{ car.engine }}</div>{% endif %}
+            {% if car.in_stock %}<div><strong>Привод:</strong> Полный</div>{% endif %}
+            {% if car.mileage %}<div><strong>Пробег:</strong> {{ car.mileage }} км</div>{% endif %}
+            {% if car.year %}<div><strong>Год:</strong> {{ car.year }}</div>{% endif %}
+            {% if car.car_type %}<div><strong>Тип:</strong> {{ car.car_type.name }}</div>{% endif %}
+            <!-- Добавь другие характеристики -->
+        </div>
+    </div>
+
+    <div class="product-right">
+        <h1 class="product-title">{{ car.model }}</h1>
+        <p class="product-meta">
+            Производитель: <strong>{{ car.brand.name }}</strong> |
+            Тип: <strong>{{ car.car_type.name }}</strong>
+        </p>
+
+        <div class="product-price-section">
+            {% if car.in_stock %}
+            <span class="stock-tag in-stock">В наличии</span>
+            {% else %}
+            <span class="stock-tag pre-order">Под заказ</span>
             {% endif %}
+            <div class="price">{{ car.price | round }} ₽</div>
         </div>
 
-        {% if car.description %}
-        <div class="car-details__specs">
-            <h3>Описание</h3>
-            <p>{{ car.description }}</p>
+        <div class="product-actions">
+            <a href="#" class="btn">Заказать</a>
+            <button class="icon-btn">❤️</button>
+            <button class="icon-btn">🔁</button>
         </div>
-        {% endif %}
-
-        {% if car.specs %}
-        <div class="car-details__specs">
-            <h3>Характеристики</h3>
-            <ul>
-                {% for spec in car.specs %}
-                <li>{{ spec }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
-
-        {% if car.brand_logo %}
-        <img src="{{ url_for('static', filename='images/brands/' + car.brand_logo) }}" alt="{{ car.model }} бренд" class="brand-logo">
-        {% endif %}
-
-        <ul class="spec-list">
-            <li><strong>Год выпуска:</strong> {{ car.year }}</li>
-            <li><strong>Пробег:</strong> {{ car.mileage }}</li>
-            <li><strong>Двигатель:</strong> {{ car.engine }}</li>
-            <li><strong>FOB:</strong> {{ car.price_fob }}</li>
-            <li><strong>Дополнительно:</strong> {{ car.extras }}</li>
-        </ul>
-
-        <a href="/catalog" class="btn btn-small">← Назад в каталог</a>
-        <a href="#contact-form" class="btn">Оформить заказ</a>
     </div>
 </section>
 
-<!-- Форма заявки -->
-<section class="contact-form-section" id="contact-form">
-    <div class="container">
-        <h2>Оформить заказ</h2>
-        <form class="contact-form">
-            <input type="text" name="name" placeholder="Ваше имя" required>
-            <input type="tel" name="phone" placeholder="Телефон" required>
-            <textarea name="message" placeholder="Комментарий (необязательно)"></textarea>
-            <button type="submit" class="btn">Отправить заявку</button>
-        </form>
-    </div>
-</section>
 {% endblock %}

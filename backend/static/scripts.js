@@ -130,4 +130,3 @@ thumbnails.forEach(thumb => {
     });
 });
 
-

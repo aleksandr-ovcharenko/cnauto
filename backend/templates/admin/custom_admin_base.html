@@ -8,13 +8,13 @@
 {% block body %}
 <div class="admin-header">
     {% if current_user.is_authenticated %}
-    <div style="position: absolute; top: 10px; right: 20px; z-index: 1000; font-size: 14px;">
+    <div class="admin-user-info">
         👤 {{ current_user.username }}
         {% for role in current_user.roles %}
-        <span class="label label-default">роль: {{ role.name }}</span>
+        <span class="role-badge">роль: {{ role.name }}</span>
         {% endfor %}
         |
-        <a href="{{ url_for('admin_logout') }}" style="text-decoration: underline;">Выйти</a>
+        <a href="{{ url_for('admin_logout') }}">Выйти</a>
     </div>
     {% endif %}
 </div>
