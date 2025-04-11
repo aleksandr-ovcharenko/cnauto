@@ -81,42 +81,52 @@
         <div class="cars-grid">
             {% for car in cars %}
             <div class="car-card clean-card horizontal-card">
-                <div class="car-card__image-block">
-                    <img class="car-card__image"
-                         src="{{ url_for('static', filename='images/cars/' + (car.image or 'placeholder.webp')) }}"
-                         alt="{{ car.model }}" />
-                </div>
-
-                <div class="car-card__info-block">
-                    <div class="car-card__header">
-                        <span class="car-card__tag">Новая</span>
-                        {% if car.in_stock %}
-                        <span class="car-card__status in-stock">В наличии</span>
-                        {% else %}
-                        <span class="car-card__status pre-order">Под заказ</span>
-                        {% endif %}
+                <div class="car-card__content">
+                    <div class="car-card__image-block">
+                        <img class="car-card__image"
+                             src="{{ url_for('static', filename='images/cars/' + (car.image or 'placeholder.webp')) }}"
+                             alt="{{ car.model }}"/>
                     </div>
 
-                    <div class="car-card__brand">
-                        {% if car.brand %}
-                        <img src="{{ url_for('static', filename='images/brands/' + car.brand.logo) }}"
-                             alt="{{ car.brand.name }}" class="brand-logo" />
-                        {% endif %}
-                        <h3 class="car-card__title">{{ car.model }}</h3>
+                    <div class="car-card__info-block">
+                        <div class="car-card__header">
+                            <span class="car-card__tag">Новая</span>
+                            {% if car.in_stock %}
+                            <span class="car-card__status in-stock">В наличии</span>
+                            {% else %}
+                            <span class="car-card__status pre-order">Под заказ</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="car-card__brand">
+                            {% if car.brand %}
+                            <img src="{{ url_for('static', filename='images/brands/' + car.brand.logo) }}"
+                                 alt="{{ car.brand.name }}" class="brand-logo"/>
+                            {% endif %}
+                            <h3 class="car-card__title">{{ car.model }}</h3>
+                        </div>
+
+                        <div class="car-card__price-block">
+                            <span class="car-card__price">{{ car.price | round }} ₽</span>
+                        </div>
+
+                        <ul class="car-card__specs">
+                            {% if car.engine %}
+                            <li>⚡ {{ car.engine }}</li>
+                            {% endif %}
+                            {% if car.car_type %}
+                            <li>🚗 {{ car.car_type.name }}</li>
+                            {% endif %}
+                            {% if car.year %}
+                            <li>📅 {{ car.year }}</li>
+                            {% endif %}
+                            {% if car.mileage %}
+                            <li>📍 {{ car.mileage }} км</li>
+                            {% endif %}
+                        </ul>
+
+                        <a href="/car/{{ car.id }}" class="btn btn-full">Подробнее →</a>
                     </div>
-
-                    <div class="car-card__price-block">
-                        <span class="car-card__price">{{ car.price | round }} ₽</span>
-                    </div>
-
-                    <ul class="car-card__specs">
-                        {% if car.engine %}<li>⚡ {{ car.engine }}</li>{% endif %}
-                        {% if car.car_type %}<li>🚗 {{ car.car_type.name }}</li>{% endif %}
-                        {% if car.year %}<li>📅 {{ car.year }}</li>{% endif %}
-                        {% if car.mileage %}<li>📍 {{ car.mileage }} км</li>{% endif %}
-                    </ul>
-
-                    <a href="/car/{{ car.id }}" class="btn btn-full">Подробнее →</a>
                 </div>
             </div>
             {% endfor %}
