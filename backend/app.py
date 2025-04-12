@@ -23,6 +23,10 @@ app = Flask(__name__)
 Config = DevConfig if os.environ.get('FLASK_ENV') != 'production' else ProdConfig
 app.config.from_object(Config)
 
+print("📦 DATABASE_URL:", os.getenv('DATABASE_URL'))
+print("📦 DB URI:", app.config['SQLALCHEMY_DATABASE_URI'])
+
+
 # Инициализация расширений
 db.init_app(app)
 
