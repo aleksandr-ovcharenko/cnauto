@@ -10,4 +10,4 @@ ENV FLASK_APP=backend/app.py
 ENV FLASK_ENV=production
 
 WORKDIR /app/backend
-CMD ["flask", "run", "--host=0.0.0.0", "--port=$PORT"]
+CMD ["/bin/sh", "-c", "flask run --host=0.0.0.0 --port=$PORT"]
