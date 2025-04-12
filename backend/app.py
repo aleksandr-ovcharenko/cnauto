@@ -16,6 +16,8 @@ from backend.models import User
 from backend.models import db
 from backend.config_dev import DevConfig
 from backend.config_prod import ProdConfig
+from seeds.seed_brands import seed_brands
+from seeds.seed_countries import seed_countries
 
 # .env
 load_dotenv()
@@ -116,5 +118,17 @@ def catalog():
                            reset_type_url=reset_type_url)
 
 
+
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
+    with app.app_context():
+        if os.getenv("RUN_SEEDS_ONCE") == "1":
+            from seeds.seed_users import seed_users
+            seed_users()
+            seed_countries()
+            seed_brands()
+
+    with app.app_context():
+        print("🔗 login url:", url_for('admin_login'))
