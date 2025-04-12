@@ -5,7 +5,7 @@ from flask import Flask
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import LoginManager
 from flask_login import login_user, logout_user, login_required
-from flask_migrate import Migrate
+from flask_migrate import Migrate, upgrade
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField
 from wtforms.validators import InputRequired
@@ -126,6 +126,8 @@ if __name__ == '__main__':
 
     with app.app_context():
         if os.getenv("RUN_SEEDS_ONCE") == "1":
+            upgrade()
+            print("✅ Авто-миграции в проде применены")
             seed_users()
             seed_countries()
             seed_brands()
