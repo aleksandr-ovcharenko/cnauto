@@ -126,12 +126,7 @@ if __name__ == '__main__':
 
     with app.app_context():
         if os.getenv("RUN_SEEDS_ONCE") == "1":
-            upgrade()
-            print("✅ Авто-миграции в проде применены")
-            seed_users()
-            seed_countries()
             seed_brands()
-            seed_types()
             print("✅ Сиды применены")
 
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
