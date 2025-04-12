@@ -5,44 +5,39 @@ from flask import Flask
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import LoginManager
 from flask_login import login_user, logout_user, login_required
+from flask_migrate import Migrate
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField
 from wtforms.validators import InputRequired
 
 from backend.admin import init_admin
-from config_dev import DevConfig
-from config_prod import ProdConfig
 from backend.models import Car, Category, Brand, Country, CarType
 from backend.models import User
 from backend.models import db
+from config_dev import DevConfig
+from config_prod import ProdConfig
 
-load_dotenv()  # Загружает переменные из .env
+# .env
+load_dotenv()
 
+# Flask app
 app = Flask(__name__)
-
-print("FLASK_ENV:", os.getenv('FLASK_ENV'))
-print("📦 DATABASE_URL:", os.getenv('DATABASE_URL'))
-
-env = os.getenv("FLASK_ENV")
+env = os.getenv("FLASK_ENV", "development")
 if env == "production":
     app.config.from_object(ProdConfig)
-    print("✅ Загрузили ProdConfig")
+    print("✅ ProdConfig загружен")
 else:
     app.config.from_object(DevConfig)
-    print("✅ Загрузили DevConfig")
+    print("✅ DevConfig загружен")
 
-print("📦 DB URI:", app.config['SQLALCHEMY_DATABASE_URI'])
+print("📦 DB URI:", app.config.get("SQLALCHEMY_DATABASE_URI"))
 
-
-# Инициализация расширений
+# Init extensions
 db.init_app(app)
-
-with app.app_context():
-    db.create_all()
-
-# Инициализация админки
+migrate = Migrate(app, db)
 init_admin(app)
 
+# Flask-Login
 login_manager = LoginManager()
 login_manager.login_view = 'admin_login'
 login_manager.init_app(app)
@@ -122,12 +117,4 @@ def catalog():
 
 
 if __name__ == '__main__':
-    with app.app_context():
-
-        # Instance папка
-        instance_path = os.path.join(app.instance_path)
-        if not os.path.exists(instance_path):
-            os.makedirs(instance_path)
-
-        app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

@@ -1,7 +1,9 @@
-from backend.app import app
-from backend.models import db, User, Role
+
+
 
 def seed_users():
+    from backend.app import app
+    from backend.models import db, User, Role
     with app.app_context():
         admin_role = Role.query.filter_by(name='admin').first()
         if not admin_role:
@@ -27,5 +29,5 @@ def seed_users():
         db.session.commit()
         print("✅ Пользователь и роли добавлены.")
 
-if __name__ == '__main__':
-    seed_users()
+
+
