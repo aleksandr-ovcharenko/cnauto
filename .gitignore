@@ -194,3 +194,4 @@ cython_debug/
 /backend/static/images/uploads/*
 !/backend/static/images/uploads/.gitkeep
 /backend/static/images/cars/
+/cnauto-site.iml

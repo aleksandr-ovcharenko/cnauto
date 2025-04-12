@@ -14,8 +14,8 @@ from backend.admin import init_admin
 from backend.models import Car, Category, Brand, Country, CarType
 from backend.models import User
 from backend.models import db
-from config_dev import DevConfig
-from config_prod import ProdConfig
+from backend.config_dev import DevConfig
+from backend.config_prod import ProdConfig
 
 # .env
 load_dotenv()
