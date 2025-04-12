@@ -2,8 +2,9 @@ import os
 
 
 class ProdConfig:
-    basedir = os.path.abspath(os.path.dirname(__file__))
-    DEBUG = os.getenv('FLASK_ENV') != 'production'
-    SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-secret')
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    def __init__(self):
+        self.basedir = os.path.abspath(os.path.dirname(__file__))
+        self.DEBUG = os.getenv('FLASK_ENV') != 'production'
+        self.SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-secret')
+        self.SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
+        self.SQLALCHEMY_TRACK_MODIFICATIONS = False
