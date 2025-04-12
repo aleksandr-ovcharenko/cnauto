@@ -20,11 +20,17 @@ load_dotenv()  # Загружает переменные из .env
 
 app = Flask(__name__)
 
-Config = DevConfig if os.environ.get('FLASK_ENV') != 'production' else ProdConfig
-app.config.from_object(Config)
-
-print("Config:", os.getenv('FLASK_ENV'))
+print("FLASK_ENV:", os.getenv('FLASK_ENV'))
 print("📦 DATABASE_URL:", os.getenv('DATABASE_URL'))
+
+env = os.getenv("FLASK_ENV")
+if env == "production":
+    app.config.from_object(ProdConfig)
+    print("✅ Загрузили ProdConfig")
+else:
+    app.config.from_object(DevConfig)
+    print("✅ Загрузили DevConfig")
+
 print("📦 DB URI:", app.config['SQLALCHEMY_DATABASE_URI'])
 
 
