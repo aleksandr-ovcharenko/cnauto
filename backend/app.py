@@ -26,6 +26,9 @@ app.config.from_object(Config)
 # Инициализация расширений
 db.init_app(app)
 
+with app.app_context():
+    db.create_all()
+
 # Инициализация админки
 init_admin(app)
 
