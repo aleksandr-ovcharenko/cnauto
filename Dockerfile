@@ -13,4 +13,4 @@ ENV PORT=8000
 EXPOSE 8000
 
 WORKDIR /app/backend
-CMD ["python", "backend/app.py"]
+CMD ["python", "app.py"]
