@@ -7,3 +7,5 @@ class ProdConfig:
     SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-secret')
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SERVER_NAME = os.getenv("SERVER_NAME", "localhost:5000")  # или твой проддомен
+    PREFERRED_URL_SCHEME = "https"
