@@ -8,9 +8,9 @@ RUN pip install -r backend/requirements.txt
 
 ENV FLASK_APP=backend/app.py
 ENV FLASK_ENV=production
+ENV PYTHONPATH=/app
 
-ENV PORT=8000
-EXPOSE 8000
+RUN pip install --upgrade pip
+RUN pip install -r backend/requirements.txt
 
-WORKDIR /app/backend
-CMD ["python", "app.py"]
+CMD ["python", "backend/app.py"]
