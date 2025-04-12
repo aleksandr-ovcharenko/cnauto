@@ -3,15 +3,15 @@ import os
 from dotenv import load_dotenv
 from flask import Flask
 from flask import render_template, redirect, url_for, flash, request
-from flask_login import LoginManager, current_user
+from flask_login import LoginManager
 from flask_login import login_user, logout_user, login_required
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField
 from wtforms.validators import InputRequired
 
 from backend.admin import init_admin
-from backend.config_dev import DevConfig
-from backend.config_prod import ProdConfig
+from config_dev import DevConfig
+from config_prod import ProdConfig
 from backend.models import Car, Category, Brand, Country, CarType
 from backend.models import User
 from backend.models import db
