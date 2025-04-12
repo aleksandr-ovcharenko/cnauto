@@ -18,6 +18,7 @@ from backend.config_dev import DevConfig
 from backend.config_prod import ProdConfig
 from seeds.seed_brands import seed_brands
 from seeds.seed_countries import seed_countries
+from seeds.seed_users import seed_users
 
 # .env
 load_dotenv()
@@ -120,15 +121,20 @@ def catalog():
 
 
 
+
+
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-
-    with app.app_context():
-        if os.getenv("RUN_SEEDS_ONCE") == "1":
-            from seeds.seed_users import seed_users
-            seed_users()
-            seed_countries()
-            seed_brands()
-
     with app.app_context():
         print("🔗 login url:", url_for('admin_login'))
+
+    with app.app_context():
+        seed_users()
+        seed_countries()
+        seed_brands()
+        print("✅ Сиды применены")
+
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
+
+
+
