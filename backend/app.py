@@ -11,14 +11,15 @@ from wtforms import StringField, PasswordField, BooleanField
 from wtforms.validators import InputRequired
 
 from backend.admin import init_admin
+from backend.config_dev import DevConfig
+from backend.config_prod import ProdConfig
 from backend.models import Car, Category, Brand, Country, CarType
 from backend.models import User
 from backend.models import db
-from backend.config_dev import DevConfig
-from backend.config_prod import ProdConfig
-from seeds.seed_brands import seed_brands
-from seeds.seed_countries import seed_countries
-from seeds.seed_users import seed_users
+from backend.seeds.seed_brands import seed_brands
+from backend.seeds.seed_countries import seed_countries
+from backend.seeds.seed_data import seed_types
+from backend.seeds.seed_users import seed_users
 
 # .env
 load_dotenv()
@@ -119,22 +120,16 @@ def catalog():
                            reset_type_url=reset_type_url)
 
 
-
-
-
-
 if __name__ == '__main__':
     with app.app_context():
         print("🔗 login url:", url_for('admin_login'))
 
     with app.app_context():
-        seed_users()
-        seed_countries()
-        seed_brands()
-        print("✅ Сиды применены")
+        if os.getenv("RUN_SEEDS_ONCE") == "1":
+            seed_users()
+            seed_countries()
+            seed_brands()
+            seed_types()
+            print("✅ Сиды применены")
 
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-
-
-
-

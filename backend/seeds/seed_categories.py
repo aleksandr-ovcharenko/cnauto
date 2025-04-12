@@ -1,8 +1,9 @@
-from backend.models import db, Category
-from backend.app import app
 from datetime import datetime
 
-with app.app_context():
+from backend.models import db, Category
+
+
+def seed_categories():
     categories = [
         {"name": "Седан", "slug": "sedan", "icon": "sedan.png"},
         {"name": "Кроссовер", "slug": "crossover", "icon": "crossover.png"},

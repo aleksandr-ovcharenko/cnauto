@@ -1,21 +1,9 @@
-from backend.models import db, Brand, CarType
 from datetime import datetime
-from backend.app import app
+
+from backend.models import db, CarType
 
 
-
-with app.app_context():
-    brands = [
-        {"name": "BYD", "slug": "byd", "logo": "byd.png"},
-        {"name": "Chery", "slug": "chery", "logo": "chery.png"},
-        {"name": "Geely", "slug": "geely", "logo": "geely.png"},
-        {"name": "BMW", "slug": "bmw", "logo": "bmw.png"},
-        {"name": "Volkswagen", "slug": "vw", "logo": "vw.png"},
-        {"name": "Mercedes-Benz", "slug": "mb", "logo": "mb.png"},
-        {"name": "Audi", "slug": "audi", "logo": "audi.png"},
-        {"name": "Toyota", "slug": "toyota", "logo": "toyota.png"},
-    ]
-
+def seed_types():
     types = [
         {"name": "Электро", "slug": "electric", "icon": "electric.png"},
         {"name": "Гибрид", "slug": "hybrid", "icon": "hybrid.png"},
@@ -23,13 +11,9 @@ with app.app_context():
         {"name": "Дизель", "slug": "diesel", "icon": "diesel.png"},
     ]
 
-    for b in brands:
-        if not Brand.query.filter_by(slug=b["slug"]).first():
-            db.session.add(Brand(**b, created_at=datetime.utcnow()))
-
     for t in types:
         if not CarType.query.filter_by(slug=t["slug"]).first():
             db.session.add(CarType(**t, created_at=datetime.utcnow()))
 
     db.session.commit()
-    print("✅ Бренды и типы авто добавлены")
+    print("✅ Типы авто добавлены")
