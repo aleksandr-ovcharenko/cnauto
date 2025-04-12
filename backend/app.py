@@ -126,6 +126,8 @@ if __name__ == '__main__':
 
     with app.app_context():
         if os.getenv("RUN_SEEDS_ONCE") == "1":
+            upgrade()
+            print("✅ Авто-миграции в проде применены")
             seed_users()
             seed_countries()
             seed_brands()
