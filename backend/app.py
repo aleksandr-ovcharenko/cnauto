@@ -125,8 +125,10 @@ if __name__ == '__main__':
         print("🔗 login url:", url_for('admin_login'))
 
     with app.app_context():
-        if os.getenv("RUN_SEEDS_ONCE") == "1":
-            seed_brands()
-            print("✅ Сиды применены")
+        try:
+            upgrade()
+            print("✅ Миграции применены")
+        except Exception as e:
+            print("⚠️ Ошибка при миграции:", e)
 
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

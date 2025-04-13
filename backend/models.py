@@ -60,6 +60,18 @@ class Category(db.Model):
     def __str__(self):
         return f'{self.name}'
 
+class CarImage(db.Model):
+    __tablename__ = 'car_images'
+
+    id = db.Column(db.Integer, primary_key=True)
+    car_id = db.Column(db.Integer, db.ForeignKey('cars.id'), nullable=False)
+
+    url = db.Column(db.String(512), nullable=False)
+    title = db.Column(db.String(100), nullable=True)
+    alt = db.Column(db.String(255), nullable=True)
+    position = db.Column(db.Integer, default=0)
+
+    car = db.relationship('Car', back_populates='gallery_images')
 
 class Car(db.Model):
     __tablename__ = 'cars'
@@ -79,7 +91,12 @@ class Car(db.Model):
     price_fob = db.Column(db.String(100))
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
     category = db.relationship('Category', backref='cars')
-
+    gallery_images = db.relationship(
+        'CarImage',
+        back_populates='car',
+        order_by=lambda: CarImage.position,
+        cascade='all, delete-orphan'
+    )
     brand_id = db.Column(db.Integer, db.ForeignKey('brands.id'))
     brand = db.relationship('Brand', backref='cars')
 
@@ -119,7 +136,6 @@ class CarType(db.Model):
 
     def __str__(self):
         return self.name
-
 
 class Country(db.Model):
     __tablename__ = 'countries'
