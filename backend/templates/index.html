@@ -21,8 +21,7 @@
                 {% for car in cars[:5] %} {# показываем 5 машин #}
                 <div class="swiper-slide">
                     <div class="car-card car-card--slider">
-                        <img src="{{ url_for('static', filename='images/cars/' + car.image) }}"
-                             alt="{{ car.model }}">
+                        <img src="{{ car.image_url }}" alt="{{ car.model }}">
                         <h3>{{ car.model }}</h3>
                         <p class="price">{{ car.formatted_price }}</p>
                         <a href="/car/{{ car.id }}" class="btn">Подробнее</a>

@@ -67,7 +67,7 @@ class Car(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     model = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
-    image = db.Column(db.String(200))
+    image_url = db.Column(db.String(300), nullable=True)
     brand_logo = db.Column(db.String(200))
     images = db.Column(db.JSON)
     description = db.Column(db.Text)

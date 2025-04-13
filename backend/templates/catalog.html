@@ -84,7 +84,7 @@
                 <div class="car-card__content">
                     <div class="car-card__image-block">
                         <img class="car-card__image"
-                             src="{{ url_for('static', filename='images/cars/' + (car.image or 'placeholder.webp')) }}"
+                             src="{{ car.image_url }}"
                              alt="{{ car.model }}"/>
                     </div>
 

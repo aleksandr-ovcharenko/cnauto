@@ -38,7 +38,7 @@ print("📦 DB URI:", app.config.get("SQLALCHEMY_DATABASE_URI"))
 
 # Init extensions
 db.init_app(app)
-# migrate = Migrate(app, db) use once for prod
+migrate = Migrate(app, db)
 init_admin(app)
 
 # Flask-Login

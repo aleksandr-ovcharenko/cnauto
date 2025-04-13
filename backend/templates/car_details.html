@@ -12,18 +12,27 @@
                 {% endfor %}
             </div>
             <div class="product-image">
-                <img src="{{ url_for('static', filename='images/cars/' + car.image) }}"
-                     alt="{{ car.model }}">
+                <img src="{{ car.image_url }}" alt="{{ car.model }}">
             </div>
         </div>
 
 
         <div class="product-specs-grid">
-            {% if car.engine %}<div><strong>Двигатель:</strong> {{ car.engine }}</div>{% endif %}
-            {% if car.in_stock %}<div><strong>Привод:</strong> Полный</div>{% endif %}
-            {% if car.mileage %}<div><strong>Пробег:</strong> {{ car.mileage }} км</div>{% endif %}
-            {% if car.year %}<div><strong>Год:</strong> {{ car.year }}</div>{% endif %}
-            {% if car.car_type %}<div><strong>Тип:</strong> {{ car.car_type.name }}</div>{% endif %}
+            {% if car.engine %}
+            <div><strong>Двигатель:</strong> {{ car.engine }}</div>
+            {% endif %}
+            {% if car.in_stock %}
+            <div><strong>Привод:</strong> Полный</div>
+            {% endif %}
+            {% if car.mileage %}
+            <div><strong>Пробег:</strong> {{ car.mileage }} км</div>
+            {% endif %}
+            {% if car.year %}
+            <div><strong>Год:</strong> {{ car.year }}</div>
+            {% endif %}
+            {% if car.car_type %}
+            <div><strong>Тип:</strong> {{ car.car_type.name }}</div>
+            {% endif %}
             <!-- Добавь другие характеристики -->
         </div>
     </div>

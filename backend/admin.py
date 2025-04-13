@@ -10,9 +10,9 @@ from flask_admin.helpers import get_url
 from flask_login import current_user
 from markupsafe import Markup
 from werkzeug.security import generate_password_hash
-from werkzeug.utils import secure_filename
 from wtforms import MultipleFileField
 from wtforms import PasswordField
+from wtforms.fields.simple import FileField
 from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
 
 from backend.models import Role, User
@@ -134,8 +134,8 @@ class CarAdmin(SecureModelView):
     column_display_pk = True
 
     def _image_preview(view, context, model, name):
-        if model.image:
-            return Markup(f'<img src="{get_url("static", filename="images/cars/" + model.image)}" height="60">')
+        if model.image_url:
+            return Markup(f'<img src="{model.image_url}" height="60">')
         return ''
 
     def _brand_preview(view, context, model, name):
@@ -152,13 +152,42 @@ class CarAdmin(SecureModelView):
     }
 
     form_extra_fields = {
-        'image': FileUploadField(
-            'Главное изображение',
-            base_path=os.path.join(os.path.dirname(__file__), 'static', 'images', 'cars'),
-            allowed_extensions=['jpg', 'jpeg', 'png', 'webp']
+        'image_upload': FileField(
+            'Главное изображение'
         ),
         'images_upload': MultipleFileField('Галерея (несколько изображений)')
     }
+
+    def on_model_change(self, form, model, is_created):
+        print("🧾 Обрабатываем форму для авто:", model.model)
+
+        # загрузка основного изображения
+        if form.image_upload.data:
+            print("📎 Получен файл:", form.image_upload.data.filename)
+            from utils.cloudinary_upload import upload_image
+            uploaded_url = upload_image(form.image_upload.data)
+            if uploaded_url:
+                model.image_url = uploaded_url
+            else:
+                print("⚠️ Не удалось загрузить изображение")
+        from utils.cloudinary_upload import upload_image
+        # загрузка галереи (пока в файловую систему)
+        if form.images_upload.data:
+            print("📚 Обработка дополнительных изображений")
+            saved_images = []
+            for file in form.images_upload.data:
+                if file and file.filename:
+                    print("📷 Файл галереи:", file.filename)
+                    uploaded_galery_url = upload_image(file)
+                    if uploaded_galery_url:
+                        saved_images.append(uploaded_galery_url)
+                        print(f"✅ Загружено: {uploaded_galery_url}")
+                else:
+                        print("⚠️ Не удалось загрузить изображение")
+
+            if not isinstance(model.images, list):
+                model.images = []
+            model.images += saved_images
 
     form_overrides = {
         'brand': QuerySelectField,
@@ -185,7 +214,8 @@ class CarAdmin(SecureModelView):
             kwargs.update({'prev_id': prev_id, 'next_id': next_id})
         return super().render(template, **kwargs)
 
-    form_columns = ['model', 'price', 'brand', 'car_type', 'image', 'images_upload', 'description', 'year', 'mileage',
+    form_columns = ['model', 'price', 'brand', 'car_type', 'image_upload', 'images_upload', 'description', 'year',
+                    'mileage',
                     'engine', 'in_stock']
 
     form_args = {
@@ -199,22 +229,6 @@ class CarAdmin(SecureModelView):
         }
     }
 
-    def on_model_change(self, form, model, is_created):
-        if form.images_upload.data:
-            saved_images = []
-            for file in form.images_upload.data:
-                if file.filename:
-                    filename = secure_filename(file.filename)
-                    file_path = os.path.join(UPLOAD_FOLDER, filename)
-                    file.save(file_path)
-                    saved_images.append(filename)
-
-            # Сохраняем список файлов в JSON-поле
-            if model.images:
-                model.images += saved_images
-            else:
-                model.images = saved_images
-
     # ===============================
     # Copy current car into new
     # ===============================
@@ -225,7 +239,7 @@ class CarAdmin(SecureModelView):
         new_car = Car(
             model=car.model + " (копия)",
             price=car.price,
-            image=car.image,
+            image_url=car.car.image_url,
             brand=car.brand,
             car_type=car.car_type,
             in_stock=car.in_stock,
@@ -252,7 +266,7 @@ class CarAdmin(SecureModelView):
                 new_car = Car(
                     model=car.model + " (копия)",
                     price=car.price,
-                    image=car.image,
+                    image_url=car.image_url,
                     brand=car.brand,
                     car_type=car.car_type,
                     in_stock=car.in_stock,
