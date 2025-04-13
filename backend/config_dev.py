@@ -8,3 +8,5 @@ class DevConfig:
     SQLALCHEMY_DATABASE_URI = 'postgresql://cnauto:cnauto@localhost:5432/cnauto_db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SERVER_NAME = "localhost:5000"
+    CLOUDINARY_FOLDER = "cn-auto/dev"
+

@@ -9,3 +9,5 @@ class ProdConfig:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SERVER_NAME = os.getenv("SERVER_NAME", "localhost:5000")  # или твой проддомен
     PREFERRED_URL_SCHEME = "https"
+    CLOUDINARY_FOLDER = "cn-auto/prod"
+

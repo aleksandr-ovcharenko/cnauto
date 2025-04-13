@@ -8,7 +8,7 @@
         <div class="product-media">
             <div class="product-thumbs">
                 {% for img in car.images %}
-                <img src="{{ url_for('static', filename='images/cars/' + img) }}" alt="thumb">
+                <img src="{{img}}" alt="thumb">
                 {% endfor %}
             </div>
             <div class="product-image">

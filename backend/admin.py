@@ -9,6 +9,7 @@ from flask_admin.form.upload import FileUploadField
 from flask_admin.helpers import get_url
 from flask_login import current_user
 from markupsafe import Markup
+from sqlalchemy.orm.attributes import flag_modified
 from werkzeug.security import generate_password_hash
 from wtforms import MultipleFileField
 from wtforms import PasswordField
@@ -159,35 +160,41 @@ class CarAdmin(SecureModelView):
     }
 
     def on_model_change(self, form, model, is_created):
-        print("🧾 Обрабатываем форму для авто:", model.model)
+        print(f"🧾 Обработка формы: {model.brand.name} {model.model} (ID: {model.id})")
+        from utils.cloudinary_upload import upload_image
 
-        # загрузка основного изображения
-        if form.image_upload.data:
-            print("📎 Получен файл:", form.image_upload.data.filename)
-            from utils.cloudinary_upload import upload_image
-            uploaded_url = upload_image(form.image_upload.data)
+        # Главное изображение
+        image_file = form.image_upload.data
+        if image_file and image_file.filename:
+            print(f"📎 Загрузка главного изображения: {image_file.filename}")
+            uploaded_url = upload_image(image_file, car_id=model.id, car_name=model.model, is_main=True)
             if uploaded_url:
                 model.image_url = uploaded_url
+                print(f"✅ Главная картинка загружена: {uploaded_url}")
             else:
-                print("⚠️ Не удалось загрузить изображение")
-        from utils.cloudinary_upload import upload_image
-        # загрузка галереи (пока в файловую систему)
-        if form.images_upload.data:
-            print("📚 Обработка дополнительных изображений")
-            saved_images = []
-            for file in form.images_upload.data:
-                if file and file.filename:
-                    print("📷 Файл галереи:", file.filename)
-                    uploaded_galery_url = upload_image(file)
-                    if uploaded_galery_url:
-                        saved_images.append(uploaded_galery_url)
-                        print(f"✅ Загружено: {uploaded_galery_url}")
-                else:
-                        print("⚠️ Не удалось загрузить изображение")
+                print("⚠️ Не удалось загрузить главное изображение")
 
-            if not isinstance(model.images, list):
-                model.images = []
-            model.images += saved_images
+        # Галерея изображений
+        gallery_files = form.images_upload.data
+        if gallery_files:
+            print("📚 Обработка галереи")
+            saved_images = []
+            for i, file in enumerate(gallery_files):
+                if file and file.filename:
+                    print(f"📷 Галерея {i + 1}: {file.filename}")
+                    uploaded_url = upload_image(file, car_id=model.id, car_name=model.model, is_main=False, index=i + 1)
+                    if uploaded_url:
+                        saved_images.append(uploaded_url)
+                        print(f"✅ Загружено: {uploaded_url}")
+                    else:
+                        print("⚠️ Не удалось загрузить:", file.filename)
+
+            if saved_images:
+                if not isinstance(model.images, list):
+                    model.images = []
+                model.images += saved_images
+                flag_modified(model, "images")  # 💡 без этого SQLAlchemy может не зафиксировать изменение
+                print(f"✅ Добавлено: {saved_images} к: {model.images}")
 
     form_overrides = {
         'brand': QuerySelectField,
@@ -214,9 +221,12 @@ class CarAdmin(SecureModelView):
             kwargs.update({'prev_id': prev_id, 'next_id': next_id})
         return super().render(template, **kwargs)
 
-    form_columns = ['model', 'price', 'brand', 'car_type', 'image_upload', 'images_upload', 'description', 'year',
-                    'mileage',
-                    'engine', 'in_stock']
+    form_columns = [
+        'model', 'price', 'brand', 'car_type',
+        'image_upload', 'images_upload', 'images',
+        'description', 'year', 'mileage',
+        'engine', 'in_stock'
+    ]
 
     form_args = {
         'brand': {
