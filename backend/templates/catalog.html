@@ -98,8 +98,12 @@
 
                     <div class="car-card__brand">
                         {% if car.brand %}
+                        {% if car.brand.logo %}
                         <img src="{{ url_for('static', filename='images/brands/' + car.brand.logo) }}"
-                             alt="{{ car.brand.name }}" class="brand-logo"/>
+                             alt="{{ car.brand.name }}" height="30">
+                        {% else %}
+                        <span>{{ car.brand.name }}</span>
+                        {% endif %}
                         {% endif %}
                         <h3 class="car-card__title">{{ car.model }}</h3>
                     </div>
