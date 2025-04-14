@@ -1,3 +1,6 @@
+from flask import Blueprint, request, jsonify
+from backend.models import Car, Brand, db, CarImage
+from utils.cloudinary_upload import upload_image
 import os
 
 from dotenv import load_dotenv
@@ -114,7 +117,12 @@ def catalog():
 
     return render_template("catalog.html", cars=cars, brands=brands, countries=countries, car_types=car_types,
                            reset_type_url=reset_type_url)
+api = Blueprint('api', __name__)
 
+@app.route('/api/import_car', methods=['POST'])
+def import_car():
+    from utils.telegram_import import handle_import_car
+    return handle_import_car(request)
 
 if __name__ == '__main__':
     with app.app_context():
