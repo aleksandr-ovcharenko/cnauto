@@ -8,17 +8,30 @@ from utils.cloudinary_upload import upload_image
 telegram_import = Blueprint('telegram_import', __name__)
 
 @telegram_import.route('/api/import_car', methods=['POST'])
-def import_car():
-    token = request.form.get("token") or request.headers.get("X-API-TOKEN")
+def import_car(request):
+    import json
+    from backend.models import CarType
+
+    token = request.headers.get("X-API-TOKEN")
     if token != os.getenv("IMPORT_API_TOKEN"):
         return jsonify({"error": "unauthorized"}), 403
 
-    text = request.form.get("text", "")
-    brand_name = request.form.get("brand", "").strip()
-    files = request.files.getlist("images")
+    try:
+        data = request.get_json()
+    except Exception:
+        return jsonify({"error": "invalid json"}), 400
 
-    if not brand_name or not files:
-        return jsonify({"error": "Missing brand or images"}), 400
+    model = data.get("model", "").strip()
+    price = int(data.get("price", 0))
+    mileage = data.get("mileage")
+    engine = data.get("engine", "")
+    car_type_name = data.get("car_type", "")
+    brand_name = data.get("brand", "").strip()
+    description = data.get("description", "")
+    image_urls = data.get("image_urls", [])
+
+    if not model or not brand_name or not image_urls:
+        return jsonify({"error": "Missing required fields"}), 400
 
     # Найдём или создадим бренд
     brand_created = False
@@ -29,27 +42,32 @@ def import_car():
         db.session.flush()
         brand_created = True
 
-    # Парсим модель и цену
-    model = text.split("\n")[0] if text else "Без названия"
-    price = 0
-    for line in text.split("\n"):
-        if any(c in line for c in ["₽", "💵", "цена"]):
-            digits = ''.join(filter(str.isdigit, line))
-            if digits:
-                price = int(digits)
-                break
+    # Найдём или создадим тип кузова
+    car_type = None
+    if car_type_name:
+        car_type = CarType.query.filter_by(name=car_type_name).first()
+        if not car_type:
+            car_type = CarType(name=car_type_name, slug=car_type_name.lower().replace(" ", "-"))
+            db.session.add(car_type)
+            db.session.flush()
 
-    car = Car(model=model, price=price, brand=brand)
+    # Создаём авто
+    car = Car(
+        model=model,
+        price=price,
+        mileage=mileage,
+        engine=engine,
+        brand=brand,
+        car_type=car_type,
+        description=description,
+    )
     db.session.add(car)
-    db.session.flush()  # получим car.id
+    db.session.flush()
 
-    saved_images = []
-    for i, file in enumerate(files):
-        if file and file.filename:
-            url = upload_image(file, car_id=car.id, car_name=car.model, is_main=False, index=i)
-            image = CarImage(car_id=car.id, url=url, position=i)
-            db.session.add(image)
-            saved_images.append(url)
+    # Сохраняем изображения
+    for i, url in enumerate(image_urls):
+        image = CarImage(car_id=car.id, url=url, position=i)
+        db.session.add(image)
 
     db.session.commit()
 
@@ -60,6 +78,6 @@ def import_car():
         "price": car.price,
         "brand": brand.name,
         "brand_created": brand_created,
-        "gallery_images_count": len(saved_images),
-        "note": "Главное изображение не установлено — выбери вручную в админке"
+        "gallery_images_count": len(image_urls),
+        "note": "Please add main picture in admin view"
     })

@@ -121,8 +121,8 @@ api = Blueprint('api', __name__)
 
 @app.route('/api/import_car', methods=['POST'])
 def import_car():
-    from utils.telegram_import import handle_import_car
-    return handle_import_car(request)
+    from utils.telegram_import import import_car as handler
+    return handler(request)
 
 if __name__ == '__main__':
     with app.app_context():
