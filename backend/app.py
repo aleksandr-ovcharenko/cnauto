@@ -1,12 +1,11 @@
 import os
 
-from config import Config
 from dotenv import load_dotenv
 from flask import Flask
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import LoginManager
 from flask_login import login_user, logout_user, login_required
-from flask_migrate import Migrate, upgrade
+from flask_migrate import Migrate
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField
 from wtforms.validators import InputRequired
@@ -17,10 +16,6 @@ from backend.config_prod import ProdConfig
 from backend.models import Car, Category, Brand, Country, CarType
 from backend.models import User
 from backend.models import db
-from backend.seeds.seed_brands import seed_brands
-from backend.seeds.seed_countries import seed_countries
-from backend.seeds.seed_data import seed_types
-from backend.seeds.seed_users import seed_users
 
 # .env
 load_dotenv()
