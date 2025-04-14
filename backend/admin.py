@@ -197,9 +197,9 @@ class CarAdmin(SecureModelView):
             else:
                 print("⚠️ Не удалось загрузить главное изображение")
 
-        # Галерея изображений
-        gallery_files = form.images_upload.data
-        if gallery_files:
+        # Галерея изображений — безопасная проверка
+        if hasattr(form, 'images_upload') and form.images_upload.data:
+            gallery_files = form.images_upload.data
             print("📚 Обработка галереи")
             saved_images = []
             for i, file in enumerate(gallery_files):
@@ -257,7 +257,7 @@ class CarAdmin(SecureModelView):
 
     form_columns = [
         'model', 'price', 'brand', 'car_type',
-        'image_upload',
+        'image_upload', 'image_upload',
         'description', 'year', 'mileage', 'engine', 'in_stock'
     ]
 
