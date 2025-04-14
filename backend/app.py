@@ -1,5 +1,6 @@
 import os
 
+from config import Config
 from dotenv import load_dotenv
 from flask import Flask
 from flask import render_template, redirect, url_for, flash, request
@@ -126,7 +127,12 @@ if __name__ == '__main__':
 
     with app.app_context():
         try:
-            upgrade()
+            from alembic.config import Config
+            from alembic import command
+
+            # Путь к актуальному alembic.ini
+            alembic_cfg = Config(os.path.join(os.path.dirname(__file__), '..', 'alembic.ini'))
+            command.upgrade(alembic_cfg, 'head')
             print("✅ Миграции применены")
         except Exception as e:
             print("⚠️ Ошибка при миграции:", e)

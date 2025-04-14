@@ -12,7 +12,8 @@ from markupsafe import Markup
 from sqlalchemy.orm.attributes import flag_modified
 from werkzeug.security import generate_password_hash
 from wtforms import PasswordField
-from wtforms.fields.simple import FileField
+from wtforms.fields.simple import FileField, MultipleFileField
+from wtforms.widgets.core import HiddenInput
 from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
 
 from backend.models import Role, User, CarImage
@@ -176,7 +177,9 @@ class CarAdmin(SecureModelView):
     form_extra_fields = {
         'image_upload': FileField(
             'Главное изображение'
-        )
+        ),
+        'images_upload': MultipleFileField('Галерея (несколько изображений)', widget=HiddenInput())
+
     }
 
     def on_model_change(self, form, model, is_created):
