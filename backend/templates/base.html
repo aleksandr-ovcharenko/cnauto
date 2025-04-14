@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     {% block extra_css %}{% endblock %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 
 </head>
 <body>
@@ -46,11 +47,16 @@
 
 <!-- Мобильное меню (скрыто по умолчанию) -->
 <div class="mobile-menu">
+    <div class="mobile-menu-header">
+        <button class="mobile-menu-close"></button>
+    </div>
     <nav class="mobile-nav">
         <a href="/catalog" class="mobile-nav-link">Каталог</a>
         <a href="/about" class="mobile-nav-link">О компании</a>
         <a href="/delivery" class="mobile-nav-link">Доставка</a>
         <a href="/contacts" class="mobile-nav-link">Контакты</a>
+        <a href="tel:+78001234567" class="mobile-nav-link">8 800 123-45-67</a>
+        <button class="btn btn-full mobile-nav-button">Заказать звонок</button>
     </nav>
 </div>
 
@@ -97,7 +103,6 @@
 
 <!-- Скрипты -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-<script src="{{ url_for('static', filename='script.js') }}"></script>
 
 {% block extra_js %}
 <script>

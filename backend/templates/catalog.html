@@ -10,7 +10,7 @@
             <!-- Фильтр по бренду -->
             <div class="filter-group">
                 <h4>Бренд</h4>
-                <div class="facet-items">
+                <div class="facet-items collapsed">
                     {% for brand in brands %}
                     <label class="facet-item {% if loop.index > 5 %}hidden{% endif %}">
                         <input type="radio" name="brand" value="{{ brand.slug }}"
@@ -24,13 +24,12 @@
                 {% endif %}
             </div>
 
-
             <!-- Фильтр по стране -->
-            <div class="filter-group" data-facet="country">
+            <div class="filter-group">
                 <h4>Страна</h4>
-                <div class="facet-items">
+                <div class="facet-items collapsed">
                     {% for country in countries %}
-                    <label class="facet-item{% if loop.index > 5 %} hidden{% endif %}">
+                    <label class="facet-item {% if loop.index > 5 %}hidden{% endif %}">
                         <input type="radio" name="country" value="{{ country.name }}"
                                {% if request.args.get('country') == country.name %}checked{% endif %}>
                         {{ country.name }}
@@ -45,22 +44,23 @@
             <!-- Фильтр по типу -->
             <div class="filter-group">
                 <h4>Тип авто</h4>
-                {% for car_type in car_types %}
-                <label class="facet-item {% if loop.index > 5 %}hidden{% endif %}">
-                    <input type="checkbox" name="type" value="{{ car_type.slug }}" onchange="this.form.submit()"
-                           {% if car_type.slug in request.args.getlist('type') %}checked{% endif %}>
-                    {% if car_type.icon %}
-                    <img src="{{ url_for('static', filename='images/types/' + car_type.icon) }}"
-                         alt="{{ car_type.name }}" class="type-icon">
-                    {% endif %}
-                    {{ car_type.name }}
-                </label>
-                {% endfor %}
+                <div class="facet-items collapsed">
+                    {% for car_type in car_types %}
+                    <label class="facet-item {% if loop.index > 5 %}hidden{% endif %}">
+                        <input type="checkbox" name="type" value="{{ car_type.slug }}" onchange="this.form.submit()"
+                               {% if car_type.slug in request.args.getlist('type') %}checked{% endif %}>
+                        {% if car_type.icon %}
+                        <img src="{{ url_for('static', filename='images/types/' + car_type.icon) }}"
+                             alt="{{ car_type.name }}" class="type-icon">
+                        {% endif %}
+                        {{ car_type.name }}
+                    </label>
+                    {% endfor %}
+                </div>
                 {% if car_types|length > 5 %}
                 <button type="button" class="facet-toggle" data-target="type">Показать ещё</button>
                 {% endif %}
             </div>
-
 
             <div class="filter-buttons">
                 <button type="submit" class="btn">Применить</button>
@@ -75,58 +75,53 @@
         </form>
     </aside>
 
-
     <!-- Каталог авто -->
     <section class="catalog-results">
         <div class="cars-grid">
             {% for car in cars %}
-            <div class="car-card clean-card horizontal-card">
+            <div class="car-card">
+                <div class="car-card__image-wrapper">
+                    <img class="car-card__image"
+                         src="{{ car.image_url }}"
+                         alt="{{ car.model }}"/>
+                </div>
+
                 <div class="car-card__content">
-                    <div class="car-card__image-block">
-                        <img class="car-card__image"
-                             src="{{ car.image_url }}"
-                             alt="{{ car.model }}"/>
+                    <div class="car-card__header">
+                        <span class="car-card__tag">Новая</span>
+                        {% if car.in_stock %}
+                        <span class="car-card__status in-stock">В наличии</span>
+                        {% else %}
+                        <span class="car-card__status pre-order">Под заказ</span>
+                        {% endif %}
                     </div>
 
-                    <div class="car-card__info-block">
-                        <div class="car-card__header">
-                            <span class="car-card__tag">Новая</span>
-                            {% if car.in_stock %}
-                            <span class="car-card__status in-stock">В наличии</span>
-                            {% else %}
-                            <span class="car-card__status pre-order">Под заказ</span>
-                            {% endif %}
-                        </div>
-
-                        <div class="car-card__brand">
-                            {% if car.brand %}
-                            <img src="{{ url_for('static', filename='images/brands/' + car.brand.logo) }}"
-                                 alt="{{ car.brand.name }}" class="brand-logo"/>
-                            {% endif %}
-                            <h3 class="car-card__title">{{ car.model }}</h3>
-                        </div>
-
-                        <div class="car-card__price-block">
-                            <span class="car-card__price">{{ car.price | round }} ₽</span>
-                        </div>
-
-                        <ul class="car-card__specs">
-                            {% if car.engine %}
-                            <li>⚡ {{ car.engine }}</li>
-                            {% endif %}
-                            {% if car.car_type %}
-                            <li>🚗 {{ car.car_type.name }}</li>
-                            {% endif %}
-                            {% if car.year %}
-                            <li>📅 {{ car.year }}</li>
-                            {% endif %}
-                            {% if car.mileage %}
-                            <li>📍 {{ car.mileage }} км</li>
-                            {% endif %}
-                        </ul>
-
-                        <a href="/car/{{ car.id }}" class="btn btn-full">Подробнее →</a>
+                    <div class="car-card__brand">
+                        {% if car.brand %}
+                        <img src="{{ url_for('static', filename='images/brands/' + car.brand.logo) }}"
+                             alt="{{ car.brand.name }}" class="brand-logo"/>
+                        {% endif %}
+                        <h3 class="car-card__title">{{ car.model }}</h3>
                     </div>
+
+                    <div class="car-card__price">{{ car.price | round }} ₽</div>
+
+                    <ul class="car-card__specs">
+                        {% if car.engine %}
+                        <li>⚡ {{ car.engine }}</li>
+                        {% endif %}
+                        {% if car.car_type %}
+                        <li>🚗 {{ car.car_type.name }}</li>
+                        {% endif %}
+                        {% if car.year %}
+                        <li>📅 {{ car.year }}</li>
+                        {% endif %}
+                        {% if car.mileage %}
+                        <li>🛣 {{ car.mileage }} км</li>
+                        {% endif %}
+                    </ul>
+
+                    <a href="{{ url_for('car_details', car_id=car.id) }}" class="btn-full">Подробнее</a>
                 </div>
             </div>
             {% endfor %}

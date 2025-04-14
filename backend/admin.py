@@ -11,12 +11,11 @@ from flask_login import current_user
 from markupsafe import Markup
 from sqlalchemy.orm.attributes import flag_modified
 from werkzeug.security import generate_password_hash
-from wtforms import MultipleFileField
 from wtforms import PasswordField
 from wtforms.fields.simple import FileField
 from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
 
-from backend.models import Role, User
+from backend.models import Role, User, CarImage
 from backend.models import db, Car, Category, Brand, CarType, Country
 
 # Папка для изображений автомобилей
@@ -123,6 +122,28 @@ class UserAdmin(SecureModelView):
         flash(f'✅ Скопировано: {len(ids)} пользователей. Пароль у всех: newpassword123', 'success')
 
 
+class CarImageAdmin(SecureModelView):
+    column_list = ['preview', 'car', 'title', 'alt', 'position']
+    form_columns = ['car', 'url', 'title', 'alt', 'position']
+
+    def _preview(view, context, model, name):
+        return Markup(f'<img src="{model.url}" height="50">') if model.url else ''
+
+    column_formatters = {'preview': _preview}
+
+    form_extra_fields = {
+        'file_upload': FileField('Загрузить изображение')
+    }
+
+    def on_model_change(self, form, model, is_created):
+        file = form.file_upload.data
+        if file:
+            from utils.cloudinary_upload import upload_image
+            uploaded_url = upload_image(file, car_id=model.car_id, car_name=model.car.model)
+            if uploaded_url:
+                model.url = uploaded_url
+
+
 class CarAdmin(SecureModelView):
     column_list = ['image_preview', 'model', 'price', 'brand_preview', 'car_type']
     column_labels = {'image_preview': 'Фото', 'brand_preview': 'Бренд'}
@@ -155,8 +176,7 @@ class CarAdmin(SecureModelView):
     form_extra_fields = {
         'image_upload': FileField(
             'Главное изображение'
-        ),
-        'images_upload': MultipleFileField('Галерея (несколько изображений)')
+        )
     }
 
     def on_model_change(self, form, model, is_created):
@@ -221,13 +241,6 @@ class CarAdmin(SecureModelView):
             kwargs.update({'prev_id': prev_id, 'next_id': next_id})
         return super().render(template, **kwargs)
 
-    form_columns = [
-        'model', 'price', 'brand', 'car_type',
-        'image_upload', 'images_upload', 'images',
-        'description', 'year', 'mileage',
-        'engine', 'in_stock'
-    ]
-
     form_args = {
         'brand': {
             'query_factory': lambda: db.session.query(Brand).order_by(Brand.name),
@@ -238,6 +251,12 @@ class CarAdmin(SecureModelView):
             'get_label': 'name'
         }
     }
+
+    form_columns = [
+        'model', 'price', 'brand', 'car_type',
+        'image_upload',
+        'description', 'year', 'mileage', 'engine', 'in_stock'
+    ]
 
     # ===============================
     # Copy current car into new
@@ -292,6 +311,86 @@ class CarAdmin(SecureModelView):
         except Exception as e:
             db.session.rollback()
             flash(f"❌ Ошибка при копировании: {e}", "error")
+
+    @expose('/edit_gallery/<int:id>', methods=['POST'])
+    def edit_gallery(self, id):
+        car = Car.query.get_or_404(id)
+        ids_in_order = request.form.get('order', '').split(',')
+        updated_ids = set()
+
+        for img in car.gallery_images:
+            str_id = str(img.id)
+            if str_id in request.form:
+                img.title = request.form.get(f"title_{str_id}")
+                img.alt = request.form.get(f"alt_{str_id}")
+                img.position = ids_in_order.index(str_id) if str_id in ids_in_order else img.position
+                updated_ids.add(str_id)
+
+        db.session.commit()
+        flash("✅ Галерея обновлена", "success")
+        return redirect(url_for('.edit_view', id=car.id))
+
+    @expose('/upload_gallery/<int:id>', methods=['POST'])
+    def upload_gallery(self, id):
+        car = Car.query.get_or_404(id)
+        from utils.cloudinary_upload import upload_image
+
+        files = request.files.getlist('new_images')
+        for i, file in enumerate(files):
+            if file and file.filename:
+                url = upload_image(file, car_id=car.id, car_name=car.model, is_main=False, index=i)
+                if url:
+                    image = CarImage(car_id=car.id, url=url, position=len(car.gallery_images) + i)
+                    db.session.add(image)
+
+        db.session.commit()
+        flash("✅ Новые изображения загружены", "success")
+        return redirect(url_for('.edit_view', id=car.id))
+
+    @expose('/car-image/delete/<int:id>', methods=['POST'])
+    def delete_image(self, id):
+        image = CarImage.query.get_or_404(id)
+        db.session.delete(image)
+        db.session.commit()
+        return "OK"
+
+    def create_form(self, obj=None):
+        form = super().create_form(obj)
+        self._inject_gallery_button(form)
+        return form
+
+    def edit_form(self, obj=None):
+        form = super().edit_form(obj)
+        self._inject_gallery_button(form)
+        return form
+
+    def _inject_gallery_button(self, form):
+        from wtforms.fields import Field
+        from markupsafe import Markup
+
+        class GalleryButton(Field):
+            def __init__(self, label='', **kwargs):
+                super().__init__(label, **kwargs)
+                self.widget = lambda field, **kwargs: Markup('''
+                    <div class="form-group d-flex align-items-center justify-content-between mb-3" style="min-height: 40px; border: 1px dashed red; padding: 5px 10px;">
+                        <label style="font-weight: 500; margin: 0;">Галерея</label>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                data-toggle="modal" data-target="#galleryModal">
+                            🖼 Управление
+                        </button>
+                    </div>
+                ''')
+
+        setattr(form, 'gallery_button', GalleryButton())
+
+        # Определим порядок полей вручную
+        if hasattr(form, '_fields'):
+            fields = list(form._fields.keys())
+            if 'gallery_button' not in fields and 'image_upload' in fields:
+                fields.insert(fields.index('image_upload') + 1, 'gallery_button')
+                # Перестроим OrderedDict
+                from collections import OrderedDict
+                form._fields = OrderedDict((f, form._fields[f]) for f in fields if f in form._fields)
 
 
 class CategoryAdmin(SecureModelView):
@@ -400,6 +499,7 @@ def init_admin(app):
     def inject_user():
         return dict(current_user=current_user)
 
+    admin.add_view(CarImageAdmin(CarImage, db.session, name='Фото машин'))
     admin.add_view(CarAdmin(Car, db.session, name='Автомобили'))
     admin.add_view(CategoryAdmin(Category, db.session, name='Категории'))
     admin.add_view(BrandAdmin(Brand, db.session, name='Бренды'))
