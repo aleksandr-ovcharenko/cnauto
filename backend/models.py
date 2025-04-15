@@ -2,6 +2,7 @@ from datetime import datetime
 
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Text
 
 db = SQLAlchemy()
 
@@ -60,6 +61,7 @@ class Category(db.Model):
     def __str__(self):
         return f'{self.name}'
 
+
 class CarImage(db.Model):
     __tablename__ = 'car_images'
 
@@ -72,6 +74,7 @@ class CarImage(db.Model):
     position = db.Column(db.Integer, default=0)
 
     car = db.relationship('Car', back_populates='gallery_images')
+
 
 class Car(db.Model):
     __tablename__ = 'cars'
@@ -122,8 +125,17 @@ class Brand(db.Model):
     country = db.relationship('Country', backref='brands')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    synonyms = db.relationship('BrandSynonym', backref='brand', lazy='dynamic')  # ✅ используем backref только здесь
+
     def __str__(self):
         return self.name
+
+class BrandSynonym(db.Model):
+    __tablename__ = 'brand_synonyms'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True, nullable=False)  # "бмв", "BMW", "bmw"
+    brand_id = db.Column(db.Integer, db.ForeignKey('brands.id'), nullable=False)
 
 
 class CarType(db.Model):
@@ -136,6 +148,7 @@ class CarType(db.Model):
 
     def __str__(self):
         return self.name
+
 
 class Country(db.Model):
     __tablename__ = 'countries'

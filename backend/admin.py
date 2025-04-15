@@ -16,7 +16,7 @@ from wtforms.fields.simple import FileField, MultipleFileField
 from wtforms.widgets.core import HiddenInput
 from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
 
-from backend.models import Role, User, CarImage
+from backend.models import Role, User, CarImage, BrandSynonym
 from backend.models import db, Car, Category, Brand, CarType, Country
 
 # Папка для изображений автомобилей
@@ -146,7 +146,7 @@ class CarImageAdmin(SecureModelView):
 
 
 class CarAdmin(SecureModelView):
-    column_list = ['image_preview', 'model', 'price', 'brand_preview', 'car_type']
+    column_list = ['image_preview', 'brand_preview', 'model', 'price', 'car_type']
     column_labels = {'image_preview': 'Фото', 'brand_preview': 'Бренд'}
 
     column_searchable_list = ['model']
@@ -155,6 +155,12 @@ class CarAdmin(SecureModelView):
     can_view_details = True
     can_export = True
     column_display_pk = True
+    can_delete = True
+    can_create = True
+    can_edit = True
+
+    action_disallowed_list = []
+    column_display_actions = True
 
     def _image_preview(view, context, model, name):
         if model.image_url:
@@ -315,19 +321,54 @@ class CarAdmin(SecureModelView):
             db.session.rollback()
             flash(f"❌ Ошибка при копировании: {e}", "error")
 
+    @expose('/generate_from_gallery/<int:id>', methods=['POST'])
+    def generate_from_gallery(self, id):
+        from utils.telegram_import import generate_image
+        image = CarImage.query.get_or_404(id)
+        car = image.car
+
+        prompt = (
+            f"Professional car studio shot, clean background, only the car visible. "
+            f"Car: {car.model}-{car.brand.name}, fully isolated, no other objects or cars. "
+            "License plate must clearly show 'cncars.ru'. "
+            "Car positioned diagonally: front facing left, rear facing right. "
+            "Clean, sharp details, high-quality render, studio lighting. "
+            "Remove all background elements, shadows, and distractions. "
+            "The car should look like a perfect 3D model on a white background."
+        )
+
+        try:
+            new_image = generate_image (mode="photon", prompt=prompt, image_url=car.gallery_images[0].url, car_model=car.model, car_brand=car.brand, car_id=car.id)
+            if new_image:
+                car.image_url = new_image
+                db.session.commit()
+            else:
+                flash(f"❌ Не удалось сгенерировать для {car.model}", "error")
+        except Exception as e:
+            flash(f"❌ Ошибка при генерации изображения: {e}", "error")
+
+        flash(f"✅ Изображение успешно обновлено!", "success")
+
+        return redirect(url_for('.edit_view', id=image.car.id))
+
     @expose('/edit_gallery/<int:id>', methods=['POST'])
     def edit_gallery(self, id):
         car = Car.query.get_or_404(id)
         ids_in_order = request.form.get('order', '').split(',')
         updated_ids = set()
 
-        for img in car.gallery_images:
+        for img in car.gallery_images.all():
             str_id = str(img.id)
-            if str_id in request.form:
-                img.title = request.form.get(f"title_{str_id}")
-                img.alt = request.form.get(f"alt_{str_id}")
-                img.position = ids_in_order.index(str_id) if str_id in ids_in_order else img.position
-                updated_ids.add(str_id)
+        print(f"🔍 Обрабатываем img.id={str_id}")
+        print("📥 request.form:", dict(request.form))
+
+        if f"title_{str_id}" in request.form or f"alt_{str_id}" in request.form:
+            print("✅ Нашли в форме")
+            img.title = request.form.get(f"title_{str_id}")
+            img.alt = request.form.get(f"alt_{str_id}")
+            if str_id in ids_in_order:
+                img.position = ids_in_order.index(str_id)
+            updated_ids.add(str_id)
 
         db.session.commit()
         flash("✅ Галерея обновлена", "success")
@@ -412,6 +453,11 @@ class CountryAdmin(SecureModelView):
 class BrandAdmin(SecureModelView):
     column_list = ['logo_preview', 'name', 'slug', 'country']
     column_labels = {'logo_preview': 'Логотип'}
+    inline_models = [
+        (BrandSynonym, {
+            'form_columns': ['id', 'name']
+        })
+    ]
 
     form_columns = ['name', 'slug', 'logo', 'country']
     column_searchable_list = ['name', 'slug']

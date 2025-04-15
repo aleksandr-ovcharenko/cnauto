@@ -1,9 +1,7 @@
-from flask import Blueprint, request, jsonify
-from backend.models import Car, Brand, db, CarImage
-from utils.cloudinary_upload import upload_image
 import os
 
 from dotenv import load_dotenv
+from flask import Blueprint
 from flask import Flask
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import LoginManager
@@ -37,6 +35,7 @@ print("📦 DB URI:", app.config.get("SQLALCHEMY_DATABASE_URI"))
 
 # Init extensions
 db.init_app(app)
+app.config['MIGRATIONS_DIR'] = os.path.join(os.path.dirname(__file__), '../migrations')
 migrate = Migrate(app, db)
 init_admin(app)
 
@@ -48,7 +47,7 @@ login_manager.init_app(app)
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.get_or_404(User, user_id)  # Вернёт 404 если пользователя нет
 
 
 class LoginForm(FlaskForm):
@@ -84,7 +83,7 @@ def home():
     return render_template('index.html', cars=cars, categories=categories)
 
 
-@app.route('/car/<int:car_id>')
+@app.route('/car/<int:car_id>', endpoint="car_page")
 def car_details(car_id):
     car = Car.query.get_or_404(car_id)
     return render_template('car_details.html', car=car)
@@ -117,12 +116,16 @@ def catalog():
 
     return render_template("catalog.html", cars=cars, brands=brands, countries=countries, car_types=car_types,
                            reset_type_url=reset_type_url)
+
+
 api = Blueprint('api', __name__)
+
 
 @app.route('/api/import_car', methods=['POST'])
 def import_car():
     from utils.telegram_import import import_car as handler
     return handler(request)
+
 
 if __name__ == '__main__':
     with app.app_context():
@@ -132,11 +135,13 @@ if __name__ == '__main__':
         try:
             from alembic.config import Config
             from alembic import command
+            from backend.seeds.seed_brand_synonyms import seed_brand_synonyms
 
             # Путь к актуальному alembic.ini
             alembic_cfg = Config(os.path.join(os.path.dirname(__file__), '..', 'alembic.ini'))
             command.upgrade(alembic_cfg, 'head')
             print("✅ Миграции применены")
+
         except Exception as e:
             print("⚠️ Ошибка при миграции:", e)
 

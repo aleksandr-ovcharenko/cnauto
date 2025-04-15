@@ -76,6 +76,11 @@
                                         <button class="btn btn-sm btn-danger btn-block" type="button"
                                                 onclick="removeImage({{ img.id }})">Удалить
                                         </button>
+                                        <form method="POST" action="{{ url_for('.generate_from_gallery', id=img.id) }}" style="margin-top: 10px;">
+                                            <button class="btn btn-sm btn-primary btn-block" type="submit">
+                                                🚀 Сгенерировать на главную (AI)
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
                                 <div class="col-sm-8">
