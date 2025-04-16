@@ -14,6 +14,6 @@
     }
   },
   "deploy": {
-    "startCommand": "python run_seed_synonyms.py"
+    "startCommand": "python backend/seeds/seed_brand_synonyms.py.py"
   }
 }
