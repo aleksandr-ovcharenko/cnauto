@@ -7,13 +7,9 @@
     }
   },
   "start": {
-    "cmd": "python backend/app.py",
+    "cmd": "flask run --host=0.0.0.0 --port=$PORT",
     "env": {
-      "FLASK_APP": "backend.app",
-      "FLASK_ENV": "production"
+      "FLASK_APP": "backend.app"
     }
-  },
-  "deploy": {
-    "startCommand": "python backend/seeds/seed_brand_synonyms.py"
   }
 }
