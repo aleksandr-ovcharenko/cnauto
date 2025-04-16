@@ -1,0 +1,426 @@
+:root {
+    --gray: #f5f5f5;
+    --green: #4CAF50;
+    --orange: #FF6D00;
+    --blue: #007BFF;
+    --text: #333;
+    --light: #f9f9f9;
+}
+
+/* === Кнопки === */
+.btn {
+    background: var(--orange);
+    color: white;
+    padding: 0.85rem 1.7rem;
+    font-weight: bold;
+    font-size: 1rem;
+    border-radius: 8px;
+    transition: background 0.3s ease;
+}
+.btn:hover {
+    background: #e85c00;
+}
+
+.icon-btn {
+    padding: 10px 12px;
+    background: #f0f0f0;
+    font-size: 1.2rem;
+    border-radius: 8px;
+    transition: background 0.3s ease;
+}
+.icon-btn:hover {
+    background: #ddd;
+}
+
+/* === Детали продукта === */
+.product-detail {
+    display: flex;
+    gap: 60px;
+    padding: 40px 20px;
+    flex-wrap: wrap;
+    background: var(--gray);
+}
+
+.product-left,
+.product-right {
+    flex: 1;
+    min-width: 300px;
+}
+
+/* === Галерея слева === */
+.product-media {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.product-thumbs {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    max-height: 500px;
+    padding-right: 4px;
+}
+
+.product-thumbs img {
+    width: 80px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+    background: #fff;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: border 0.3s, transform 0.3s;
+}
+
+.product-thumbs img:hover,
+.product-thumbs img.selected {
+    border-color: var(--orange);
+    transform: scale(1.05);
+    box-shadow: 0 0 5px rgba(255, 109, 0, 0.3);
+}
+
+/* Главное фото */
+.product-image img {
+    width: 100%;
+    max-width: 520px;
+    border-radius: 8px;
+    object-fit: contain;
+    background: white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* Метаданные */
+.product-meta {
+    margin-top: 10px;
+    color: #555;
+    font-size: 1rem;
+}
+
+/* Цена и статус */
+.product-price-section {
+    margin-top: 20px;
+}
+.product-price-section .price {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--text);
+}
+
+.stock-tag {
+    font-weight: bold;
+    padding: 6px 12px;
+    border-radius: 6px;
+    display: inline-block;
+    margin-bottom: 10px;
+    color: white;
+    background: var(--blue);
+}
+.stock-tag.in-stock {
+    background: var(--green);
+}
+.stock-tag.pre-order {
+    background: var(--blue);
+}
+
+/* Гарантия */
+.warranty-options span {
+    font-weight: normal;
+    font-size: 0.95rem;
+    color: #666;
+}
+
+/* Кнопки действия */
+.product-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* Характеристики с иконками */
+.product-specs-icons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0;
+    margin-top: 20px;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.product-specs-icons .spec {
+    background: #fff;
+    padding: 10px 12px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+}
+
+/* Название модели */
+.car-card__title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0;
+    color: #222;
+}
+
+.product-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 20px 18px;
+    background: #fff;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.product-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #222;
+    margin-bottom: 6px;
+}
+
+.product-meta {
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 12px;
+}
+
+.product-config label {
+    display: block;
+    font-weight: 600;
+    margin: 10px 0 6px;
+    color: #333;
+}
+
+.select-box {
+    background: #f3f3f3;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.warranty-options label {
+    font-size: 0.9rem;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    background: #fafafa;
+    transition: background 0.2s;
+}
+
+.warranty-options label:hover {
+    background: #f0f0f0;
+}
+
+.warranty-options input {
+    margin-right: 8px;
+}
+
+.warranty-options span {
+    color: #555;
+    font-weight: 500;
+}
+
+.product-price-section {
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+}
+
+.product-price-section .price {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: var(--text);
+    margin-top: 8px;
+}
+
+.product-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.product-actions .btn {
+    flex-grow: 1;
+    text-align: center;
+}
+
+.horizontal-card {
+    display: flex;
+    padding: 20px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+    gap: 25px;
+    align-items: flex-start;
+    font-family: Arial, sans-serif;
+    position: relative;
+    transition: box-shadow 0.2s;
+}
+
+.horizontal-card:hover {
+    box-shadow: 0 8px 18px rgba(0,0,0,0.1);
+}
+
+.car-card__image-block {
+    flex: 0 0 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.car-card__image {
+    width: 100%;
+    height: auto;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 6px;
+    background: #f9f9f9;
+}
+
+.car-card__info-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.car-card__header {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.car-card__tag {
+    background: #FFC107;
+    color: #000;
+    padding: 4px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 3px;
+}
+
+.car-card__status {
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 3px;
+    padding: 4px 10px;
+}
+
+.car-card__status.in-stock {
+    background: #4CAF50;
+    color: #fff;
+}
+
+.car-card__status.pre-order {
+    background: #007BFF;
+    color: #fff;
+}
+
+.car-card__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.car-card__brand img {
+    height: 24px;
+}
+
+.car-card__title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #222;
+    margin: 0;
+}
+
+.car-card__price-row {
+    margin: 6px 0;
+}
+
+.car-card__price-row .price {
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+
+.price.in-stock {
+    color: #4CAF50;
+}
+
+.price.pre-order {
+    color: #e53935;
+}
+
+.car-card__specs {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px 12px;
+    font-size: 0.9rem;
+    color: #444;
+}
+
+.car-card__specs li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.car-card__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.car-card__actions .action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.car-card__actions .btn.full-width {
+    width: 100%;
+    text-align: center;
+    padding: 12px;
+    font-weight: bold;
+}
+
+.car-card__actions .btn {
+    flex: 1;
+    text-align: center;
+    border-radius: 6px;
+    color: white;
+    font-weight: bold;
+    padding: 12px;
+    transition: background 0.3s ease;
+}
+
+.car-card__actions .btn:hover {
+    background: #000;
+}
+
+.btn-small {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 5px;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}

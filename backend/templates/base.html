@@ -8,11 +8,19 @@
     <meta property="og:image" content="{{ url_for('static', filename='images/preview.jpg') }}">
 
     <title>{% block title %}CN-Auto - Авто из Китая{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    {% block extra_css %}{% endblock %}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
-    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 
+    <!-- Подключаем модульные CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modals.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/hero.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
+
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
 <!-- Хедер -->
@@ -45,7 +53,7 @@
     </div>
 </header>
 
-<!-- Мобильное меню (скрыто по умолчанию) -->
+<!-- Мобильное меню -->
 <div class="mobile-menu">
     <div class="mobile-menu-header">
         <button class="mobile-menu-close"></button>
@@ -60,12 +68,10 @@
     </nav>
 </div>
 
-<!-- Основное содержимое -->
 <main class="main-content">
     {% block content %}{% endblock %}
 </main>
 
-<!-- Футер -->
 <footer class="footer">
     <div class="container">
         <div class="footer__grid">
@@ -73,14 +79,12 @@
                 <h3>CN-Auto</h3>
                 <p>Официальный импортер китайских автомобилей в России</p>
             </div>
-
             <div class="footer-col">
                 <h4>Контакты</h4>
                 <a href="tel:+78001234567">8 800 123-45-67</a>
                 <a href="mailto:info@cn-auto.ru">info@cn-auto.ru</a>
                 <p>Москва, ул. Автозаводская, 23</p>
             </div>
-
             <div class="footer-col">
                 <h4>Часы работы</h4>
                 <p>Пн-Пт: 9:00-20:00</p>
@@ -91,11 +95,9 @@
         <div class="footer-bottom">
             <p>&copy; 2025 CN-Auto. Все права защищены</p>
             <div class="social-links">
-                <a href="#"><img src="{{ url_for('static', filename='images/social/vk.png') }}" alt="VK"></a>
-                <a href="#"><img src="{{ url_for('static', filename='images/social/telegram.png') }}"
-                                 alt="Telegram"></a>
-                <a href="#"><img src="{{ url_for('static', filename='images/social/whatsapp.png') }}"
-                                 alt="WhatsApp"></a>
+                <a href="#"><img src="{{url_for('static', filename='images/social/vk.png') }}" alt="VK"></a>
+                <a href="#"><img src="{{url_for('static', filename='images/social/telegram.png') }}" alt="Telegram"></a>
+                <a href="#"><img src="{{url_for('static', filename='images/social/whatsapp.png') }}" alt="WhatsApp"></a>
             </div>
         </div>
     </div>
@@ -103,10 +105,11 @@
 
 <!-- Скрипты -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="{{ url_for('static', filename='scripts.js') }}" defer></script>
 
 {% block extra_js %}
 <script>
-    // Популярные авто
+    // Swiper
     new Swiper('.swiper-popular', {
         loop: true,
         spaceBetween: 20,
@@ -125,7 +128,6 @@
         }
     });
 
-    // Каталог авто
     new Swiper('.swiper-catalog', {
         spaceBetween: 20,
         slidesPerView: 1.1,
@@ -134,24 +136,16 @@
             1024: {slidesPerView: 3}
         }
     });
-</script>
 
-<script>
-
-
+    // Facet toggles
     document.addEventListener("DOMContentLoaded", function () {
         const toggles = document.querySelectorAll('.facet-toggle');
-
         toggles.forEach(button => {
-            const group = button.previousElementSibling; // .facet-items
-
-            // Начальное состояние
+            const group = button.previousElementSibling;
             group.classList.add('collapsed');
             button.dataset.expanded = "false";
-
             button.addEventListener("click", () => {
                 const expanded = button.dataset.expanded === "true";
-
                 group.classList.toggle("collapsed", expanded);
                 button.dataset.expanded = (!expanded).toString();
                 button.textContent = expanded ? "Показать ещё" : "Скрыть";
@@ -159,8 +153,6 @@
         });
     });
 </script>
-
 {% endblock %}
-
 </body>
 </html>

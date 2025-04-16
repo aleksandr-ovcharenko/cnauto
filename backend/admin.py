@@ -357,7 +357,7 @@ class CarAdmin(SecureModelView):
         ids_in_order = request.form.get('order', '').split(',')
         updated_ids = set()
 
-        for img in car.gallery_images.all():
+        for img in car.gallery_images:
             str_id = str(img.id)
         print(f"🔍 Обрабатываем img.id={str_id}")
         print("📥 request.form:", dict(request.form))

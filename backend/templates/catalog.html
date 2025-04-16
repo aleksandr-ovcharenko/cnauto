@@ -9,20 +9,31 @@
         <form method="get">
             <!-- Фильтр по бренду -->
             <div class="filter-group">
-                <h4>Бренд</h4>
-                <div class="facet-items collapsed">
+                <h4 class="filter-group-title">Бренд</h4>
+
+                <!-- 🔍 Показываем, сколько брендов доступно -->
+                <p style="color:red;">Всего брендов: {{ brands|length }}</p>
+
+                <div class="facet-items" id="brandFacet">
                     {% for brand in brands %}
                     <label class="facet-item {% if loop.index > 5 %}hidden{% endif %}">
                         <input type="radio" name="brand" value="{{ brand.slug }}"
                                {% if request.args.get('brand') == brand.slug %}checked{% endif %}>
-                        {{ brand.name }}
+                        <span>{{ brand.name }}</span>
                     </label>
                     {% endfor %}
                 </div>
+
                 {% if brands|length > 5 %}
-                <button type="button" class="facet-toggle" data-target="brand">Показать ещё</button>
+                <button type="button"
+                        class="facet-toggle"
+                        data-target="brandFacet"
+                        data-expanded="false">
+                    Показать ещё
+                </button>
                 {% endif %}
             </div>
+
 
             <!-- Фильтр по стране -->
             <div class="filter-group">
@@ -63,13 +74,11 @@
             </div>
 
             <div class="filter-buttons">
-                <button type="submit" class="btn">Применить</button>
+                <button type="submit" class="btn btn-reset">Применить</button>
                 <a href="{{ url_for('catalog') }}" class="btn btn-reset">Сбросить всё</a>
 
                 {% if request.args.getlist('type') %}
-                <a href="{{ reset_type_url }}" class="btn btn-reset">
-                    Сбросить тип авто
-                </a>
+                <a href="{{ reset_type_url }}" class="btn btn-reset">Сбросить тип авто</a>
                 {% endif %}
             </div>
         </form>
@@ -79,14 +88,12 @@
     <section class="catalog-results">
         <div class="cars-grid">
             {% for car in cars %}
-            <div class="car-card">
-                <div class="car-card__image-wrapper">
-                    <img class="car-card__image"
-                         src="{{ car.image_url }}"
-                         alt="{{ car.model }}"/>
+            <div class="car-card horizontal-card">
+                <div class="car-card__image-block">
+                    <img class="car-card__image" src="{{ car.image_url | thumb_url(400) }}" alt="{{ car.model }}">
                 </div>
 
-                <div class="car-card__content">
+                <div class="car-card__info-block">
                     <div class="car-card__header">
                         <span class="car-card__tag">Новая</span>
                         {% if car.in_stock %}
@@ -97,35 +104,44 @@
                     </div>
 
                     <div class="car-card__brand">
-                        {% if car.brand %}
                         {% if car.brand.logo %}
-                        <img src="{{ url_for('static', filename='images/brands/' + car.brand.logo) }}"
-                             alt="{{ car.brand.name }}" height="30">
-                        {% else %}
+                        <img src="{{ url_for('static', filename='images/brands/' + car.brand.logo) }}" alt="{{ car.brand.name }}">
+                        {% endif %}
                         <span>{{ car.brand.name }}</span>
-                        {% endif %}
-                        {% endif %}
-                        <h3 class="car-card__title">{{ car.model }}</h3>
                     </div>
 
-                    <div class="car-card__price">{{ car.price | round }} ₽</div>
+                    <h3 class="car-card__title">{{ car.model }}</h3>
+
+                    <div class="car-card__price-row">
+                        {% if car.in_stock %}
+                        <span class="price in-stock">{{ car.price | round }} ₽</span>
+                        {% else %}
+                        <span class="price pre-order">{{ car.price | round }} ₽</span>
+                        {% endif %}
+                    </div>
 
                     <ul class="car-card__specs">
+                        {% if car.speed %}
+                        <li>🚀 до 100 км/ч: {{ car.speed }} сек</li>
+                        {% endif %}
+                        {% if car.range %}
+                        <li>🛣 Запас хода: {{ car.range }}</li>
+                        {% endif %}
                         {% if car.engine %}
-                        <li>⚡ {{ car.engine }}</li>
+                        <li>⚡ Двигатель: {{ car.engine }}</li>
                         {% endif %}
-                        {% if car.car_type %}
-                        <li>🚗 {{ car.car_type.name }}</li>
-                        {% endif %}
-                        {% if car.year %}
-                        <li>📅 {{ car.year }}</li>
-                        {% endif %}
-                        {% if car.mileage %}
-                        <li>🛣 {{ car.mileage }} км</li>
+                        {% if car.drive %}
+                        <li>🔧 Привод: {{ car.drive }}</li>
                         {% endif %}
                     </ul>
 
-                    <a href="{{ url_for('car_details', car_id=car.id) }}" class="btn-full">Подробнее</a>
+                    <div class="car-card__actions">
+                        <div class="action-buttons">
+                            <button class="icon-btn">📌</button>
+                            <button class="icon-btn">🔁</button>
+                        </div>
+                        <a href="{{ url_for('car_page', car_id=car.id) }}" class="btn btn-small">Подробнее</a>
+                    </div>
                 </div>
             </div>
             {% endfor %}

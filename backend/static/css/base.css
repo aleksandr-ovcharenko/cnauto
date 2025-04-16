@@ -1,0 +1,33 @@
+:root {
+    --gray: #f5f5f5;
+    --green: #4CAF50;
+    --orange: #FF6D00;
+    --blue: #007BFF;
+    --text: #333;
+    --light: #f9f9f9;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    background: var(--gray);
+    color: var(--text);
+}
+
+a {
+    color: var(--blue);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.badge {
+    background: var(--orange);
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 5px;
+}

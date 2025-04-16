@@ -4,36 +4,17 @@
 
 {% block content %}
 <section class="product-detail">
-    <div class="product-left">
-        <div class="product-media">
-            <div class="product-thumbs">
-                {% for img in car.images %}
-                <img src="{{img}}" alt="thumb">
-                {% endfor %}
-            </div>
-            <div class="product-image">
-                <img src="{{ car.image_url }}" alt="{{ car.model }}">
-            </div>
+    <div class="product-media">
+        <!-- Превьюшки вертикально слева -->
+        <div class="product-thumbs">
+            {% for img in car.gallery_images %}
+            <img src="{{ img.url | thumb_url(200) }}" data-full="{{ img.url }}" alt="Фото {{ loop.index }}" class="car-thumb">
+            {% endfor %}
         </div>
 
-
-        <div class="product-specs-grid">
-            {% if car.engine %}
-            <div><strong>Двигатель:</strong> {{ car.engine }}</div>
-            {% endif %}
-            {% if car.in_stock %}
-            <div><strong>Привод:</strong> Полный</div>
-            {% endif %}
-            {% if car.mileage %}
-            <div><strong>Пробег:</strong> {{ car.mileage }} км</div>
-            {% endif %}
-            {% if car.year %}
-            <div><strong>Год:</strong> {{ car.year }}</div>
-            {% endif %}
-            {% if car.car_type %}
-            <div><strong>Тип:</strong> {{ car.car_type.name }}</div>
-            {% endif %}
-            <!-- Добавь другие характеристики -->
+        <!-- Основное фото -->
+        <div class="product-image">
+            <img class="main-image" src="{{ car.image_url }}" alt="{{ car.model }}">
         </div>
     </div>
 
@@ -41,24 +22,60 @@
         <h1 class="product-title">{{ car.model }}</h1>
         <p class="product-meta">
             Производитель: <strong>{{ car.brand.name }}</strong> |
-            Тип: <strong>{{ car.car_type.name }}</strong>
+            Тип: <strong>{{ car.car_type.name }}</strong> |
+            Модель: <strong>{{ car.model }}</strong>
         </p>
 
-        <div class="product-price-section">
-            {% if car.in_stock %}
-            <span class="stock-tag in-stock">В наличии</span>
-            {% else %}
-            <span class="stock-tag pre-order">Под заказ</span>
-            {% endif %}
-            <div class="price">{{ car.price | round }} ₽</div>
+        <div class="product-config">
+            <label><strong>Выберите комплектацию</strong></label>
+            <div class="select-box">X-Trail E-Power TOP</div>
+
+            <label><strong>Гарантия</strong></label>
+            <div class="warranty-options">
+                <label><input type="radio" name="warranty" checked> Без гарантии <span>+ 0 ₽</span></label><br>
+                <label><input type="radio" name="warranty"> С гарантией <span>+ 106 710 ₽</span></label>
+            </div>
         </div>
 
-        <div class="product-actions">
-            <a href="#" class="btn">Заказать</a>
-            <button class="icon-btn">❤️</button>
-            <button class="icon-btn">🔁</button>
+        <div class="product-price-section">
+            <span class="stock-tag pre-order">Под заказ</span>
+            <div class="price">{{ car.price | round }} ₽</div>
+
+            <div class="product-actions">
+                <a href="#" class="btn">ЗАКАЗАТЬ</a>
+                <button class="icon-btn">📌</button>
+                <button class="icon-btn">🔁</button>
+            </div>
         </div>
     </div>
 </section>
+
+<section class="product-specs-icons">
+    <div class="spec">
+        ⚡ <strong>Двигатель:</strong> {{ car.engine or "—" }}
+    </div>
+    <div class="spec">
+        🔋 <strong>Объем батареи:</strong> {{ car.battery or "2 кВт⋅ч" }}
+    </div>
+    <div class="spec">
+        🚗 <strong>Привод:</strong> полный
+    </div>
+    <div class="spec">
+        🛣 <strong>Запас хода:</strong> до 1100 км
+    </div>
+    <div class="spec">
+        ⚙️ <strong>Коробка:</strong> Одноступенчатая
+    </div>
+    <div class="spec">
+        🪑 <strong>Салон:</strong> Иск. кожа + натуральная кожа
+    </div>
+    <div class="spec">
+        🕒 <strong>До 100 км/ч:</strong> 8 сек.
+    </div>
+    <div class="spec">
+        🔁 <strong>Крутящий момент:</strong> 250/1500–2500
+    </div>
+</section>
+
 
 {% endblock %}

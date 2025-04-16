@@ -88,6 +88,17 @@ def car_details(car_id):
     car = Car.query.get_or_404(car_id)
     return render_template('car_details.html', car=car)
 
+@app.template_filter('thumb_url')
+def thumb_url_filter(url, width=400):
+    try:
+        parts = url.split('/upload/')
+        if len(parts) != 2:
+            return url
+        return f"{parts[0]}/upload/w_{width},c_limit/{parts[1]}"
+    except Exception as e:
+        print(f"⚠️ Ошибка в thumb_url_filter: {e}")
+        return url
+
 
 @app.route("/catalog")
 def catalog():
