@@ -110,30 +110,229 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Facet toggle logic без id
 document.addEventListener('DOMContentLoaded', function () {
-    const toggleButtons = document.querySelectorAll(".facet-toggle");
-
-    toggleButtons.forEach(button => {
+    function showAllFacets(container) {
+        const items = container.querySelectorAll('.facet-item');
+        items.forEach(item => item.classList.remove('hidden'));
+    }
+    function hideExtraFacets(container) {
+        const items = container.querySelectorAll('.facet-item');
+        items.forEach((item, idx) => {
+            if (idx >= 8) {
+                item.classList.add('hidden');
+            } else {
+                item.classList.remove('hidden');
+            }
+        });
+    }
+    // Toggle logic
+    document.querySelectorAll('.facet-toggle').forEach(button => {
         const targetId = button.dataset.target;
         const container = document.getElementById(targetId);
+        const hideLink = document.querySelector('.facet-hide-link[data-target="' + targetId + '"]');
+        if (!container || !hideLink) return;
+        button.addEventListener('click', function () {
+            showAllFacets(container);
+            button.style.display = 'none';
+            hideLink.style.display = 'inline';
+        });
+        // Initial state: ensure only first 8 are shown
+        hideExtraFacets(container);
+    });
+    document.querySelectorAll('.facet-hide-link').forEach(link => {
+        const targetId = link.dataset.target;
+        const container = document.getElementById(targetId);
+        const button = document.querySelector('.facet-toggle[data-target="' + targetId + '"]');
+        if (!container || !button) return;
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            hideExtraFacets(container);
+            link.style.display = 'none';
+            button.style.display = 'inline-block';
+        });
+    });
 
-        if (!container) return;
+    // --- Facet Autocomplete Logic ---
+    function setupFacetAutocomplete({inputId, suggestionsId, facetId, inputType}) {
+        const input = document.getElementById(inputId);
+        const suggestionsBox = document.getElementById(suggestionsId);
+        const facet = document.getElementById(facetId);
+        if (!input || !suggestionsBox || !facet) return;
 
-        button.addEventListener("click", () => {
-            const hiddenItems = container.querySelectorAll(".facet-item.hidden");
-            const isExpanded = button.dataset.expanded === "true";
+        // Get all label elements and their text
+        const labels = Array.from(facet.querySelectorAll('.facet-item'));
+        const options = labels.map(label => {
+            const inputEl = label.querySelector('input');
+            return {
+                value: inputEl.value,
+                text: label.textContent.trim(),
+                inputEl,
+                label
+            };
+        });
 
-            hiddenItems.forEach(item => {
-                item.style.display = isExpanded ? "none" : "flex";
+        input.addEventListener('input', function() {
+            const val = input.value.trim().toLowerCase();
+            suggestionsBox.innerHTML = '';
+            if (!val) {
+                suggestionsBox.style.display = 'none';
+                return;
+            }
+            // Filter options
+            const matches = options.filter(opt => opt.text.toLowerCase().includes(val));
+            if (matches.length === 0) {
+                suggestionsBox.style.display = 'none';
+                return;
+            }
+            matches.forEach(opt => {
+                const div = document.createElement('div');
+                div.className = 'facet-suggestion-item';
+                div.textContent = opt.text;
+                div.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    // Select the option
+                    if (inputType === 'radio') {
+                        opt.inputEl.checked = true;
+                        // Optionally, submit the form if needed
+                        const form = input.closest('form');
+                        if (form) form.submit();
+                    } else if (inputType === 'checkbox') {
+                        opt.inputEl.checked = !opt.inputEl.checked;
+                        // Optionally, trigger onchange
+                        opt.inputEl.dispatchEvent(new Event('change', {bubbles: true}));
+                    }
+                    input.value = '';
+                    suggestionsBox.innerHTML = '';
+                    suggestionsBox.style.display = 'none';
+                });
+                suggestionsBox.appendChild(div);
             });
+            suggestionsBox.style.display = 'block';
+        });
+        // Hide suggestions when focus is lost
+        input.addEventListener('blur', function() {
+            setTimeout(() => {
+                suggestionsBox.innerHTML = '';
+                suggestionsBox.style.display = 'none';
+            }, 100);
+        });
+    }
 
-            button.dataset.expanded = (!isExpanded).toString();
-            button.textContent = isExpanded ? "Показать ещё" : "Скрыть";
+    setupFacetAutocomplete({
+        inputId: 'brandSearch',
+        suggestionsId: 'brandSuggestions',
+        facetId: 'brandFacet',
+        inputType: 'radio'
+    });
+    setupFacetAutocomplete({
+        inputId: 'countrySearch',
+        suggestionsId: 'countrySuggestions',
+        facetId: 'countryFacet',
+        inputType: 'radio'
+    });
+    setupFacetAutocomplete({
+        inputId: 'typeSearch',
+        suggestionsId: 'typeSuggestions',
+        facetId: 'typeFacet',
+        inputType: 'checkbox'
+    });
+
+    function updateFacetDependencies() {
+        // Get selected brand and country
+        const selectedBrandInput = document.querySelector('#brandFacet input[type=radio]:checked');
+        const selectedCountryInput = document.querySelector('#countryFacet input[type=radio]:checked');
+        const brandCountryMap = window.brandCountryMap;
+
+        // 1. Disable unrelated countries if a brand is selected
+        if (selectedBrandInput) {
+            const brandSlug = selectedBrandInput.value;
+            const brandCountry = brandCountryMap[brandSlug];
+            document.querySelectorAll('#countryFacet .facet-item').forEach(label => {
+                const input = label.querySelector('input');
+                if (label.textContent.trim() !== brandCountry) {
+                    input.disabled = true;
+                    label.classList.add('disabled');
+                } else {
+                    input.disabled = false;
+                    label.classList.remove('disabled');
+                }
+            });
+        } else {
+            // Enable all countries if no brand is selected
+            document.querySelectorAll('#countryFacet .facet-item').forEach(label => {
+                const input = label.querySelector('input');
+                input.disabled = false;
+                label.classList.remove('disabled');
+            });
+        }
+
+        // 2. Disable unrelated brands if a country is selected
+        if (selectedCountryInput) {
+            const countryName = selectedCountryInput.value;
+            document.querySelectorAll('#brandFacet .facet-item').forEach(label => {
+                const input = label.querySelector('input');
+                const brandSlug = input.value;
+                if (brandCountryMap[brandSlug] !== countryName) {
+                    input.disabled = true;
+                    label.classList.add('disabled');
+                } else {
+                    input.disabled = false;
+                    label.classList.remove('disabled');
+                }
+            });
+        } else {
+            // Enable all brands if no country is selected
+            document.querySelectorAll('#brandFacet .facet-item').forEach(label => {
+                const input = label.querySelector('input');
+                input.disabled = false;
+                label.classList.remove('disabled');
+            });
+        }
+    }
+
+    document.querySelectorAll('#brandFacet input[type=radio]').forEach(input => {
+        input.addEventListener('change', updateFacetDependencies);
+    });
+    document.querySelectorAll('#countryFacet input[type=radio]').forEach(input => {
+        input.addEventListener('change', updateFacetDependencies);
+    });
+    // Run on page load
+    updateFacetDependencies();
+
+    // --- Show 'Применить' link on facet change ---
+    const form = document.querySelector('.filters-sidebar form');
+    function showApplyLink(linkId) {
+        document.querySelectorAll('.apply-facet-link').forEach(l => l.style.display = 'none');
+        const link = document.getElementById(linkId);
+        if (link) link.style.display = 'inline';
+    }
+    // Brand
+    document.querySelectorAll('#brandFacet input[type=radio]').forEach(input => {
+        input.addEventListener('change', function() {
+            showApplyLink('applyBrand');
+        });
+    });
+    // Country
+    document.querySelectorAll('#countryFacet input[type=radio]').forEach(input => {
+        input.addEventListener('change', function() {
+            showApplyLink('applyCountry');
+        });
+    });
+    // Type (checkboxes)
+    document.querySelectorAll('#typeFacet input[type=checkbox]').forEach(input => {
+        input.addEventListener('change', function() {
+            showApplyLink('applyType');
+        });
+    });
+    // On click of any apply link, submit the form
+    document.querySelectorAll('.apply-facet-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            link.style.display = 'none';
+            if (form) form.submit();
         });
     });
 });
-
 
 window.addEventListener('load', function () {
     const mainImage = document.querySelector('.main-image');

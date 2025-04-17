@@ -35,10 +35,19 @@
 /* === Детали продукта === */
 .product-detail {
     display: flex;
-    gap: 60px;
+    gap: 2vw;
     padding: 40px 20px;
     flex-wrap: wrap;
     background: var(--gray);
+}
+
+.product-media {
+    flex: 0 1 35%;
+    min-width: 340px;
+    max-width: 35%;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
 }
 
 .product-left,
@@ -47,19 +56,34 @@
     min-width: 300px;
 }
 
-/* === Галерея слева === */
-.product-media {
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
+.product-right {
+    flex: 0 1 40%;
+    max-width: 40%;
+    min-width: 260px;
+    margin-left: 0;
 }
 
+.product-specs-icons {
+    flex: 0 1 25%;
+    max-width: 25%;
+    min-width: 180px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* === Галерея слева === */
 .product-thumbs {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    overflow-y: auto;
-    max-height: 500px;
     padding-right: 4px;
 }
 
@@ -139,24 +163,16 @@
 }
 
 /* Характеристики с иконками */
-.product-specs-icons {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 0;
-    margin-top: 20px;
-    font-size: 0.9rem;
-    color: #333;
-}
-
 .product-specs-icons .spec {
-    background: #fff;
-    padding: 10px 12px;
-    border-radius: 6px;
+    font-size: 1rem;
+    color: #333;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
     display: flex;
     align-items: center;
-    gap: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+    gap: 6px;
 }
 
 /* Название модели */
@@ -423,4 +439,29 @@
     line-height: 1;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+@media (max-width: 1200px) {
+  .product-media {
+    min-width: 280px;
+  }
+  .product-right, .product-specs-icons {
+    min-width: 160px;
+  }
+}
+
+@media (max-width: 900px) {
+  .product-detail {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .product-media, .product-right, .product-specs-icons {
+    max-width: 100%;
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+  .product-specs-icons {
+    margin-top: 24px;
+    order: 3;
+  }
 }

@@ -7,8 +7,9 @@
     <div class="product-media">
         <!-- Превьюшки вертикально слева -->
         <div class="product-thumbs">
-            {% for img in car.gallery_images %}
-            <img src="{{ img.url | thumb_url(200) }}" data-full="{{ img.url }}" alt="Фото {{ loop.index }}" class="car-thumb">
+            {% set thumbs = [car.image_url] + (car.gallery_images | map(attribute='url') | reject('equalto', car.image_url) | list) %}
+            {% for thumb_url in thumbs %}
+            <img src="{{ thumb_url | thumb_url(200) }}" data-full="{{ thumb_url }}" alt="Фото {{ loop.index }}" class="car-thumb">
             {% endfor %}
         </div>
 
@@ -48,34 +49,33 @@
             </div>
         </div>
     </div>
-</section>
 
-<section class="product-specs-icons">
-    <div class="spec">
-        ⚡ <strong>Двигатель:</strong> {{ car.engine or "—" }}
-    </div>
-    <div class="spec">
-        🔋 <strong>Объем батареи:</strong> {{ car.battery or "2 кВт⋅ч" }}
-    </div>
-    <div class="spec">
-        🚗 <strong>Привод:</strong> полный
-    </div>
-    <div class="spec">
-        🛣 <strong>Запас хода:</strong> до 1100 км
-    </div>
-    <div class="spec">
-        ⚙️ <strong>Коробка:</strong> Одноступенчатая
-    </div>
-    <div class="spec">
-        🪑 <strong>Салон:</strong> Иск. кожа + натуральная кожа
-    </div>
-    <div class="spec">
-        🕒 <strong>До 100 км/ч:</strong> 8 сек.
-    </div>
-    <div class="spec">
-        🔁 <strong>Крутящий момент:</strong> 250/1500–2500
+    <div class="product-specs-icons">
+        <div class="spec">
+            ⚡ <strong>Двигатель:</strong> {{ car.engine or "—" }}
+        </div>
+        <div class="spec">
+            🔋 <strong>Объем батареи:</strong> {{ car.battery or "2 кВт⋅ч" }}
+        </div>
+        <div class="spec">
+            🚗 <strong>Привод:</strong> полный
+        </div>
+        <div class="spec">
+            🛣 <strong>Запас хода:</strong> до 1100 км
+        </div>
+        <div class="spec">
+            ⚙️ <strong>Коробка:</strong> Одноступенчатая
+        </div>
+        <div class="spec">
+            🪑 <strong>Салон:</strong> Иск. кожа + натуральная кожа
+        </div>
+        <div class="spec">
+            🕒 <strong>До 100 км/ч:</strong> 8 сек.
+        </div>
+        <div class="spec">
+            🔁 <strong>Крутящий момент:</strong> 250/1500–2500
+        </div>
     </div>
 </section>
-
 
 {% endblock %}

@@ -4,93 +4,150 @@
 
 {% block content %}
 <div class="catalog-layout">
+    <!-- Sidebar Toggle Button (centered vertically, always visible) -->
+    <button type="button" id="toggleSidebar" class="sidebar-toggle" aria-label="Скрыть фильтры" title="Скрыть фильтры" tabindex="0" style="z-index: 1; pointer-events: auto;"><span class="arrow">◀</span></button>
     <!-- Фильтры -->
     <aside class="filters-sidebar">
         <form method="get">
-            <!-- Фильтр по бренду -->
+            <a href="{{ url_for('catalog') }}" class="btn btn-reset" style="margin-bottom: 1rem;">Сбросить всё</a>
+            <!-- Фильтр по бренду (hide if only one) -->
+            {% if brands|length > 1 %}
             <div class="filter-group">
-                <h4 class="filter-group-title">Бренд</h4>
-
-                <!-- 🔍 Показываем, сколько брендов доступно -->
-                <p style="color:red;">Всего брендов: {{ brands|length }}</p>
-
+                <h4 class="filter-group-title">Бренд
+                  <a href="#" class="apply-facet-link" id="applyBrand" style="display:none; font-size:0.95em; margin-left:8px;">Применить</a>
+                </h4>
+                <input type="text" class="facet-search-input" id="brandSearch" placeholder="Введите бренд..." autocomplete="off">
+                <div class="facet-suggestions" id="brandSuggestions"></div>
                 <div class="facet-items" id="brandFacet">
                     {% for brand in brands %}
-                    <label class="facet-item {% if loop.index > 5 %}hidden{% endif %}">
-                        <input type="radio" name="brand" value="{{ brand.slug }}"
-                               {% if request.args.get('brand') == brand.slug %}checked{% endif %}>
+                    <label class="facet-item {% if loop.index > 8 %}hidden{% endif %}">
+                        <input type="radio" name="brand" value="{{ brand.slug }}" {% if request.args.get('brand') == brand.slug %}checked{% endif %}>
                         <span>{{ brand.name }}</span>
                     </label>
                     {% endfor %}
                 </div>
-
-                {% if brands|length > 5 %}
+                {% if brands|length > 8 %}
                 <button type="button"
                         class="facet-toggle"
                         data-target="brandFacet"
-                        data-expanded="false">
-                    Показать ещё
-                </button>
+                        data-expanded="false">Показать ещё</button>
+                <a href="#" class="facet-hide-link" data-target="brandFacet" style="display:none;">Скрыть</a>
                 {% endif %}
             </div>
-
-
-            <!-- Фильтр по стране -->
+            {% endif %}
+            <!-- Фильтр по стране (hide if only one) -->
+            {% if countries|length > 1 %}
             <div class="filter-group">
-                <h4>Страна</h4>
-                <div class="facet-items collapsed">
+                <h4 class="filter-group-title">Страна
+                  <a href="#" class="apply-facet-link" id="applyCountry" style="display:none; font-size:0.95em; margin-left:8px;">Применить</a>
+                </h4>
+                <input type="text" class="facet-search-input" id="countrySearch" placeholder="Введите страну..." autocomplete="off">
+                <div class="facet-suggestions" id="countrySuggestions"></div>
+                <div class="facet-items" id="countryFacet">
                     {% for country in countries %}
-                    <label class="facet-item {% if loop.index > 5 %}hidden{% endif %}">
-                        <input type="radio" name="country" value="{{ country.name }}"
-                               {% if request.args.get('country') == country.name %}checked{% endif %}>
-                        {{ country.name }}
+                    <label class="facet-item">
+                        <input type="radio" name="country" value="{{ country.name }}" {% if request.args.get('country') == country.name %}checked{% endif %}>
+                        <span>{{ country.name }}</span>
                     </label>
                     {% endfor %}
                 </div>
-                {% if countries|length > 5 %}
-                <button type="button" class="facet-toggle" data-target="country">Показать ещё</button>
-                {% endif %}
             </div>
-
-            <!-- Фильтр по типу -->
+            {% endif %}
+            <!-- Фильтр по типу (hide if only one) -->
+            {% if car_types|length > 1 %}
             <div class="filter-group">
-                <h4>Тип авто</h4>
-                <div class="facet-items collapsed">
+                <h4 class="filter-group-title">Тип
+                  <a href="#" class="apply-facet-link" id="applyType" style="display:none; font-size:0.95em; margin-left:8px;">Применить</a>
+                </h4>
+                <div class="facet-items" id="typeFacet">
                     {% for car_type in car_types %}
-                    <label class="facet-item {% if loop.index > 5 %}hidden{% endif %}">
-                        <input type="checkbox" name="type" value="{{ car_type.slug }}" onchange="this.form.submit()"
-                               {% if car_type.slug in request.args.getlist('type') %}checked{% endif %}>
-                        {% if car_type.icon %}
-                        <img src="{{ url_for('static', filename='images/types/' + car_type.icon) }}"
-                             alt="{{ car_type.name }}" class="type-icon">
-                        {% endif %}
-                        {{ car_type.name }}
+                    <label class="facet-item">
+                        <input type="checkbox" name="type" value="{{ car_type.slug }}" {% if car_type.slug in request.args.getlist('type') %}checked{% endif %}>
+                        <span>{{ car_type.name }}</span>
                     </label>
                     {% endfor %}
                 </div>
-                {% if car_types|length > 5 %}
-                <button type="button" class="facet-toggle" data-target="type">Показать ещё</button>
-                {% endif %}
             </div>
-
-            <div class="filter-buttons">
-                <button type="submit" class="btn btn-reset">Применить</button>
-                <a href="{{ url_for('catalog') }}" class="btn btn-reset">Сбросить всё</a>
-
-                {% if request.args.getlist('type') %}
-                <a href="{{ reset_type_url }}" class="btn btn-reset">Сбросить тип авто</a>
-                {% endif %}
-            </div>
+            {% endif %}
         </form>
     </aside>
-
-    <!-- Каталог авто -->
-    <section class="catalog-results">
+    <main class="catalog-results">
+        {# Applied Filters Section #}
+        {% set has_filters = request.args.get('brand') or request.args.get('country') or request.args.getlist('type') %}
+        {% set single_brand = brands|length == 1 %}
+        {% set single_country = countries|length == 1 %}
+        {% set single_type = car_types|length == 1 %}
+        {% if has_filters or single_brand or single_country or single_type %}
+        <div class="applied-filters">
+          <span class="applied-filters-label">Вы выбрали:</span>
+          {# Brand chip: show if selected or only one #}
+          {% if request.args.get('brand') %}
+            {% set brand_obj = (brands | selectattr('slug', 'equalto', request.args.get('brand')) | first) %}
+            <span class="filter-chip">
+              Бренд: {{ brand_obj.name if brand_obj else request.args.get('brand') }}
+              <a href="{{ url_for('catalog', country=request.args.get('country'), type=request.args.getlist('type')) }}" class="remove-filter">✕</a>
+            </span>
+          {% elif single_brand %}
+            <span class="filter-chip">
+              Бренд: {{ brands[0].name }}
+            </span>
+          {% endif %}
+          {# Country chip: show if selected or only one #}
+          {% if request.args.get('country') %}
+            <span class="filter-chip">
+              Страна: {{ request.args.get('country') }}
+              <a href="{{ url_for('catalog', brand=request.args.get('brand'), type=request.args.getlist('type')) }}" class="remove-filter">✕</a>
+            </span>
+          {% elif single_country %}
+            <span class="filter-chip">
+              Страна: {{ countries[0].name }}
+            </span>
+          {% endif %}
+          {# Type chip: show if selected or only one #}
+          {% for t in request.args.getlist('type') %}
+            {% set car_type_obj = (car_types | selectattr('slug', 'equalto', t) | first) %}
+            <span class="filter-chip">
+              Тип: {{ car_type_obj.name if car_type_obj else t }}
+              <a href="{{ url_for('catalog', brand=request.args.get('brand'), country=request.args.get('country'), type=request.args.getlist('type')|reject('equalto', t)) }}" class="remove-filter">✕</a>
+            </span>
+          {% endfor %}
+          {% if not request.args.getlist('type') and single_type %}
+            <span class="filter-chip">
+              Тип: {{ car_types[0].name }}
+            </span>
+          {% endif %}
+        </div>
+        {% endif %}
         <div class="cars-grid">
             {% for car in cars %}
             <div class="car-card horizontal-card">
                 <div class="car-card__image-block">
-                    <img class="car-card__image" src="{{ car.image_url | thumb_url(400) }}" alt="{{ car.model }}">
+                    <div class="car-card__gallery" data-gallery="{{ ([car.image_url] + (car.gallery_images | map(attribute='url') | reject('equalto', car.image_url) | list)) | tojson }}">
+                        {% set gallery_urls = [car.image_url] + (car.gallery_images | map(attribute='url') | reject('equalto', car.image_url) | list) %}
+                        {% set maxDots = 8 %}
+                        {% set show_more = gallery_urls|length > maxDots %}
+                        {% for img_url in gallery_urls[:maxDots-1] %}
+                        <img class="car-card__gallery-img{% if loop.first %}{{ '' }}{% else %} hidden{% endif %}" src="{{ img_url | thumb_url(200) }}" alt="{{ car.model }} {{ loop.index }}">
+                        {% endfor %}
+                        {% if show_more %}
+                        <img class="car-card__gallery-img hidden" src="{{ gallery_urls[maxDots-1] | thumb_url(200) }}" alt="{{ car.model }} {{ maxDots }}+">
+                        {% for img_url in gallery_urls[maxDots:] %}
+                        <img class="car-card__gallery-img hidden" src="{{ img_url | thumb_url(200) }}" alt="{{ car.model }} extra">
+                        {% endfor %}
+                        {% else %}
+                        <img class="car-card__gallery-img{% if gallery_urls|length == maxDots and not show_more %} hidden{% endif %}" src="{{ gallery_urls[maxDots-1] | thumb_url(200) }}" alt="{{ car.model }} {{ maxDots }}">
+                        {% endif %}
+                        <div class="car-card__dots">
+                            {% for _ in gallery_urls[:maxDots-1] %}
+                            <span class="car-card__dot{% if loop.first %} active{% endif %}"></span>
+                            {% endfor %}
+                            {% if show_more %}
+                            <span class="car-card__dot car-card__dot--more">+{{ gallery_urls|length - (maxDots-1) }}</span>
+                            {% else %}
+                            <span class="car-card__dot{% if gallery_urls|length == maxDots and not show_more %} active{% endif %}"></span>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
 
                 <div class="car-card__info-block">
@@ -146,7 +203,7 @@
             </div>
             {% endfor %}
         </div>
-    </section>
+    </main>
 </div>
 <div class="quick-view-modal" id="quickViewModal">
     <div class="modal-content">
@@ -208,6 +265,92 @@
             modal.style.display = "none";
         }
     });
+</script>
+
+<script>
+    window.brandCountryMap = {
+        {% for brand in brands %}'{{ brand.slug }}': '{{ brand.country }}'{% if not loop.last %},{% endif %}{% endfor %}
+    };
+</script>
+
+<script>
+    const toggleSidebar = document.getElementById('toggleSidebar');
+    const filtersSidebar = document.querySelector('.filters-sidebar');
+    function updateSidebarTogglePosition() {
+        const sidebar = filtersSidebar;
+        const btn = toggleSidebar;
+        const offset = 48; // px, so button sits even further to the right of the border
+        const sidebarWidth = sidebar.classList.contains('hidden') ? 0 : sidebar.offsetWidth;
+        // When sidebar is open, button hugs the sidebar; when closed, hugs left edge
+        btn.style.left = sidebar.classList.contains('hidden') ? offset + 'px' : (sidebar.offsetWidth + offset) + 'px';
+    }
+    function updateArrowDirection() {
+        const arrow = toggleSidebar.querySelector('.arrow');
+        if (filtersSidebar.classList.contains('hidden')) {
+            arrow.textContent = '▶';
+            toggleSidebar.setAttribute('aria-label', 'Показать фильтры');
+            toggleSidebar.setAttribute('title', 'Показать фильтры');
+        } else {
+            arrow.textContent = '◀';
+            toggleSidebar.setAttribute('aria-label', 'Скрыть фильтры');
+            toggleSidebar.setAttribute('title', 'Скрыть фильтры');
+        }
+    }
+    toggleSidebar.addEventListener('click', () => {
+        filtersSidebar.classList.toggle('hidden');
+        updateArrowDirection();
+        updateSidebarTogglePosition();
+    });
+    // On resize, keep button vertically centered and in correct place
+    window.addEventListener('resize', updateSidebarTogglePosition);
+    // On load, set correct position
+    window.addEventListener('DOMContentLoaded', () => {
+        updateSidebarTogglePosition();
+        updateArrowDirection();
+    });
+</script>
+
+<script>
+// Car card gallery: show image based on mouse position over dots area, limited to maxDots
+function setupCarCardGalleries() {
+    const maxDots = 8;
+    document.querySelectorAll('.car-card__gallery').forEach(gallery => {
+        const imgs = gallery.querySelectorAll('.car-card__gallery-img');
+        const dots = gallery.querySelectorAll('.car-card__dot');
+        const dotsContainer = gallery.querySelector('.car-card__dots');
+        function show(n) {
+            imgs.forEach((img, i) => img.classList.toggle('hidden', i !== n));
+            dots.forEach((dot, i) => dot.classList.toggle('active', i === n));
+        }
+        function handleMove(e) {
+            if (!dotsContainer) return;
+            const rect = dotsContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            if (x < 0 || x > rect.width) return;
+            // Only count normal dots (not the +N dot)
+            let normalDots = dots.length;
+            if (dots[normalDots-1] && dots[normalDots-1].classList.contains('car-card__dot--more')) {
+                normalDots = normalDots - 1;
+            }
+            const seg = rect.width / dots.length;
+            let idx = Math.floor(x / seg);
+            idx = Math.max(0, Math.min(idx, imgs.length - 1));
+            show(idx);
+        }
+        function reset() {
+            show(0);
+        }
+        if (dotsContainer) {
+            dotsContainer.addEventListener('mousemove', handleMove);
+            dotsContainer.addEventListener('mouseleave', reset);
+        }
+        dots.forEach((dot, i) => {
+            dot.addEventListener('mouseenter', () => show(i));
+        });
+        show(0);
+    });
+}
+document.addEventListener('DOMContentLoaded', setupCarCardGalleries);
 </script>
 
 {% endblock %}
