@@ -16,7 +16,7 @@ from wtforms.fields.simple import FileField, MultipleFileField
 from wtforms.widgets.core import HiddenInput
 from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
 
-from backend.models import Role, User, CarImage, BrandSynonym
+from backend.models import Role, User, CarImage, BrandSynonym, Currency
 from backend.models import db, Car, Category, Brand, CarType, Country
 
 # Папка для изображений автомобилей
@@ -29,7 +29,7 @@ class SecureAdminIndexView(AdminIndexView):
         return current_user.is_authenticated and current_user.has_role('admin')
 
     def inaccessible_callback(self, name, **kwargs):
-        return redirect(url_for('login', next=request.url))
+        return redirect(url_for('admin_login', next=request.url))
 
     def render(self, template, **kwargs):
         kwargs['current_user'] = current_user
@@ -47,7 +47,7 @@ class SecureModelView(ModelView):
         return current_user.is_authenticated and current_user.has_role('admin')
 
     def inaccessible_callback(self, name, **kwargs):
-        return redirect(url_for('login', next=request.url))
+        return redirect(url_for('admin_login', next=request.url))
 
     def render(self, template, **kwargs):
         kwargs['current_user'] = current_user
@@ -146,8 +146,11 @@ class CarImageAdmin(SecureModelView):
 
 
 class CarAdmin(SecureModelView):
-    column_list = ['image_preview', 'brand_preview', 'model', 'price', 'car_type']
-    column_labels = {'image_preview': 'Фото', 'brand_preview': 'Бренд'}
+    base_template = 'admin/custom_admin_base.html'
+    list_template = 'admin/model/list.html'
+
+    column_list = ['image_preview', 'brand_preview', 'model', 'price', 'currency', 'car_type']
+    column_labels = {'image_preview': 'Фото', 'brand_preview': 'Бренд', 'currency': 'Валюта'}
 
     column_searchable_list = ['model']
     column_filters = ['price', 'car_type', 'in_stock']
@@ -175,9 +178,43 @@ class CarAdmin(SecureModelView):
             return model.brand.name  # показать просто название бренда
         return '—'
 
+    def _currency_display(view, context, model, name):
+        if model.currency:
+            return f"{model.currency.code} ({model.currency.symbol})"
+        return '—'
+
+    def _price_formatter(view, context, model, name):
+        locale = model.currency.locale.replace('_', '-') if model.currency and model.currency.locale else 'ru-RU'
+        currency = model.currency.code if model.currency and model.currency.code else 'RUB'
+        symbol = model.currency.symbol if model.currency else '₽'
+        price = model.price
+        
+        # Format price using Python before rendering
+        if price and locale and currency:
+            import locale as loc
+            from babel.numbers import format_currency
+            try:
+                # First try Babel formatter for best international support
+                formatted_price = format_currency(price, currency, locale=locale)
+            except:
+                try:
+                    # Fallback to locale formatting with symbol added
+                    loc.setlocale(loc.LC_ALL, locale.replace('-', '_'))
+                    formatted_price = loc.currency(price, symbol=symbol, grouping=True)
+                except:
+                    # Last resort: simple formatting
+                    formatted_price = f"{price:,.2f} {symbol}"
+        else:
+            formatted_price = f"{price} {symbol}"
+            
+        # Still include data attributes for JS if needed, but with pre-formatted content
+        return Markup(f'<span class="price" data-locale="{locale}" data-currency="{currency}">{formatted_price}</span>')
+
     column_formatters = {
         'image_preview': _image_preview,
-        'brand_preview': _brand_preview
+        'brand_preview': _brand_preview,
+        'currency': _currency_display,
+        'price': _price_formatter
     }
 
     form_extra_fields = {
@@ -228,6 +265,28 @@ class CarAdmin(SecureModelView):
     form_overrides = {
         'brand': QuerySelectField,
         'car_type': QuerySelectField,
+        'currency': QuerySelectField
+    }
+
+    form_columns = [
+        'model', 'price', 'currency', 'brand', 'car_type',
+        'image_upload', 'image_upload',
+        'description', 'year', 'mileage', 'engine', 'in_stock'
+    ]
+
+    form_args = {
+        'brand': {
+            'query_factory': lambda: db.session.query(Brand).order_by(Brand.name),
+            'get_label': 'name'
+        },
+        'car_type': {
+            'query_factory': lambda: db.session.query(CarType).order_by(CarType.name),
+            'get_label': 'name'
+        },
+        'currency': {
+            'query_factory': lambda: db.session.query(Currency).order_by(Currency.code),
+            'get_label': lambda c: f"{c.code} ({c.symbol})"
+        }
     }
 
     edit_template = 'admin/edit_with_nav.html'  # кастомный шаблон
@@ -249,23 +308,6 @@ class CarAdmin(SecureModelView):
             prev_id, next_id = self._get_adjacent_ids(model_id)
             kwargs.update({'prev_id': prev_id, 'next_id': next_id})
         return super().render(template, **kwargs)
-
-    form_args = {
-        'brand': {
-            'query_factory': lambda: db.session.query(Brand).order_by(Brand.name),
-            'get_label': 'name'
-        },
-        'car_type': {
-            'query_factory': lambda: db.session.query(CarType).order_by(CarType.name),
-            'get_label': 'name'
-        }
-    }
-
-    form_columns = [
-        'model', 'price', 'brand', 'car_type',
-        'image_upload', 'image_upload',
-        'description', 'year', 'mileage', 'engine', 'in_stock'
-    ]
 
     # ===============================
     # Copy current car into new
@@ -536,6 +578,13 @@ class CarTypeAdmin(SecureModelView):
     }
 
 
+class CurrencyAdmin(SecureModelView):
+    column_list = ('id', 'code', 'name', 'symbol', 'locale')
+    column_searchable_list = ('code', 'name', 'symbol', 'locale')
+    form_columns = ('code', 'name', 'symbol', 'locale')
+    column_sortable_list = ('id', 'code', 'name', 'locale')
+
+
 def init_admin(app):
     admin = Admin(
         app,
@@ -555,3 +604,4 @@ def init_admin(app):
     admin.add_view(CarTypeAdmin(CarType, db.session, name='Типы авто'))
     admin.add_view(CountryAdmin(Country, db.session, name='Страны'))
     admin.add_view(UserAdmin(User, db.session, name='Пользователи'))
+    admin.add_view(CurrencyAdmin(Currency, db.session, name='Currencies'))

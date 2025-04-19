@@ -78,10 +78,12 @@ class CarImage(db.Model):
 
 class Car(db.Model):
     __tablename__ = 'cars'
-    form_columns = ['model', 'price', 'image', 'brand_logo', 'description', 'in_stock', 'category', 'brand', 'car_type']
+    form_columns = ['model', 'price', 'currency', 'image', 'brand_logo', 'description', 'in_stock', 'category', 'brand', 'car_type']
     id = db.Column(db.Integer, primary_key=True)
     model = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
+    currency_id = db.Column(db.Integer, db.ForeignKey('currencies.id'), nullable=True)
+    currency = db.relationship('Currency', back_populates='cars')
     image_url = db.Column(db.String(300), nullable=True)
     brand_logo = db.Column(db.String(200))
     images = db.Column(db.JSON)
@@ -125,10 +127,11 @@ class Brand(db.Model):
     country = db.relationship('Country', backref='brands')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    synonyms = db.relationship('BrandSynonym', backref='brand', lazy='dynamic')  # ✅ используем backref только здесь
+    synonyms = db.relationship('BrandSynonym', backref='brand', lazy='dynamic')  # используем backref только здесь
 
     def __str__(self):
         return self.name
+
 
 class BrandSynonym(db.Model):
     __tablename__ = 'brand_synonyms'
@@ -157,3 +160,16 @@ class Country(db.Model):
 
     def __str__(self):
         return self.name
+
+
+class Currency(db.Model):
+    __tablename__ = 'currencies'
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(10), unique=True, nullable=False)  # e.g. 'RUB', 'USD'
+    name = db.Column(db.String(50), nullable=False)  # e.g. 'Russian Ruble'
+    symbol = db.Column(db.String(10), nullable=False)  # e.g. '₽', '$'
+    locale = db.Column(db.String(20), nullable=True)  # e.g. 'ru_RU', 'en_US'
+    cars = db.relationship('Car', back_populates='currency')
+
+    def __str__(self):
+        return f"{self.code} ({self.symbol}, {self.locale})" if self.locale else f"{self.code} ({self.symbol})"

@@ -134,8 +134,8 @@
                         {% for img_url in gallery_urls[maxDots:] %}
                         <img class="car-card__gallery-img hidden" src="{{ img_url | thumb_url(200) }}" alt="{{ car.model }} extra">
                         {% endfor %}
-                        {% else %}
-                        <img class="car-card__gallery-img{% if gallery_urls|length == maxDots and not show_more %} hidden{% endif %}" src="{{ gallery_urls[maxDots-1] | thumb_url(200) }}" alt="{{ car.model }} {{ maxDots }}">
+                        {% elif gallery_urls|length == maxDots %}
+                        <img class="car-card__gallery-img hidden" src="{{ gallery_urls[maxDots-1] | thumb_url(200) }}" alt="{{ car.model }} {{ maxDots }}">
                         {% endif %}
                         <div class="car-card__dots">
                             {% for _ in gallery_urls[:maxDots-1] %}
@@ -171,9 +171,13 @@
 
                     <div class="car-card__price-row">
                         {% if car.in_stock %}
-                        <span class="price in-stock">{{ car.price | round }} ₽</span>
+                        <span class="price in-stock">
+                            {{ car.price | format_currency(car.currency) }}
+                        </span>
                         {% else %}
-                        <span class="price pre-order">{{ car.price | round }} ₽</span>
+                        <span class="price pre-order">
+                            {{ car.price | format_currency(car.currency) }}
+                        </span>
                         {% endif %}
                     </div>
 
@@ -353,4 +357,32 @@ function setupCarCardGalleries() {
 document.addEventListener('DOMContentLoaded', setupCarCardGalleries);
 </script>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.price').forEach(function(el) {
+        const locale = el.getAttribute('data-locale');
+        const currency = el.getAttribute('data-currency');
+        const rawText = el.textContent.trim();
+        // Improved regex to extract number regardless of currency symbols
+        const match = rawText.match(/[^0-9]*([0-9.,\s]+).*/);
+        if (!locale || !currency || !match) {
+            console.warn('Price formatting skipped:', { locale, currency, rawText });
+            return;
+        }
+        let num = match[1];
+        num = num.replace(/\s/g, '').replace(',', '.');
+        const value = parseFloat(num);
+        if (isNaN(value)) {
+            console.warn('Could not parse price value:', { num, rawText });
+            return;
+        }
+        try {
+            el.textContent = new Intl.NumberFormat(locale, { style: 'currency', currency: currency }).format(value);
+        } catch (e) {
+            console.error('Formatting error:', e);
+            el.textContent = value.toLocaleString(locale) + ' ' + currency;
+        }
+    });
+});
+</script>
 {% endblock %}

@@ -3,13 +3,14 @@
 {% block head_css %}
 {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 {% endblock %}
 
 {% block body %}
 <div class="admin-header">
     {% if current_user.is_authenticated %}
     <div class="admin-user-info">
-        👤 {{ current_user.username }}
+        {{ current_user.username }}
         {% for role in current_user.roles %}
         <span class="role-badge">роль: {{ role.name }}</span>
         {% endfor %}
@@ -19,4 +20,13 @@
     {% endif %}
 </div>
 {{ super() }}
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+{% endblock %}
+
+{% block tail %}
+{{ super() }}
+<script src="{{ url_for('static', filename='admin-scripts.js') }}"></script>
 {% endblock %}

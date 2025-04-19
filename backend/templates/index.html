@@ -23,7 +23,9 @@
                     <div class="car-card car-card--slider">
                         <img src="{{ car.image_url }}" alt="{{ car.model }}">
                         <h3>{{ car.model }}</h3>
-                        <p class="price">{{ car.formatted_price }}</p>
+                        <p class="price">
+                            {{ car.price | format_currency(car.currency) }}
+                        </p>
                         <a href="/car/{{ car.id }}" class="btn">Подробнее</a>
                     </div>
                 </div>
@@ -60,3 +62,24 @@
     </div>
 </section>
 {% endblock %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.price').forEach(function(el) {
+        const locale = el.getAttribute('data-locale');
+        const currency = el.getAttribute('data-currency');
+        const rawText = el.textContent.trim();
+        const match = rawText.match(/([\d\s.,]+)/);
+        if (!locale || !currency || !match) return;
+        let num = match[1];
+        num = num.replace(/\s/g, '').replace(',', '.');
+        const value = parseFloat(num);
+        if (isNaN(value)) return;
+        try {
+            el.textContent = new Intl.NumberFormat(locale, { style: 'currency', currency: currency }).format(value);
+        } catch {
+            el.textContent = value.toLocaleString(locale) + ' ' + currency;
+        }
+    });
+});
+</script>

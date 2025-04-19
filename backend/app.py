@@ -10,6 +10,7 @@ from flask_migrate import Migrate
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField
 from wtforms.validators import InputRequired
+from sqlalchemy.orm import joinedload
 
 from backend.admin import init_admin
 from backend.config_dev import DevConfig
@@ -99,6 +100,64 @@ def thumb_url_filter(url, width=400):
         print(f"⚠️ Ошибка в thumb_url_filter: {e}")
         return url
 
+@app.template_filter('format_currency')
+def format_currency_filter(price, currency_obj=None):
+    """Format a price based on currency object or with defaults"""
+    if not price:
+        return "-"
+    
+    # Currency-specific locale mapping
+    currency_locale_map = {
+        'RUB': 'ru-RU',
+        'USD': 'en-US',
+        'EUR': 'de-DE',
+        'GBP': 'en-GB',
+        'CNY': 'zh-CN',
+        'JPY': 'ja-JP'
+    }
+    
+    if currency_obj:
+        currency = currency_obj.code if currency_obj and currency_obj.code else 'RUB'
+        # Use currency-specific locale if no explicit locale is set
+        if currency_obj and currency_obj.locale:
+            locale = currency_obj.locale.replace('_', '-')
+        else:
+            # Try to get locale from the currency code
+            locale = currency_locale_map.get(currency, 'ru-RU')
+        symbol = currency_obj.symbol if currency_obj and currency_obj.symbol else '₽'
+    else:
+        # Default to Russian locale and currency
+        locale = 'ru-RU'
+        currency = 'RUB'
+        symbol = '₽'
+    
+    # Special case for Russian Rubles
+    if currency == 'RUB':
+        # Format with space as thousands separator and no decimal places
+        try:
+            # Try to convert to integer first to remove decimal part for whole numbers
+            clean_price = float(price)
+            formatted_price = f"{int(clean_price):,}".replace(',', ' ')
+            return f"{formatted_price} {symbol}"
+        except Exception as e:
+            print(f"Error formatting RUB price: {e}")
+            # Fallback if any error occurs
+            return f"{price} {symbol}"
+    
+    # Format with Babel for other currencies
+    try:
+        from babel.numbers import format_currency
+        return format_currency(price, currency, locale=locale)
+    except Exception as e:
+        # Fallback to simpler formatting
+        try:
+            import locale as loc
+            loc.setlocale(loc.LC_ALL, locale.replace('-', '_'))
+            return loc.currency(price, symbol=symbol, grouping=True)
+        except:
+            # Last resort
+            return f"{price:,.2f} {symbol}"
+
 
 @app.route("/catalog")
 def catalog():
@@ -106,7 +165,7 @@ def catalog():
     country_name = request.args.get("country")
     type_slugs = request.args.getlist('type')
 
-    query = Car.query
+    query = Car.query.options(joinedload(Car.currency))
 
     if brand:
         query = query.join(Car.brand).filter(Brand.slug == brand)
