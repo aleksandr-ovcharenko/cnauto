@@ -184,31 +184,14 @@ class CarAdmin(SecureModelView):
         return '—'
 
     def _price_formatter(view, context, model, name):
-        locale = model.currency.locale.replace('_', '-') if model.currency and model.currency.locale else 'ru-RU'
-        currency = model.currency.code if model.currency and model.currency.code else 'RUB'
-        symbol = model.currency.symbol if model.currency else '₽'
-        price = model.price
+        from app import format_currency_filter
         
-        # Format price using Python before rendering
-        if price and locale and currency:
-            import locale as loc
-            from babel.numbers import format_currency
-            try:
-                # First try Babel formatter for best international support
-                formatted_price = format_currency(price, currency, locale=locale)
-            except:
-                try:
-                    # Fallback to locale formatting with symbol added
-                    loc.setlocale(loc.LC_ALL, locale.replace('-', '_'))
-                    formatted_price = loc.currency(price, symbol=symbol, grouping=True)
-                except:
-                    # Last resort: simple formatting
-                    formatted_price = f"{price:,.2f} {symbol}"
-        else:
-            formatted_price = f"{price} {symbol}"
-            
-        # Still include data attributes for JS if needed, but with pre-formatted content
-        return Markup(f'<span class="price" data-locale="{locale}" data-currency="{currency}">{formatted_price}</span>')
+        # Use the same format_currency_filter we created for the templates
+        # This ensures consistent formatting across admin and frontend
+        formatted_price = format_currency_filter(model.price, model.currency)
+        
+        # No data attributes needed - pure server-side formatting
+        return Markup(f'<span class="price">{formatted_price}</span>')
 
     column_formatters = {
         'image_preview': _image_preview,

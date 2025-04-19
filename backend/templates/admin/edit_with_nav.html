@@ -15,10 +15,8 @@
         {% endif %}
     </div>
     <div class="col-md-12">
-        <span class="price"
-              data-locale="{{ model.currency.locale.replace('_', '-') if model.currency and model.currency.locale else '' }}"
-              data-currency="{{ model.currency.code if model.currency and model.currency.code else '' }}">
-            {{ model.price }} {{ model.currency.symbol if model.currency else '₽' }}
+        <span class="price">
+            {{ model.price | format_currency(model.currency) }}
         </span>
     </div>
 </div>
@@ -178,6 +176,6 @@
     }
 
 </script>
-{% endblock %}
-
 <script src="{{ url_for('static', filename='admin-scripts.js') }}"></script>
+{% endif %}
+{% endblock %}
