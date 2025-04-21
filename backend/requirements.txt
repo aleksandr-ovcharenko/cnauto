@@ -13,4 +13,4 @@ Flask-Migrate>=4.0.5
 alembic>=1.11.0
 cloudinary>=1.44.0
 replicate>=1.0.4
-Babel>=3.1.0
+Babel
