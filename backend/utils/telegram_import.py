@@ -20,12 +20,13 @@ telegram_import = Blueprint('telegram_import', __name__)
 @telegram_import.route('/api/import_car', methods=['POST'])
 def import_car(request):
     from backend.models import CarType
+    print("Started importing car vie API")
 
     token = request.headers.get("X-API-TOKEN")
     print("received ", "token")
     print("expected ", os.getenv("IMPORT_API_TOKEN"))
     if token != os.getenv("IMPORT_API_TOKEN"):
-        return jsonify({"error": "unauthorized"}), 403
+        return jsonify({"error": "unauthorized, check your token"}), 403
 
     try:
         data = request.get_json()
