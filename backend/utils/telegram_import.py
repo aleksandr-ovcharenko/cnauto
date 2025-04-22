@@ -22,6 +22,8 @@ def import_car(request):
     from backend.models import CarType
 
     token = request.headers.get("X-API-TOKEN")
+    print("received ", "token")
+    print("expected ", os.getenv("IMPORT_API_TOKEN"))
     if token != os.getenv("IMPORT_API_TOKEN"):
         return jsonify({"error": "unauthorized"}), 403
 
