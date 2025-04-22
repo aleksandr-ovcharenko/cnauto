@@ -18,6 +18,7 @@ from backend.config_prod import ProdConfig
 from backend.models import Car, Category, Brand, Country, CarType
 from backend.models import User
 from backend.models import db
+from utils.telegram_import import import_car as import_car_handler
 
 # .env
 load_dotenv()
@@ -193,8 +194,7 @@ api = Blueprint('api', __name__)
 
 @app.route('/api/import_car', methods=['POST'])
 def import_car():
-    from utils.telegram_import import import_car as handler
-    return handler(request)
+    return import_car_handler(request)
 
 
 if __name__ == '__main__':

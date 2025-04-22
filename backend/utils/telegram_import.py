@@ -1,10 +1,10 @@
 import os
 import tempfile
 import threading
-from flask import url_for
 
 import requests
 from flask import Blueprint, jsonify, current_app
+from flask import url_for
 
 from backend.models import db, Car, Brand, CarImage, BrandSynonym
 from utils.cloudinary_upload import upload_image
@@ -18,13 +18,18 @@ telegram_import = Blueprint('telegram_import', __name__)
 
 
 @telegram_import.route('/api/import_car', methods=['POST'])
-def import_car(request):
+def import_car():
     from backend.models import CarType
+    from flask import request
+
     print("Started importing car vie API")
 
+    print("🚗 Started importing car via API")
+
     token = request.headers.get("X-API-TOKEN")
-    print("received ", "token")
-    print("expected ", os.getenv("IMPORT_API_TOKEN"))
+    print("🔐 Received token:", token)
+    print("🔐 Expected token:", os.getenv("IMPORT_API_TOKEN"))
+
     if token != os.getenv("IMPORT_API_TOKEN"):
         return jsonify({"error": "unauthorized, check your token"}), 403
 
@@ -123,8 +128,9 @@ def import_car(request):
                 thread.start()
                 print(f"✅ Загружено главное изображение: {main_image_url}")
 
-                                # Остальные изображения - галерея
-                for i, file_id in enumerate(image_file_ids[1:], start=1):  # Начинаем с 1, так как 0 - главное изображение
+                # Остальные изображения - галерея
+                for i, file_id in enumerate(image_file_ids[1:],
+                                            start=1):  # Начинаем с 1, так как 0 - главное изображение
                     try:
                         url = get_telegram_file_url(file_id)
                         ref_url = download_and_reupload(
@@ -152,7 +158,8 @@ def import_car(request):
 
     # Генерация URL для просмотра автомобиля
     car_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}{url_for('car_page', car_id=car.id)}"
-    admin_car_edit_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}" + url_for('car.edit_view', id=car.id, url='/admin/car/')
+    admin_car_edit_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}" + url_for('car.edit_view', id=car.id,
+                                                                                          url='/admin/car/')
 
     print(f"⚠️ Ссылка на сайт: {car_url}")
     print(f"⚠️ Редактировать в админке: {admin_car_edit_url}")
