@@ -31,7 +31,13 @@ def import_car():
     print("🔐 Expected token:", os.getenv("IMPORT_API_TOKEN"))
 
     if token != os.getenv("IMPORT_API_TOKEN"):
-        return jsonify({"error": "unauthorized, check your token"}), 403
+        return jsonify({
+            "error": "unauthorized, check your token",
+            "details": {
+                "received_token": token,
+                "expected_token": os.getenv("IMPORT_API_TOKEN")
+            }
+        }), 403
 
     try:
         data = request.get_json()
