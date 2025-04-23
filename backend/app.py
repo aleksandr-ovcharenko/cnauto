@@ -194,7 +194,7 @@ api = Blueprint('api', __name__)
 
 @app.route('/api/import_car', methods=['POST'])
 def import_car():
-    return import_car_handler(request)
+    return import_car_handler()
 
 
 if __name__ == '__main__':
