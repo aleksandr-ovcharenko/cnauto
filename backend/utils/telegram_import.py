@@ -27,8 +27,9 @@ def import_car():
     print("🚗 Started importing car via API")
 
     token = request.headers.get("X-API-TOKEN")
-    print("🔐 Received token:", token)
-    print("🔐 Expected token:", os.getenv("IMPORT_API_TOKEN"))
+    print(f"Received token: {token}")
+    print(f"Expected token: {os.getenv('IMPORT_API_TOKEN')}")
+
 
     if token != os.getenv("IMPORT_API_TOKEN"):
         return jsonify({
@@ -59,11 +60,18 @@ def import_car():
     if missing_fields:
         return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
 
-    # Бренд и синоним
-    synonym = BrandSynonym.query.filter(BrandSynonym.name.ilike(brand_name)).first()
-    brand = synonym.brand if synonym else None
+    # Сначала ищем синоним
+    synonym = BrandSynonym.query.filter(
+        BrandSynonym.name.ilike(brand_name)
+    ).first()
 
+    brand = synonym.brand if synonym else None
     brand_created = False
+
+    # Если бренд не найден ни по синониму, ни напрямую — создаём
+    if not brand:
+        brand = Brand.query.filter_by(name=brand_name).first()
+
     if not brand:
         brand = Brand(name=brand_name, slug=brand_name.lower().replace(" ", "-"))
         db.session.add(brand)
