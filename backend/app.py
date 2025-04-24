@@ -18,7 +18,7 @@ from backend.config_prod import ProdConfig
 from backend.models import Car, Category, Brand, Country, CarType
 from backend.models import User
 from backend.models import db
-from utils.telegram_import import import_car as import_car_handler
+from backend.utils.telegram_import import import_car as import_car_handler
 
 # .env
 load_dotenv()

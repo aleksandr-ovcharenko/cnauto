@@ -7,10 +7,10 @@ from flask import Blueprint, jsonify, current_app
 from flask import url_for
 
 from backend.models import db, Car, Brand, CarImage, BrandSynonym
-from utils.cloudinary_upload import upload_image
-from utils.generate_comfyui import generate_with_comfyui
-from utils.generator_photon import generate_with_photon
-from utils.telegram_file import get_telegram_file_url
+from backend.utils.cloudinary_upload import upload_image
+from backend.utils.generate_comfyui import generate_with_comfyui
+from backend.utils.generator_photon import generate_with_photon
+from backend.utils.telegram_file import get_telegram_file_url
 
 REPLICATE_MODE = os.getenv("REPLICATE_MODE", "photon").lower().strip()
 

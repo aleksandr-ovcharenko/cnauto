@@ -1,9 +1,11 @@
-import os
 import sys
+import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+# Добавляем корень проекта в sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 from flask_migrate import upgrade
+
 from backend.app import app
 from backend.seeds.seed_users import seed_users
 from backend.seeds.seed_currencies import seed_currencies
