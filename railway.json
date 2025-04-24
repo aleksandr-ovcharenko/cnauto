@@ -14,5 +14,6 @@
   },
   "deploy": {
     "startCommand": "python backend/app.py"
-  }
+  },
+  "postdeploy": "python backend/seeds/manage.py"
 }
