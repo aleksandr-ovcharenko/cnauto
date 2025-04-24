@@ -61,16 +61,16 @@ def import_car():
         return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
 
     # Сначала ищем синоним
-    synonym = BrandSynonym.query.filter(
-        BrandSynonym.name.ilike(brand_name)
-    ).first()
+    brand_name_normalized = brand_name.lower().strip()
+    synonym = BrandSynonym.query.filter(BrandSynonym.name.ilike(brand_name_normalized)).first()
 
     brand = synonym.brand if synonym else None
     brand_created = False
 
-    # Если бренд не найден ни по синониму, ни напрямую — создаём
+    # Ищем по slug, если нет бренда
     if not brand:
-        brand = Brand.query.filter_by(name=brand_name).first()
+        slug = brand_name_normalized.replace(" ", "-")
+        brand = Brand.query.filter_by(slug=slug).first()
 
     if not brand:
         brand = Brand(name=brand_name, slug=brand_name.lower().replace(" ", "-"))

@@ -7,15 +7,16 @@ from flask_admin.actions import action
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.form.upload import FileUploadField
 from flask_admin.helpers import get_url
+from flask_admin.model.form import InlineFormAdmin
 from flask_login import current_user
 from markupsafe import Markup
 from sqlalchemy.orm.attributes import flag_modified
 from werkzeug.security import generate_password_hash
 from wtforms import PasswordField
+from wtforms.fields import HiddenField
 from wtforms.fields.simple import FileField, MultipleFileField
 from wtforms.widgets.core import HiddenInput
 from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
-from flask_admin.model.form import InlineFormAdmin
 
 from backend.models import Role, User, CarImage, BrandSynonym, Currency
 from backend.models import db, Car, Category, Brand, CarType, Country
@@ -476,14 +477,19 @@ class CountryAdmin(SecureModelView):
     # Не показываем ID
     form_excluded_columns = ['id']
 
+
 class BrandSynonymInlineModel(InlineFormAdmin):
-    form_columns = ['name']  # Только необходимые поля
+    form_columns = ['id', 'name']
+
+    def postprocess_form(self, form_class):
+        form_class.id = HiddenField()
+        return form_class
+
 
 class BrandAdmin(SecureModelView):
     column_list = ['logo_preview', 'name', 'slug', 'country']
     column_labels = {'logo_preview': 'Логотип'}
     inline_models = [BrandSynonymInlineModel(BrandSynonym)]
-
 
     form_columns = ['name', 'slug', 'logo', 'country']
     column_searchable_list = ['name', 'slug']
