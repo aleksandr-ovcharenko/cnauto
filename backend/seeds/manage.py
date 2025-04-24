@@ -1,6 +1,10 @@
-from flask_migrate import upgrade
+import os
+import sys
 
-from backend.app  import app
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
+from flask_migrate import upgrade
+from backend.app import app
 from backend.seeds.seed_users import seed_users
 from backend.seeds.seed_currencies import seed_currencies
 from backend.seeds.seed_countries import seed_countries
