@@ -55,18 +55,18 @@ else:
 
 logger.info(f"📦 DB URI: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
 
-# Add a Flask handler to log all requests
+# Add a Flask handler to log all requests - with reduced verbosity
 @app.before_request
 def log_request_info():
+    # Only log the request path and method, not the headers or body to avoid sensitive data
     logger = logging.getLogger('flask.request')
-    logger.debug('Headers: %s', request.headers)
-    logger.debug('Body: %s', request.get_data())
+    logger.info(f"Request: {request.method} {request.path}")
 
-# Add a handler to log all responses
+# Add a handler to log all responses - with reduced verbosity
 @app.after_request
 def log_response_info(response):
     logger = logging.getLogger('flask.response')
-    logger.debug('Response: %s', response.status)
+    logger.info(f"Response: {response.status}")
     return response
 
 # Init extensions
@@ -78,6 +78,31 @@ admin_app = init_admin(app)
 # Set up Cloudinary deletion event listeners
 with app.app_context():
     setup_deletion_events()
+
+# Add a verification point to ensure logs are being captured
+log_capture_test_interval = 60  # seconds
+@app.before_first_request
+def before_first_request():
+    """Run once before the first request to verify logging is working"""
+    logger = logging.getLogger("runtime_verification")
+    logger.info("🔄 First request received - verifying logging is still working")
+
+    # Set up a background thread to periodically verify logging is still working
+    def periodic_log_check():
+        import time
+        import threading
+        
+        def log_check_thread():
+            count = 0
+            while True:
+                logger.info(f"⏱️ Periodic log check #{count} - logging is still active")
+                count += 1
+                time.sleep(log_capture_test_interval)
+                
+        t = threading.Thread(target=log_check_thread, daemon=True)
+        t.start()
+        
+    periodic_log_check()
 
 login_manager = LoginManager()
 login_manager.init_app(app)

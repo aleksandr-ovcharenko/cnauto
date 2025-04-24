@@ -17,6 +17,9 @@ def setup_file_logger():
     for handler in root_logger.handlers[:]:
         root_logger.removeHandler(handler)
     
+    # CRITICAL: Disable existing loggers to prevent them from using their own configuration
+    logging.Logger.manager.loggerDict.clear()
+    
     # Create a logs directory if it doesn't exist
     log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs')
     os.makedirs(log_dir, exist_ok=True)
@@ -43,21 +46,31 @@ def setup_file_logger():
     root_logger.addHandler(file_handler)
     root_logger.addHandler(console_handler)
     
-    # CRITICAL: Force propagation for ALL loggers to ensure logs reach the root logger
-    for name in logging.root.manager.loggerDict:
-        logger = logging.getLogger(name)
-        logger.setLevel(logging.DEBUG)  # Set level to DEBUG for all loggers
-        logger.propagate = True  # Ensure propagation is enabled
-
-    # Force debug logs to go to file even if other libraries try to disable it
-    logging.getLogger('werkzeug').propagate = True
-    logging.getLogger('werkzeug').setLevel(logging.DEBUG)
+    # IMPORTANT: Set appropriate log levels for different loggers
+    # Need to forcefully set these AFTER clearing the loggerDict
     
-    logging.getLogger('sqlalchemy').propagate = True
-    logging.getLogger('sqlalchemy').setLevel(logging.DEBUG)
+    # Database loggers - reduce verbosity to avoid sensitive data
+    # Set ALL SQLAlchemy loggers to ERROR level to silence them completely
+    logging.getLogger('sqlalchemy').setLevel(logging.ERROR)
+    logging.getLogger('sqlalchemy.engine').setLevel(logging.ERROR)
+    logging.getLogger('sqlalchemy.pool').setLevel(logging.ERROR)
+    logging.getLogger('sqlalchemy.orm').setLevel(logging.ERROR)
+    logging.getLogger('sqlalchemy.dialects').setLevel(logging.ERROR)
     
-    logging.getLogger('flask').propagate = True
-    logging.getLogger('flask').setLevel(logging.DEBUG)
+    # Web server and framework logs - keep at INFO level
+    logging.getLogger('werkzeug').setLevel(logging.INFO)
+    logging.getLogger('flask').setLevel(logging.INFO)
+    logging.getLogger('flask.app').setLevel(logging.INFO)
+    logging.getLogger('flask.request').setLevel(logging.INFO)  # Don't log request bodies
+    
+    # Our application logs - keep at DEBUG level
+    logging.getLogger('backend').setLevel(logging.DEBUG)
+    
+    # Add a message to confirm setup
+    root_logger.info(f"✅ Logging initialized: All logs will be saved to {log_file}")
+    
+    # Testing flag to verify logging configuration
+    os.environ["LOGGING_INITIALIZED"] = "1"
     
     # Log some system information to help with debugging
     platform_info = {
@@ -69,7 +82,6 @@ def setup_file_logger():
         'cwd': os.getcwd(),
         'env': {k: v for k, v in os.environ.items() if not k.startswith('_')}
     }
-    root_logger.info(f"✅ Logging initialized: All logs will be saved to {log_file}")
     root_logger.debug(f"🔧 Platform info: {platform_info}")
     
     # Test logging for each configured logger to verify propagation

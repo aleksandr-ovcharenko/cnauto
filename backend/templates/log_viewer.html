@@ -16,9 +16,11 @@
             border-radius: 4px;
             white-space: pre-wrap;
             word-wrap: break-word;
+            font-size: 12px;  
+            line-height: 1.2; 
         }
         .log-line {
-            padding: 2px 0;
+            padding: 1px 0;  
             border-bottom: 1px solid #333;
         }
         .log-line:hover {
@@ -30,7 +32,7 @@
         .log-error { color: #F14C4C; }
         .log-critical { color: #FF3333; font-weight: bold; }
         .highlight { background-color: #6B5B00; }
-        .timestamp { color: #9CDCFE; }
+        .timestamp { color: #9CDCFE; font-size: 11px; } 
         .module { color: #CE9178; }
         .level { font-weight: bold; }
         #log-controls {
@@ -41,6 +43,10 @@
             margin-bottom: 10px;
             z-index: 100;
         }
+        /* Compact mode toggle */
+        .compact-mode .timestamp { display: none; }
+        .compact-mode .module { display: none; }
+        .compact-mode .log-line { padding: 0; line-height: 1.1; }
     </style>
 </head>
 <body>
@@ -85,6 +91,12 @@
                             Auto-refresh (5s)
                         </label>
                     </div>
+                    <div class="form-check ms-3 d-inline-block">
+                        <input class="form-check-input" type="checkbox" id="compact-mode" value="1">
+                        <label class="form-check-label" for="compact-mode">
+                            Ultra-compact mode
+                        </label>
+                    </div>
                 </div>
                 <div class="col-md-4 text-end">
                     <a href="/admin/logs/raw?file={{ current_log }}" target="_blank" class="btn btn-sm btn-outline-secondary">
@@ -117,10 +129,20 @@
             const searchButton = document.getElementById('search-button');
             const logFileSelect = document.getElementById('log-file-select');
             const autoRefreshCheckbox = document.getElementById('auto-refresh');
+            const compactModeCheckbox = document.getElementById('compact-mode');
             let autoRefreshInterval;
             
             // Scroll to bottom of logs initially
             logContent.scrollTop = logContent.scrollHeight;
+            
+            // Compact mode toggle
+            compactModeCheckbox.addEventListener('change', function() {
+                if(this.checked) {
+                    logContent.classList.add('compact-mode');
+                } else {
+                    logContent.classList.remove('compact-mode');
+                }
+            });
             
             // Search functionality
             function performSearch() {
