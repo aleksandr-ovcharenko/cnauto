@@ -206,18 +206,17 @@ if __name__ == '__main__':
     with app.app_context():
         print("🔗 login url:", url_for(login_admin))
 
-        if os.getenv(flask_env) != production:  # или своя переменная: os.getenv("RUN_SEEDS") == "1"
-            try:
-                from alembic.config import Config
-                from alembic import command
-                from backend.seeds.seed_brand_synonyms import seed_brand_synonyms
+        try:
+            from alembic.config import Config
+            from alembic import command
+            from backend.seeds.seed_brand_synonyms import seed_brand_synonyms
 
-                alembic_cfg = Config(os.path.join(os.path.dirname(__file__), '..', 'alembic.ini'))
-                command.upgrade(alembic_cfg, 'head')
-                print("✅ Миграции применены")
-                seed_brand_synonyms()
-                print("🌱 Синонимы загружены")
-            except Exception as e:
-                print("⚠️ Ошибка при миграции или сидинге:", e)
+            alembic_cfg = Config(os.path.join(os.path.dirname(__file__), '..', 'alembic.ini'))
+            command.upgrade(alembic_cfg, 'head')
+            print("✅ Миграции применены")
+            seed_brand_synonyms()
+            print("🌱 Синонимы загружены")
+        except Exception as e:
+            print("⚠️ Ошибка при миграции или сидинге:", e)
 
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
