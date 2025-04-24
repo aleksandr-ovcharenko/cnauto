@@ -22,6 +22,7 @@ from backend.models import db
 from backend.utils.file_logger import setup_file_logger
 from backend.utils.log_viewer import get_log_files, get_log_content
 from backend.utils.telegram_import import import_car as import_car_handler
+from backend.events import setup_deletion_events
 
 # .env
 load_dotenv()
@@ -74,12 +75,15 @@ print("📦 DB URI:", app.config.get("SQLALCHEMY_DATABASE_URI"))
 db.init_app(app)
 app.config['MIGRATIONS_DIR'] = os.path.join(os.path.dirname(__file__), '../migrations')
 migrate = Migrate(app, db)
-init_admin(app)
+admin_app = init_admin(app)
 
-# Flask-Login
+# Set up Cloudinary deletion event listeners
+with app.app_context():
+    setup_deletion_events()
+
 login_manager = LoginManager()
-login_manager.login_view = 'admin_login'
 login_manager.init_app(app)
+login_manager.login_view = 'admin_login'
 
 
 @login_manager.user_loader
