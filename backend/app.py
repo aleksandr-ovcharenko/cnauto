@@ -25,10 +25,8 @@ load_dotenv()
 
 # Flask app
 app = Flask(__name__)
-flask_env = "FLASK_ENV"
-env = os.getenv(flask_env, "development")
-production = "production"
-if env == production:
+env = os.getenv("FLASK_ENV", "development")
+if env == "production":
     app.config.from_object(ProdConfig)
     print("✅ ProdConfig загружен")
 else:
@@ -45,8 +43,7 @@ init_admin(app)
 
 # Flask-Login
 login_manager = LoginManager()
-login_admin = 'admin_login'
-login_manager.login_view = login_admin
+login_manager.login_view = 'admin_login'
 login_manager.init_app(app)
 
 
@@ -78,7 +75,7 @@ def admin_login():
 def admin_logout():
     logout_user()
     flash('Вы вышли из системы', 'info')
-    return redirect(url_for(login_admin))
+    return redirect(url_for('admin_login'))
 
 
 @app.route('/')
