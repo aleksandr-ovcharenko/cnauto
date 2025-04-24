@@ -81,28 +81,28 @@ with app.app_context():
 
 # Add a verification point to ensure logs are being captured
 log_capture_test_interval = 60  # seconds
-@app.before_first_request
-def before_first_request():
-    """Run once before the first request to verify logging is working"""
-    logger = logging.getLogger("runtime_verification")
-    logger.info("🔄 First request received - verifying logging is still working")
 
-    # Set up a background thread to periodically verify logging is still working
-    def periodic_log_check():
-        import time
-        import threading
-        
-        def log_check_thread():
-            count = 0
-            while True:
-                logger.info(f"⏱️ Periodic log check #{count} - logging is still active")
-                count += 1
-                time.sleep(log_capture_test_interval)
-                
-        t = threading.Thread(target=log_check_thread, daemon=True)
-        t.start()
-        
-    periodic_log_check()
+# Use Flask 2.0+ compatible approach for first request handling
+def start_periodic_logging():
+    """Start a background thread to periodically log verification messages"""
+    import time
+    import threading
+    
+    logger = logging.getLogger("runtime_verification")
+    logger.info("🔄 Application started - verifying logging is working")
+    
+    def log_check_thread():
+        count = 0
+        while True:
+            logger.info(f"⏱️ Periodic log check #{count} - logging is still active")
+            count += 1
+            time.sleep(log_capture_test_interval)
+    
+    t = threading.Thread(target=log_check_thread, daemon=True)
+    t.start()
+
+# Start the periodic logging immediately
+start_periodic_logging()
 
 login_manager = LoginManager()
 login_manager.init_app(app)

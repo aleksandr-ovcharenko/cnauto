@@ -79,8 +79,7 @@ def setup_file_logger():
         'version': platform.version(),
         'python': platform.python_version(),
         'path': sys.path,
-        'cwd': os.getcwd(),
-        'env': {k: v for k, v in os.environ.items() if not k.startswith('_')}
+        'cwd': os.getcwd()
     }
     root_logger.debug(f"🔧 Platform info: {platform_info}")
     
