@@ -359,75 +359,80 @@ class CarAdmin(SecureModelView):
 
     @expose('/generate_from_gallery/<int:id>', methods=['POST'])
     def generate_from_gallery(self, id):
-        from utils.telegram_import import generate_image
-        import os
-        
-        # Get centralized logger
+        """Generate a new image from a gallery image using AI."""
+        import logging
         from utils.file_logger import get_module_logger
+        from models import ImageTask
         logger = get_module_logger(__name__)
         
-        logger.info(f"🚀 AI Image generation requested for CarImage ID={id}")
+        # Get the gallery image by ID
+        image = CarImage.query.get_or_404(id)
+        car = image.car
+        logger.info(f"🔍 Starting AI image generation for car ID={car.id} from image ID={id}")
         
-        # Check for API token first
-        if not os.getenv("REPLICATE_API_TOKEN"):
-            flash(f"❌ Отсутствует REPLICATE_API_TOKEN. Генерация невозможна.", "error")
-            logger.error(f"❌ Missing REPLICATE_API_TOKEN for AI generation. Generation aborted.")
-            return redirect(url_for('.edit_view', id=id))
-        
-        # Get the image that was clicked
-        try:
-            image = CarImage.query.get_or_404(id)
-            car = image.car
-            logger.info(f"📷 Found image ID={id} for car ID={car.id}, model={car.model}")
-        except Exception as e:
-            logger.error(f"❌ Failed to retrieve CarImage with ID={id}: {e}")
-            flash(f"❌ Не удалось найти изображение с ID={id}", "error")
-            return redirect(url_for('.index_view'))
-        
-        # Rest of the method remains the same
-        prompt = (
-            "Professional car studio shot, ultra-clean pure white background, only the car visible with ample empty space around it. "
-            f"Car: {car.model}-{car.brand.name}, perfectly isolated with at least 2 meters of empty space on all sides, no other objects or cars visible. "
-            "License plate must clearly and legibly display 'cncars.ru' in proper format. "
-            "Car positioned diagonally in frame: front facing 30 degrees left, rear facing 30 degrees right, with slight perspective as if viewed from eye level. "
-            "The car should be positioned not too close - about 5-7 meters from the virtual camera, showing full body with space around. "
-            "Crisp, ultra-sharp details, 8K quality render, professional three-point studio lighting with soft shadows. "
-            "Absolutely no background elements, no reflections of surroundings, no stray shadows - only clean, pure white backdrop. "
-            "The car should appear as a flawless 3D model with perfect proportions, slightly matte surface to avoid glare. "
-            "Add subtle ambient occlusion shadows under the car for natural grounding effect."
+        # Create a new ImageTask record
+        image_task = ImageTask(
+            car_id=car.id,
+            source='gallery_ai',
+            status='processing',
+            source_image_id=image.id,
+            source_url=image.url
         )
-
-
-        logger.info(f"🎨 Generating AI image from gallery image ID={id} for car {car.model}")
-        logger.info(f"🔗 Source image URL: {image.url}")
-        logger.info(f"📝 Using prompt: {prompt[:100]}...")
-
+        db.session.add(image_task)
+        db.session.commit()
+        logger.info(f"📝 Created ImageTask record #{image_task.id} for car ID={car.id}")
+        
         try:
-            # Add additional feedback for the user
-            logger.info(f"⏳ Starting AI generation with mode=photon for car ID={car.id}")
-            flash(f"⏳ Генерация AI изображения для {car.model} запущена. Это может занять 1-2 минуты...", "info")
+            # Get the prompt from the image or car information
+            prompt_hint = f"{car.brand.name if car.brand else ''} {car.model}"
+            logger.info(f"🔤 Using prompt hint: '{prompt_hint}'")
             
-            # Use the specific image that was clicked, not the first gallery image
-            logger.info(f"📤 Sending request to generate_image function with car_model={car.model}")
-            new_image = generate_image(mode="photon", prompt=prompt, image_url=image.url,
-                                       car_model=car.model, car_brand=car.brand, car_id=car.id)
+            # Call the image generation function
+            from utils.generator_photon import generate_with_photon
+            logger.info(f"🚀 Calling Photon generator with image URL: {image.url}")
             
-            logger.info(f"🔄 AI generation response received: URL={'Success (URL received)' if new_image else 'Failed (None returned)'}")
+            # Image lookup and generation process
+            new_image_url = generate_with_photon(
+                image_url=image.url,
+                prompt_hint=prompt_hint,
+                car_id=car.id
+            )
             
-            if new_image:
-                logger.info(f"💾 Setting new image URL as main image for car ID={car.id}")
-                car.image_url = new_image
-                logger.info(f"💾 Committing changes to database")
+            # Update the task with the status
+            if new_image_url:
+                logger.info(f"✅ Successfully generated image, URL: {new_image_url}")
+                
+                # Create a new gallery image with the generated image
+                new_image = CarImage(
+                    car_id=car.id,
+                    url=new_image_url,
+                    position=(len(car.gallery_images) if car.gallery_images else 0)
+                )
+                db.session.add(new_image)
+                db.session.flush()  # Get the new ID without committing
+                
+                # Update the task with the result
+                image_task.status = 'completed'
+                image_task.result_image_id = new_image.id
+                image_task.result_url = new_image_url
                 db.session.commit()
                 logger.info(f"✅ Database commit successful, image updated for car ID={car.id}")
                 flash(f"✅ Изображение успешно обновлено для {car.model}!", "success")
                 logger.info(f"✅ AI image generation workflow completed successfully for car {car.id} from image {id}")
             else:
                 # More detailed error message when generation fails but doesn't raise an exception
+                image_task.status = 'failed'
+                image_task.error = "AI generation returned None but no exception was raised"
+                db.session.commit()
                 logger.warning(f"⚠️ AI generation returned None but no exception was raised. Car ID={car.id}, Image ID={id}")
                 flash(f"❌ Не удалось сгенерировать изображение для {car.model}. Проверьте логи для деталей.", "error")
                 logger.warning(f"⚠️ AI image generation failed for car {car.id} - no image returned")
         except Exception as e:
+            # Update the task with the error
+            image_task.status = 'failed'
+            image_task.error = str(e)
+            db.session.commit()
+            
             logger.error(f"❌ AI generation exception: {str(e)}")
             logger.error(f"❌ Exception details:", exc_info=True)
             flash(f"❌ Ошибка при генерации изображения: {e}", "error")

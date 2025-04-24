@@ -173,3 +173,60 @@ class Currency(db.Model):
 
     def __str__(self):
         return f"{self.code} ({self.symbol}, {self.locale})" if self.locale else f"{self.code} ({self.symbol})"
+
+
+class ImageTask(db.Model):
+    """Model to track history of image generation and upload tasks"""
+    __tablename__ = 'image_tasks'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    car_id = db.Column(db.Integer, db.ForeignKey('cars.id'), nullable=True)
+    car = db.relationship('Car', backref='image_tasks')
+    
+    # Source can be: 'gallery_ai', 'upload', 'telegram', etc.
+    source = db.Column(db.String(50), nullable=False)
+    
+    # Status: 'pending', 'processing', 'completed', 'failed'
+    status = db.Column(db.String(20), default='pending')
+    
+    # Original image if AI generation
+    source_image_id = db.Column(db.Integer, db.ForeignKey('car_images.id'), nullable=True)
+    source_image = db.relationship('CarImage', foreign_keys=[source_image_id])
+    
+    # Result image (if any)
+    result_image_id = db.Column(db.Integer, db.ForeignKey('car_images.id'), nullable=True)
+    result_image = db.relationship('CarImage', foreign_keys=[result_image_id])
+    
+    # Store any prompt used for generation
+    prompt = db.Column(db.Text, nullable=True)
+    
+    # Error message if failed
+    error = db.Column(db.Text, nullable=True)
+    
+    # URLs for source and result
+    source_url = db.Column(db.String(512), nullable=True)
+    result_url = db.Column(db.String(512), nullable=True)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __str__(self):
+        return f"ImageTask #{self.id} ({self.source}) - {self.status}"
+    
+    def to_dict(self):
+        """Convert task to dictionary for API responses"""
+        return {
+            'id': self.id,
+            'car_id': self.car_id,
+            'car_model': self.car.model if self.car else None,
+            'source': self.source,
+            'status': self.status,
+            'source_image_id': self.source_image_id,
+            'result_image_id': self.result_image_id,
+            'prompt': self.prompt,
+            'error': self.error,
+            'source_url': self.source_url,
+            'result_url': self.result_url,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }

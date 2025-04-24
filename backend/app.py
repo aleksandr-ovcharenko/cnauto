@@ -27,12 +27,13 @@ from flask import Response
 from admin import init_admin
 from config_dev import DevConfig
 from config_prod import ProdConfig
-from models import Car, Category, Brand, Country, CarType, User, db
-from utils.file_logger import setup_file_logger, add_test_logs
+from models import Car, Category, Brand, Country, CarType, User, db, ImageTask
+from utils.file_logger import setup_file_logger, add_test_logs, get_module_logger
 from utils.log_viewer import get_log_files, get_log_content
 from utils.telegram_import import import_car as import_car_handler
 from events import setup_deletion_events
 from utils.image_queue import start_image_processor, get_car_tasks, task_status, get_task_status
+from app_decorators import admin_required
 
 # .env
 load_dotenv()
@@ -575,6 +576,69 @@ def get_image_task(task_id):
         return jsonify({'error': 'Task not found'}), 404
         
     return jsonify(task)
+
+
+@api.route('/image-tasks', methods=['GET'])
+@login_required
+@admin_required
+def image_tasks_api():
+    """
+    API endpoint to get image task history
+    
+    Query parameters:
+    - status: Filter by status (pending, processing, completed, failed)
+    - source: Filter by source (gallery_ai, upload, telegram)
+    - car_id: Filter by car ID
+    - limit: Limit number of results (default 50)
+    - offset: Offset for pagination
+    """
+    try:
+        # Get query parameters
+        status = request.args.get('status')
+        source = request.args.get('source')
+        car_id = request.args.get('car_id')
+        limit = int(request.args.get('limit', 50))
+        offset = int(request.args.get('offset', 0))
+        
+        # Build query
+        query = ImageTask.query
+        
+        # Apply filters if provided
+        if status:
+            query = query.filter(ImageTask.status == status)
+        if source:
+            query = query.filter(ImageTask.source == source)
+        if car_id:
+            query = query.filter(ImageTask.car_id == car_id)
+        
+        # Order by newest first
+        query = query.order_by(ImageTask.created_at.desc())
+        
+        # Apply pagination
+        total = query.count()
+        tasks = query.limit(limit).offset(offset).all()
+        
+        # Convert to dictionaries
+        task_dicts = [task.to_dict() for task in tasks]
+        
+        # Return as JSON
+        return jsonify({
+            'total': total,
+            'limit': limit,
+            'offset': offset,
+            'tasks': task_dicts
+        })
+    except Exception as e:
+        logger.error(f"Error in image tasks API: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/admin/image-tasks', methods=['GET'])
+@login_required
+@admin_required
+def image_tasks_view():
+    """Web interface for viewing image task history"""
+    return render_template('image_tasks.html')
 
 
 app.register_blueprint(api, url_prefix='/api')

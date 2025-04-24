@@ -1,0 +1,318 @@
+{% extends 'admin/master.html' %}
+
+{% block head_css %}
+{{ super() }}
+<style>
+    body {
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .task-card {
+        margin-bottom: 20px;
+        border-radius: 6px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .task-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 15px;
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+    }
+    .task-pending .card-header { background-color: #f8f9fa; }
+    .task-processing .card-header { background-color: #cff4fc; }
+    .task-completed .card-header { background-color: #d1e7dd; }
+    .task-failed .card-header { background-color: #f8d7da; }
+    
+    .card-body {
+        padding: 15px;
+    }
+    .task-images {
+        display: flex;
+        margin-top: 10px;
+    }
+    .image-container {
+        position: relative;
+        width: 200px;
+        height: 150px;
+        margin-right: 15px;
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
+    .image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .image-label {
+        position: absolute;
+        top: 5px;
+        left: 5px;
+        background-color: rgba(0, 0, 0, 0.6);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 12px;
+    }
+    .badge {
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-weight: 500;
+        font-size: 12px;
+    }
+    .badge-pending { background-color: #e9ecef; color: #495057; }
+    .badge-processing { background-color: #0dcaf0; color: #055160; }
+    .badge-completed { background-color: #198754; color: white; }
+    .badge-failed { background-color: #dc3545; color: white; }
+    
+    .task-details {
+        margin-top: 10px;
+        font-size: 14px;
+    }
+    .task-details dl {
+        display: grid;
+        grid-template-columns: 130px 1fr;
+        gap: 8px;
+        margin: 0;
+    }
+    .task-details dt {
+        font-weight: 600;
+        color: #6c757d;
+    }
+    .filter-bar {
+        background-color: #f8f9fa;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    .loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 200px;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <h2>Задачи генерации изображений</h2>
+    <p class="text-muted mb-4">История всех задач генерации и загрузки изображений</p>
+
+    <div class="filter-bar">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-secondary" data-status="all">Все</button>
+                    <button type="button" class="btn btn-outline-secondary" data-status="pending">Ожидающие</button>
+                    <button type="button" class="btn btn-outline-secondary" data-status="processing">В процессе</button>
+                    <button type="button" class="btn btn-outline-secondary" data-status="completed">Завершенные</button>
+                    <button type="button" class="btn btn-outline-secondary" data-status="failed">Неудачные</button>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="car-id-filter" placeholder="ID автомобиля">
+                    <button class="btn btn-outline-secondary" type="button" id="apply-car-filter">Применить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="loading">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Загрузка...</span>
+        </div>
+    </div>
+    
+    <div id="tasks-container" class="row" style="display: none;">
+        <!-- Tasks will be loaded here -->
+    </div>
+    
+    <div class="text-center mt-4 mb-5">
+        <button id="load-more" class="btn btn-outline-primary" style="display: none;">Загрузить еще</button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let currentStatus = null;
+        let currentCarId = null;
+        let currentOffset = 0;
+        const limit = 20;
+        
+        // Initial load
+        loadTasks();
+        
+        // Status filter buttons
+        document.querySelectorAll('.btn-group button').forEach(button => {
+            button.addEventListener('click', function() {
+                // Update active button
+                document.querySelectorAll('.btn-group button').forEach(b => 
+                    b.classList.remove('active', 'btn-primary', 'text-white'));
+                this.classList.add('active', 'btn-primary', 'text-white');
+                
+                // Reset and reload with new status
+                currentStatus = this.dataset.status === 'all' ? null : this.dataset.status;
+                currentOffset = 0;
+                loadTasks(true);
+            });
+        });
+        
+        // Car ID filter
+        document.getElementById('apply-car-filter').addEventListener('click', function() {
+            const carIdInput = document.getElementById('car-id-filter');
+            currentCarId = carIdInput.value.trim() === '' ? null : carIdInput.value.trim();
+            currentOffset = 0;
+            loadTasks(true);
+        });
+        
+        // Load more button
+        document.getElementById('load-more').addEventListener('click', function() {
+            currentOffset += limit;
+            loadTasks(false);
+        });
+        
+        function loadTasks(reset = false) {
+            // Show loading, hide tasks and load more button
+            document.querySelector('.loading').style.display = 'flex';
+            if (reset) {
+                document.getElementById('tasks-container').style.display = 'none';
+                document.getElementById('load-more').style.display = 'none';
+            }
+            
+            // Build query params
+            const params = new URLSearchParams();
+            params.append('limit', limit);
+            params.append('offset', currentOffset);
+            if (currentStatus) params.append('status', currentStatus);
+            if (currentCarId) params.append('car_id', currentCarId);
+            
+            // Fetch tasks
+            fetch(`/api/image-tasks?${params.toString()}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Hide loading
+                    document.querySelector('.loading').style.display = 'none';
+                    
+                    // Show tasks container
+                    const container = document.getElementById('tasks-container');
+                    container.style.display = 'flex';
+                    
+                    // Reset container if needed
+                    if (reset) {
+                        container.innerHTML = '';
+                    }
+                    
+                    // Add tasks to container
+                    data.tasks.forEach(task => {
+                        container.appendChild(createTaskCard(task));
+                    });
+                    
+                    // Show/hide load more button
+                    const loadMoreBtn = document.getElementById('load-more');
+                    if (currentOffset + limit < data.total) {
+                        loadMoreBtn.style.display = 'inline-block';
+                    } else {
+                        loadMoreBtn.style.display = 'none';
+                    }
+                    
+                    // Show message if no tasks
+                    if (data.tasks.length === 0 && currentOffset === 0) {
+                        container.innerHTML = '<div class="col-12 text-center py-5"><p>Задачи не найдены</p></div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading tasks:', error);
+                    document.querySelector('.loading').style.display = 'none';
+                    alert('Ошибка при загрузке задач');
+                });
+        }
+        
+        function createTaskCard(task) {
+            const col = document.createElement('div');
+            col.className = 'col-md-6 col-lg-6';
+            
+            const statusClass = `task-${task.status}`;
+            const statusText = {
+                'pending': 'Ожидание',
+                'processing': 'В процессе',
+                'completed': 'Завершено',
+                'failed': 'Ошибка'
+            }[task.status];
+            
+            const statusBadge = `badge-${task.status}`;
+            
+            // Format date
+            const createdDate = new Date(task.created_at);
+            const formattedDate = createdDate.toLocaleString('ru-RU');
+            
+            // Create HTML
+            col.innerHTML = `
+                <div class="card task-card ${statusClass}">
+                    <div class="card-header">
+                        <div>
+                            <span class="badge ${statusBadge}">${statusText}</span>
+                            <span class="ms-2">${task.source === 'gallery_ai' ? 'AI генерация' : task.source}</span>
+                        </div>
+                        <small>${formattedDate}</small>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            ${task.car_model ? task.car_model : 'Автомобиль #' + task.car_id}
+                            ${task.car_id ? `<a href="/admin/car/edit/?id=${task.car_id}" class="btn btn-sm btn-outline-secondary ms-2">Открыть</a>` : ''}
+                        </h5>
+                        
+                        ${task.source_url || task.result_url ? `
+                        <div class="task-images">
+                            ${task.source_url ? `
+                            <div class="image-container">
+                                <span class="image-label">Исходное</span>
+                                <img src="${task.source_url}" alt="Исходное изображение">
+                            </div>` : ''}
+                            
+                            ${task.result_url ? `
+                            <div class="image-container">
+                                <span class="image-label">Результат</span>
+                                <img src="${task.result_url}" alt="Результат">
+                            </div>` : ''}
+                        </div>` : ''}
+                        
+                        <div class="task-details">
+                            <dl>
+                                <dt>ID задачи:</dt>
+                                <dd>${task.id}</dd>
+                                
+                                ${task.source_image_id ? `
+                                <dt>ID исходного:</dt>
+                                <dd>${task.source_image_id}</dd>` : ''}
+                                
+                                ${task.result_image_id ? `
+                                <dt>ID результата:</dt>
+                                <dd>${task.result_image_id}</dd>` : ''}
+                                
+                                ${task.prompt ? `
+                                <dt>Промпт:</dt>
+                                <dd>${task.prompt}</dd>` : ''}
+                                
+                                ${task.error ? `
+                                <dt>Ошибка:</dt>
+                                <dd class="text-danger">${task.error}</dd>` : ''}
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return col;
+        }
+    });
+</script>
+{% endblock %}
