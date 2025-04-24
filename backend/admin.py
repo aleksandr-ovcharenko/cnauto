@@ -486,8 +486,9 @@ class BrandAdmin(SecureModelView):
     column_list = ['logo_preview', 'name', 'slug', 'country']
     column_labels = {'logo_preview': 'Логотип'}
     
-    # Temporarily disable inline models to isolate the issue
-    inline_models = None
+    # Fixed implementation of inline_models that avoids the tuple error
+    # Each item must be a proper model class or a dict with configuration
+    inline_models = [BrandSynonym]  # This is a list with one class, not a tuple
     
     form_columns = ['name', 'slug', 'logo', 'country']
     column_searchable_list = ['name', 'slug']
@@ -510,7 +511,7 @@ class BrandAdmin(SecureModelView):
             'Логотип',
             base_path=os.path.join(os.path.dirname(__file__), 'static', 'images', 'brands'),
             allowed_extensions=['jpg', 'jpeg', 'png', 'webp']
-        ),
+        )
     }
 
     form_overrides = {
