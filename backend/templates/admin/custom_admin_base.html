@@ -29,4 +29,21 @@
 {% block tail %}
 {{ super() }}
 <script src="{{ url_for('static', filename='admin-scripts.js') }}"></script>
+<script>
+    // Add target="_blank" to specific admin tools
+    document.addEventListener('DOMContentLoaded', function() {
+        // Target specific menu items by their text content
+        const menuItems = document.querySelectorAll('.nav-item');
+        menuItems.forEach(item => {
+            const link = item.querySelector('a');
+            if (link && (
+                link.textContent.includes('Логи') || 
+                link.textContent.includes('API Документация')
+            )) {
+                link.setAttribute('target', '_blank');
+                console.log('Set target="_blank" for:', link.textContent.trim());
+            }
+        });
+    });
+</script>
 {% endblock %}
