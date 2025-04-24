@@ -1,4 +1,5 @@
 import os
+import logging
 
 from dotenv import load_dotenv
 from flask import Blueprint
@@ -22,6 +23,22 @@ from backend.utils.telegram_import import import_car as import_car_handler
 
 # .env
 load_dotenv()
+
+# Configure logging for the entire application
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()  # Output to console
+    ]
+)
+
+# Get the root logger
+logger = logging.getLogger()
+
+# Reduce verbosity of some loggers
+logging.getLogger('werkzeug').setLevel(logging.INFO)
+logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
 
 # Flask app
 app = Flask(__name__)
