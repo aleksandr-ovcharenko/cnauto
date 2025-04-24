@@ -3,32 +3,44 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 import logging
+from flask import current_app
 from utils.file_logger import get_module_logger
 
 # Use the centralized logger
 logger = get_module_logger(__name__)
 
 def upload_image(file, car_id=None, car_name=None, is_main=False, index=None):
-    base_folder = current_app.config.get("CLOUDINARY_FOLDER", "cn-auto/misc")
-    base_name = f"{car_name or 'car'}_{'main' if is_main else f'gallery_{index}'}".lower().replace(" ", "_")
-    # Путь: <окружение>/cars/<id>/
-    car_folder = f"{base_folder}/cars/{car_id or 'unknown'} - {car_name or 'unknown'}"
-    logger.info(f"📂 Загрузка в Cloudinary → Папка: {car_folder} | Файл: {base_name}")
-
     try:
-        result = cloudinary.uploader.upload(
-            file,
-            folder=car_folder,  # создаёт физическую папку
-            public_id=base_name,  # только имя файла
-            overwrite=True,
-            resource_type="image",
-            use_filename=False,
-            unique_filename=False
-        )
-        logger.info(f"✅ Uploaded to Cloudinary: {result['secure_url']}")
-        return result['secure_url']
+        # Get base folder from app config or use default
+        try:
+            base_folder = current_app.config.get("CLOUDINARY_FOLDER", "cn-auto/misc")
+        except RuntimeError:
+            # Fallback if no application context is available
+            logger.warning("⚠️ No Flask application context - using default Cloudinary folder")
+            base_folder = "cn-auto/misc"
+            
+        base_name = f"{car_name or 'car'}_{'main' if is_main else f'gallery_{index}'}".lower().replace(" ", "_")
+        # Путь: <окружение>/cars/<id>/
+        car_folder = f"{base_folder}/cars/{car_id or 'unknown'} - {car_name or 'unknown'}"
+        logger.info(f"📂 Загрузка в Cloudinary → Папка: {car_folder} | Файл: {base_name}")
+
+        try:
+            result = cloudinary.uploader.upload(
+                file,
+                folder=car_folder,  # создаёт физическую папку
+                public_id=base_name,  # только имя файла
+                overwrite=True,
+                resource_type="image",
+                use_filename=False,
+                unique_filename=False
+            )
+            logger.info(f"✅ Uploaded to Cloudinary: {result['secure_url']}")
+            return result['secure_url']
+        except Exception as e:
+            logger.error(f"❌ Upload failed: {e}")
+            return None
     except Exception as e:
-        logger.error(f"❌ Upload failed: {e}")
+        logger.error(f"❌ Unexpected error: {e}")
         return None
 
 
@@ -110,7 +122,13 @@ def delete_image(url=None, public_id=None, folder=None, car_id=None, car_name=No
             
         elif car_id and car_name:
             # Construct folder path and delete it
-            base_folder = current_app.config.get("CLOUDINARY_FOLDER", "cn-auto/misc")
+            try:
+                base_folder = current_app.config.get("CLOUDINARY_FOLDER", "cn-auto/misc")
+            except RuntimeError:
+                # Fallback if no application context is available
+                logger.warning("⚠️ No Flask application context - using default Cloudinary folder")
+                base_folder = "cn-auto/misc"
+                
             car_folder = f"{base_folder}/cars/{car_id} - {car_name}"
             logger.info(f"Deleting car folder from Cloudinary: {car_folder}")
             

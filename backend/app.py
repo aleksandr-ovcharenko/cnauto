@@ -186,14 +186,24 @@ def car_details(car_id):
 
 @app.template_filter('thumb_url')
 def thumb_url_filter(url, width=400):
+    """
+    Convert a Cloudinary URL to a thumbnail URL with specified width
+    Handles None values and invalid URLs gracefully
+    """
     try:
+        # Safely handle None values
+        if url is None:
+            logger.warning("⚠️ thumb_url_filter received None instead of a URL")
+            return ""
+            
         parts = url.split('/upload/')
         if len(parts) != 2:
+            # Not a standard Cloudinary URL or already transformed
             return url
         return f"{parts[0]}/upload/w_{width},c_limit/{parts[1]}"
     except Exception as e:
-        print(f"⚠️ Ошибка в thumb_url_filter: {e}")
-        return url
+        logger.error(f"⚠️ Ошибка в thumb_url_filter: {e}", exc_info=True)
+        return url or ""
 
 
 @app.template_filter('format_currency')
@@ -236,7 +246,7 @@ def format_currency_filter(price, currency_obj=None):
             formatted_price = f"{int(clean_price):,}".replace(',', ' ')
             return f"{formatted_price} {symbol}"
         except Exception as e:
-            print(f"Error formatting RUB price: {e}")
+            logger.error(f"Error formatting RUB price: {e}")
             # Fallback if any error occurs
             return f"{price} {symbol}"
 
@@ -571,7 +581,7 @@ app.register_blueprint(api, url_prefix='/api')
 
 if __name__ == '__main__':
     with app.app_context():
-        print("🔗 login url:", url_for('admin_login'))
+        logger.info("🔗 login url: %s", url_for('admin_login'))
 
     with app.app_context():
         try:
@@ -582,9 +592,9 @@ if __name__ == '__main__':
             # Путь к актуальному alembic.ini
             alembic_cfg = Config(os.path.join(os.path.dirname(__file__), '..', 'alembic.ini'))
             command.upgrade(alembic_cfg, 'head')
-            print("✅ Миграции применены")
+            logger.info("✅ Миграции применены")
 
         except Exception as e:
-            print("⚠️ Ошибка при миграции:", e)
+            logger.error("⚠️ Ошибка при миграции: %s", e)
 
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

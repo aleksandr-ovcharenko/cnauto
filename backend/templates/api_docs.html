@@ -267,7 +267,7 @@
         <div class="title-bar">
             <h1>CNAuto API Documentation</h1>
             <div>
-                <a href="{{ url_for('admin.index') }}" class="btn-tools"><i class="bi bi-arrow-left"></i> Back to Admin</a>
+                <a href="{{ url_for('admin.index') }}" class="btn-tools" target="_blank"><i class="bi bi-arrow-left"></i> Back to Admin</a>
             </div>
         </div>
     </div>
@@ -600,6 +600,11 @@ raw: (optional) Return raw log file content (1 or 0)</code></pre>
             
             // Add "Try It" buttons for GET endpoints
             document.querySelectorAll('.api-path a[href^="/"]').forEach((link) => {
+                // Ensure all links open in new tabs
+                if (!link.hasAttribute('target')) {
+                    link.setAttribute('target', '_blank');
+                }
+                
                 const title = link.closest('.api-item').querySelector('.api-title');
                 if (title && title.querySelector('.method-get')) {
                     const tryBtn = document.createElement('button');

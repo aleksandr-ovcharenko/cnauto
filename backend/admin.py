@@ -91,7 +91,6 @@ class UserAdmin(SecureModelView):
     }
 
     def on_model_change(self, form, model, is_created):
-        print(">> Сработал on_model_change", form.password.data)
         if form.password.data:
             model.password_hash = generate_password_hash(form.password.data, method='pbkdf2:sha256')
 
@@ -216,41 +215,42 @@ class CarAdmin(SecureModelView):
     }
 
     def on_model_change(self, form, model, is_created):
-        print(f"🧾 Обработка формы: {model.brand.name} {model.model} (ID: {model.id})")
+        logger = logging.getLogger(__name__)
+        logger.info(f"🧾 Обработка формы: {model.brand.name} {model.model} (ID: {model.id})")
         from utils.cloudinary_upload import upload_image
 
         # Главное изображение
         image_file = form.image_upload.data
         if image_file and image_file.filename:
-            print(f"📎 Загрузка главного изображения: {image_file.filename}")
+            logger.info(f"📎 Загрузка главного изображения: {image_file.filename}")
             uploaded_url = upload_image(image_file, car_id=model.id, car_name=model.model, is_main=True)
             if uploaded_url:
                 model.image_url = uploaded_url
-                print(f"✅ Главная картинка загружена: {uploaded_url}")
+                logger.info(f"✅ Главная картинка загружена: {uploaded_url}")
             else:
-                print("⚠️ Не удалось загрузить главное изображение")
+                logger.warning("⚠️ Не удалось загрузить главное изображение")
 
         # Галерея изображений — безопасная проверка
         if hasattr(form, 'images_upload') and form.images_upload.data:
             gallery_files = form.images_upload.data
-            print("📚 Обработка галереи")
+            logger.info("📚 Обработка галереи")
             saved_images = []
             for i, file in enumerate(gallery_files):
                 if file and file.filename:
-                    print(f"📷 Галерея {i + 1}: {file.filename}")
+                    logger.info(f"📷 Галерея {i + 1}: {file.filename}")
                     uploaded_url = upload_image(file, car_id=model.id, car_name=model.model, is_main=False, index=i + 1)
                     if uploaded_url:
                         saved_images.append(uploaded_url)
-                        print(f"✅ Загружено: {uploaded_url}")
+                        logger.info(f"✅ Загружено: {uploaded_url}")
                     else:
-                        print("⚠️ Не удалось загрузить:", file.filename)
+                        logger.warning(f"⚠️ Не удалось загрузить: {file.filename}")
 
             if saved_images:
                 if not isinstance(model.images, list):
                     model.images = []
                 model.images += saved_images
                 flag_modified(model, "images")  # 💡 без этого SQLAlchemy может не зафиксировать изменение
-                print(f"✅ Добавлено: {saved_images} к: {model.images}")
+                logger.info(f"✅ Добавлено: {saved_images} к: {model.images}")
 
     form_overrides = {
         'brand': QuerySelectField,
@@ -390,24 +390,28 @@ class CarAdmin(SecureModelView):
 
     @expose('/edit_gallery/<int:id>', methods=['POST'])
     def edit_gallery(self, id):
+        import logging
+        from utils.file_logger import get_module_logger
+        logger = get_module_logger(__name__)
         car = Car.query.get_or_404(id)
         ids_in_order = request.form.get('order', '').split(',')
         updated_ids = set()
 
         for img in car.gallery_images:
             str_id = str(img.id)
-        print(f"🔍 Обрабатываем img.id={str_id}")
-        print("📥 request.form:", dict(request.form))
+            logger.info(f"🔍 Обрабатываем img.id={str_id}")
+            logger.debug(f"📥 request.form: {dict(request.form)}")
 
-        if f"title_{str_id}" in request.form or f"alt_{str_id}" in request.form:
-            print("✅ Нашли в форме")
-            img.title = request.form.get(f"title_{str_id}")
-            img.alt = request.form.get(f"alt_{str_id}")
-            if str_id in ids_in_order:
-                img.position = ids_in_order.index(str_id)
-            updated_ids.add(str_id)
+            if f"title_{str_id}" in request.form or f"alt_{str_id}" in request.form:
+                logger.info(f"✅ Нашли в форме изображение {str_id}")
+                img.title = request.form.get(f"title_{str_id}")
+                img.alt = request.form.get(f"alt_{str_id}")
+                if str_id in ids_in_order:
+                    img.position = ids_in_order.index(str_id)
+                updated_ids.add(str_id)
 
         db.session.commit()
+        logger.info(f"✅ Галерея обновлена для car_id={id}, обработано {len(updated_ids)} изображений")
         flash("✅ Галерея обновлена", "success")
         return redirect(url_for('.edit_view', id=car.id))
 
@@ -578,13 +582,27 @@ def init_admin(app):
     class ApiDocsView(BaseView):
         @expose('/')
         def index(self):
-            return redirect(url_for('api_docs'))
+            return redirect(url_for('api_docs'), code=302)
+            
+        def is_visible(self):
+            return True
+            
+        def _get_view_url(self, **kwargs):
+            url = super(ApiDocsView, self)._get_view_url(**kwargs)
+            return url + '" target="_blank'
     
     # Add Logs view link
     class LogsView(BaseView):
         @expose('/')
         def index(self):
-            return redirect(url_for('view_logs'))
+            return redirect(url_for('view_logs'), code=302)
+            
+        def is_visible(self):
+            return True
+            
+        def _get_view_url(self, **kwargs):
+            url = super(LogsView, self)._get_view_url(**kwargs)
+            return url + '" target="_blank'
     
     admin.add_view(CarImageAdmin(CarImage, db.session, name='Фото машин'))
     admin.add_view(CarAdmin(Car, db.session, name='Автомобили'))

@@ -23,6 +23,30 @@ logger = get_module_logger(__name__)
 REPLICATE_MODE = os.getenv("REPLICATE_MODE", "photon").lower().strip()
 telegram_import = Blueprint('telegram_import', __name__)
 
+# Store a reference to the Flask app - will be set when the blueprint is registered
+_app = None
+
+def get_app_context():
+    """Get the app context safely, either from current_app or stored _app reference"""
+    global _app
+    try:
+        # Try to use current_app first (in request context)
+        return current_app.app_context()
+    except RuntimeError:
+        # If no request context, use stored app reference
+        if _app is not None:
+            return _app.app_context()
+        else:
+            # This should only happen during testing or if not properly initialized
+            logger.error("❌ No Flask app context available and no stored app reference")
+            raise RuntimeError("No Flask app context available")
+
+@telegram_import.record
+def record_app(state):
+    """Store a reference to the Flask app when the blueprint is registered"""
+    global _app
+    _app = state.app
+    logger.info("✅ Stored Flask app reference for background processing")
 
 @telegram_import.route('/api/import_car', methods=['POST'])
 def import_car():
@@ -247,18 +271,21 @@ def download_and_reupload(url: str, car_id=None, car_name=None, is_main_img=Fals
 
 def generate_image(mode: str = None, prompt: str = "", image_url: str = "", car_model: str = "", car_brand=None,
                    car_id=None) -> str:
+    """Generate an AI image using the specified mode and parameters"""
     mode = (mode or REPLICATE_MODE).lower().strip()
     logger.info(f"🚀 Генерация изображение [mode={mode}]")
 
-    ref_url = download_and_reupload(image_url, car_id=car_id, car_name=car_model, is_main_img=True)
-    if not ref_url:
-        logger.warning("⚠️ Прерывание: не удалось загрузить изображение в Cloudinary")
-        return None
+    # Use app context to ensure current_app is available in background threads
+    with get_app_context():
+        ref_url = download_and_reupload(image_url, car_id=car_id, car_name=car_model, is_main_img=True)
+        if not ref_url:
+            logger.warning("⚠️ Прерывание: не удалось загрузить изображение в Cloudinary")
+            return None
 
-    if mode == "photon":
-        return generate_with_photon(prompt, ref_url, car_model, car_brand, car_id)
-    elif mode == "comfy":
-        return generate_with_comfyui(prompt, ref_url, car_model, car_brand, car_id)
-    else:
-        logger.warning(f"⚠️ Неизвестный режим генерации: {mode}")
-        return None
+        if mode == "photon":
+            return generate_with_photon(prompt, ref_url, car_model, car_brand, car_id)
+        elif mode == "comfy":
+            return generate_with_comfyui(prompt, ref_url, car_model, car_brand, car_id)
+        else:
+            logger.warning(f"⚠️ Неизвестный режим генерации: {mode}")
+            return None
