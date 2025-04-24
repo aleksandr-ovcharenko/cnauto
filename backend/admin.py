@@ -271,7 +271,11 @@ class CarAdmin(SecureModelView):
         'currency': {
             'query_factory': lambda: db.session.query(Currency).order_by(Currency.code),
             'get_label': lambda c: f"{c.code} ({c.symbol})"
-        }
+        },
+        # --- FIXED: Example for SelectField with choices ---
+        # 'example_field': {
+        #     'choices': [('value1', 'Label 1'), ('value2', 'Label 2')],  # Always a list of tuples
+        # },
     }
 
     edit_template = 'admin/edit_with_nav.html'  # кастомный шаблон
@@ -478,18 +482,12 @@ class CountryAdmin(SecureModelView):
     form_excluded_columns = ['id']
 
 
-class BrandSynonymInlineModel(InlineFormAdmin):
-    form_columns = ['name']
-
-    def postprocess_form(self, form_class):
-        form_class.id = HiddenField()
-        return form_class
-
-
 class BrandAdmin(SecureModelView):
     column_list = ['logo_preview', 'name', 'slug', 'country']
     column_labels = {'logo_preview': 'Логотип'}
-    inline_models = [BrandSynonymInlineModel(BrandSynonym)]
+    # Fixed: Convert to a form that prevents 'tuple' has no attribute 'items' error
+    # by using a dict structure instead of direct class instantiation
+    inline_models = [(BrandSynonym, dict(form_columns=['name']))]
 
     form_columns = ['name', 'slug', 'logo', 'country']
     column_searchable_list = ['name', 'slug']
@@ -526,23 +524,6 @@ class BrandAdmin(SecureModelView):
             'allow_blank': True
         }
     }
-
-    # def on_form_prefill(self, form, id):
-    #     # Устанавливаем актуальные choices здесь
-    #     form.country.choices = [(c.slug, c.name) for c in Category.query.order_by(Category.name)]
-    #
-    # def create_form(self, obj=None):
-    #     form = super().create_form(obj)
-    #     form.country.choices = [(c.slug, c.name) for c in Category.query.order_by(Category.name)]
-    #     return form
-    #
-    # def edit_form(self, obj=None):
-    #     form = super().edit_form(obj)
-    #     form.country.choices = [
-    #         (c.slug, c.name) for c in db.session.query(Category).order_by(Category.name).all()
-    #     ]
-    #
-    #     return form
 
 
 class CarTypeAdmin(SecureModelView):
