@@ -8,9 +8,9 @@ from flask_login import LoginManager
 from flask_login import login_user, logout_user, login_required
 from flask_migrate import Migrate
 from flask_wtf import FlaskForm
+from sqlalchemy.orm import joinedload
 from wtforms import StringField, PasswordField, BooleanField
 from wtforms.validators import InputRequired
-from sqlalchemy.orm import joinedload
 
 from backend.admin import init_admin
 from backend.config_dev import DevConfig
@@ -25,8 +25,10 @@ load_dotenv()
 
 # Flask app
 app = Flask(__name__)
-env = os.getenv("FLASK_ENV", "development")
-if env == "production":
+flask_env = "FLASK_ENV"
+env = os.getenv(flask_env, "development")
+production = "production"
+if env == production:
     app.config.from_object(ProdConfig)
     print("✅ ProdConfig загружен")
 else:
@@ -43,7 +45,8 @@ init_admin(app)
 
 # Flask-Login
 login_manager = LoginManager()
-login_manager.login_view = 'admin_login'
+login_admin = 'admin_login'
+login_manager.login_view = login_admin
 login_manager.init_app(app)
 
 
@@ -75,7 +78,7 @@ def admin_login():
 def admin_logout():
     logout_user()
     flash('Вы вышли из системы', 'info')
-    return redirect(url_for('admin_login'))
+    return redirect(url_for(login_admin))
 
 
 @app.route('/')
@@ -90,6 +93,7 @@ def car_details(car_id):
     car = Car.query.get_or_404(car_id)
     return render_template('car_details.html', car=car)
 
+
 @app.template_filter('thumb_url')
 def thumb_url_filter(url, width=400):
     try:
@@ -101,12 +105,13 @@ def thumb_url_filter(url, width=400):
         print(f"⚠️ Ошибка в thumb_url_filter: {e}")
         return url
 
+
 @app.template_filter('format_currency')
 def format_currency_filter(price, currency_obj=None):
     """Format a price based on currency object or with defaults"""
     if not price:
         return "-"
-    
+
     # Currency-specific locale mapping
     currency_locale_map = {
         'RUB': 'ru-RU',
@@ -116,7 +121,7 @@ def format_currency_filter(price, currency_obj=None):
         'CNY': 'zh-CN',
         'JPY': 'ja-JP'
     }
-    
+
     if currency_obj:
         currency = currency_obj.code if currency_obj and currency_obj.code else 'RUB'
         # Use currency-specific locale if no explicit locale is set
@@ -131,7 +136,7 @@ def format_currency_filter(price, currency_obj=None):
         locale = 'ru-RU'
         currency = 'RUB'
         symbol = '₽'
-    
+
     # Special case for Russian Rubles
     if currency == 'RUB':
         # Format with space as thousands separator and no decimal places
@@ -144,7 +149,7 @@ def format_currency_filter(price, currency_obj=None):
             print(f"Error formatting RUB price: {e}")
             # Fallback if any error occurs
             return f"{price} {symbol}"
-    
+
     # Format with Babel for other currencies
     try:
         from babel.numbers import format_currency
@@ -199,9 +204,9 @@ def import_car():
 
 if __name__ == '__main__':
     with app.app_context():
-        print("🔗 login url:", url_for('admin_login'))
+        print("🔗 login url:", url_for(login_admin))
 
-        if os.getenv("FLASK_ENV") != "production":  # или своя переменная: os.getenv("RUN_SEEDS") == "1"
+        if os.getenv(flask_env) != production:  # или своя переменная: os.getenv("RUN_SEEDS") == "1"
             try:
                 from alembic.config import Config
                 from alembic import command

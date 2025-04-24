@@ -13,6 +13,6 @@
     }
   },
   "deploy": {
-    "startCommand": "python manage.py && python backend/app.py"
+    "startCommand": "python backend/seeds/manage.py && python backend/app.py"
   }
 }
