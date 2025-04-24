@@ -12,6 +12,7 @@ from backend.utils.generate_comfyui import generate_with_comfyui
 from backend.utils.generator_photon import generate_with_photon
 from backend.utils.telegram_file import get_telegram_file_url
 from backend.utils.file_logger import get_module_logger
+from backend.utils.image_queue import enqueue_image_task, generate_image
 
 # Configure logging using the centralized logger
 logger = get_module_logger(__name__)
@@ -119,16 +120,23 @@ def import_car():
                 car.image_url = main_image_url
                 db.session.commit()
 
-                thread_data = {
-                    'app': current_app._get_current_object(),
+                params = {
+                    'mode': REPLICATE_MODE,
                     'prompt': prompt_hint,
                     'image_url': main_image_url,
                     'car_model': model,
-                    'brand_name': brand.name,
+                    'car_brand': brand,
                     'car_id': car.id
                 }
-                thread = threading.Thread(target=async_generate_image, kwargs=thread_data)
-                thread.start()
+                
+                # Enqueue the task with our new queuing system
+                task_id = enqueue_image_task(
+                    car_id=car.id,
+                    generator_func=generate_image,
+                    params=params,
+                    max_retries=3
+                )
+                logger.info(f"🎯 Queued AI image generation as task: {task_id}")
 
                 for i, file_id in enumerate(image_file_ids[1:], start=1):
                     try:
@@ -147,11 +155,15 @@ def import_car():
         except Exception as e:
             logger.warning(f"⚠️ Ошибка при обработке главного изображения: {e}")
 
+    # Add real image URLs to the Car's gallery
     for i, url in enumerate(real_urls):
         image = CarImage(car_id=car.id, url=url, position=i)
         db.session.add(image)
-
+    
     db.session.commit()
+
+    # Get the admin edit URL for the car
+    admin_car_edit_url = f"/admin/car/edit/?id={car.id}"
 
     car_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}{url_for('car_page', car_id=car.id)}"
     admin_car_edit_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}/admin/car/edit/?id={car.id}&url=/admin/car/"
@@ -173,6 +185,10 @@ def import_car():
 
 
 def async_generate_image(app, prompt, image_url, car_model, brand_name, car_id):
+    """
+    Legacy function maintained for backward compatibility.
+    New code should use the image_queue system instead.
+    """
     with app.app_context():
         try:
             brand = Brand.query.filter_by(name=brand_name).first()

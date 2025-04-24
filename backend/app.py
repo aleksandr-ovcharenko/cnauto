@@ -5,7 +5,7 @@ import requests
 from dotenv import load_dotenv
 from flask import Blueprint
 from flask import Flask
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, jsonify
 from flask_login import LoginManager
 from flask_login import login_user, logout_user, login_required
 from flask_migrate import Migrate
@@ -24,6 +24,7 @@ from backend.utils.file_logger import setup_file_logger, add_test_logs
 from backend.utils.log_viewer import get_log_files, get_log_content
 from backend.utils.telegram_import import import_car as import_car_handler
 from backend.events import setup_deletion_events
+from backend.utils.image_queue import start_image_processor, get_car_tasks, task_status, get_task_status
 
 # .env
 load_dotenv()
@@ -78,6 +79,10 @@ admin_app = init_admin(app)
 # Set up Cloudinary deletion event listeners
 with app.app_context():
     setup_deletion_events()
+
+    # Start the image processor worker for handling AI image generation
+    image_processor_thread = start_image_processor(app)
+    logger.info("✅ Image processor started for asynchronous AI image generation")
 
 # Add a verification point to ensure logs are being captured
 log_capture_test_interval = 60  # seconds
@@ -444,6 +449,52 @@ def diagnose_replicate():
     logger.info(info_text)
 
     return f"<pre>{info_text}</pre>"
+
+
+@api.route('/image-tasks', methods=['GET'])
+@login_required
+def list_image_tasks():
+    """
+    Get a list of all image generation tasks or filter by car ID
+    """
+    from backend.utils.image_queue import get_car_tasks, task_status
+    
+    car_id = request.args.get('car_id')
+    
+    if car_id:
+        try:
+            car_id = int(car_id)
+            tasks = get_car_tasks(car_id)
+            return jsonify({
+                'car_id': car_id,
+                'tasks': tasks
+            })
+        except ValueError:
+            return jsonify({'error': 'Invalid car_id parameter'}), 400
+    else:
+        # Return all tasks (limited to most recent 50)
+        all_tasks = list(task_status.values())
+        all_tasks.sort(key=lambda x: x.get('last_update', ''), reverse=True)
+        return jsonify({
+            'tasks': all_tasks[:50],
+            'total_count': len(all_tasks)
+        })
+
+
+@api.route('/image-tasks/<task_id>', methods=['GET'])
+@login_required
+def get_image_task(task_id):
+    """
+    Get details for a specific image generation task
+    """
+    from backend.utils.image_queue import get_task_status
+    
+    task = get_task_status(task_id)
+    
+    if task['status'] == 'unknown':
+        return jsonify({'error': 'Task not found'}), 404
+        
+    return jsonify(task)
 
 
 app.register_blueprint(api, url_prefix='/api')
