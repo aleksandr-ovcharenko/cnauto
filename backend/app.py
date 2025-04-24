@@ -1,6 +1,7 @@
 import logging
 import os
 
+import requests
 from dotenv import load_dotenv
 from flask import Blueprint
 from flask import Flask
