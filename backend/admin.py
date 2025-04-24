@@ -360,39 +360,80 @@ class CarAdmin(SecureModelView):
     @expose('/generate_from_gallery/<int:id>', methods=['POST'])
     def generate_from_gallery(self, id):
         from utils.telegram_import import generate_image
-        image = CarImage.query.get_or_404(id)
-        car = image.car
+        import os
         
+        # Get centralized logger
+        from utils.file_logger import get_module_logger
         logger = get_module_logger(__name__)
-        logger.info(f"🎨 Generating AI image from gallery image ID={id} for car {car.model}")
-
+        
+        logger.info(f"🚀 AI Image generation requested for CarImage ID={id}")
+        
+        # Check for API token first
+        if not os.getenv("REPLICATE_API_TOKEN"):
+            flash(f"❌ Отсутствует REPLICATE_API_TOKEN. Генерация невозможна.", "error")
+            logger.error(f"❌ Missing REPLICATE_API_TOKEN for AI generation. Generation aborted.")
+            return redirect(url_for('.edit_view', id=id))
+        
+        # Get the image that was clicked
+        try:
+            image = CarImage.query.get_or_404(id)
+            car = image.car
+            logger.info(f"📷 Found image ID={id} for car ID={car.id}, model={car.model}")
+        except Exception as e:
+            logger.error(f"❌ Failed to retrieve CarImage with ID={id}: {e}")
+            flash(f"❌ Не удалось найти изображение с ID={id}", "error")
+            return redirect(url_for('.index_view'))
+        
+        # Rest of the method remains the same
         prompt = (
-            f"Professional car studio shot, clean background, only the car visible. "
-            f"Car: {car.model}-{car.brand.name}, fully isolated, no other objects or cars. "
-            "License plate must clearly show 'cncars.ru'. "
-            "Car positioned diagonally: front facing left, rear facing right. "
-            "Clean, sharp details, high-quality render, studio lighting. "
-            "Remove all background elements, shadows, and distractions. "
-            "The car should look like a perfect 3D model on a white background."
+            "Professional car studio shot, ultra-clean pure white background, only the car visible with ample empty space around it. "
+            f"Car: {car.model}-{car.brand.name}, perfectly isolated with at least 2 meters of empty space on all sides, no other objects or cars visible. "
+            "License plate must clearly and legibly display 'cncars.ru' in proper format. "
+            "Car positioned diagonally in frame: front facing 30 degrees left, rear facing 30 degrees right, with slight perspective as if viewed from eye level. "
+            "The car should be positioned not too close - about 5-7 meters from the virtual camera, showing full body with space around. "
+            "Crisp, ultra-sharp details, 8K quality render, professional three-point studio lighting with soft shadows. "
+            "Absolutely no background elements, no reflections of surroundings, no stray shadows - only clean, pure white backdrop. "
+            "The car should appear as a flawless 3D model with perfect proportions, slightly matte surface to avoid glare. "
+            "Add subtle ambient occlusion shadows under the car for natural grounding effect."
         )
 
+
+        logger.info(f"🎨 Generating AI image from gallery image ID={id} for car {car.model}")
+        logger.info(f"🔗 Source image URL: {image.url}")
+        logger.info(f"📝 Using prompt: {prompt[:100]}...")
+
         try:
+            # Add additional feedback for the user
+            logger.info(f"⏳ Starting AI generation with mode=photon for car ID={car.id}")
+            flash(f"⏳ Генерация AI изображения для {car.model} запущена. Это может занять 1-2 минуты...", "info")
+            
             # Use the specific image that was clicked, not the first gallery image
+            logger.info(f"📤 Sending request to generate_image function with car_model={car.model}")
             new_image = generate_image(mode="photon", prompt=prompt, image_url=image.url,
                                        car_model=car.model, car_brand=car.brand, car_id=car.id)
+            
+            logger.info(f"🔄 AI generation response received: URL={'Success (URL received)' if new_image else 'Failed (None returned)'}")
+            
             if new_image:
+                logger.info(f"💾 Setting new image URL as main image for car ID={car.id}")
                 car.image_url = new_image
+                logger.info(f"💾 Committing changes to database")
                 db.session.commit()
-                flash(f"✅ Изображение успешно обновлено!", "success")
-                logger.info(f"✅ AI image generation successful for car {car.id} from image {id}")
+                logger.info(f"✅ Database commit successful, image updated for car ID={car.id}")
+                flash(f"✅ Изображение успешно обновлено для {car.model}!", "success")
+                logger.info(f"✅ AI image generation workflow completed successfully for car {car.id} from image {id}")
             else:
-                flash(f"❌ Не удалось сгенерировать для {car.model}", "error")
+                # More detailed error message when generation fails but doesn't raise an exception
+                logger.warning(f"⚠️ AI generation returned None but no exception was raised. Car ID={car.id}, Image ID={id}")
+                flash(f"❌ Не удалось сгенерировать изображение для {car.model}. Проверьте логи для деталей.", "error")
                 logger.warning(f"⚠️ AI image generation failed for car {car.id} - no image returned")
         except Exception as e:
+            logger.error(f"❌ AI generation exception: {str(e)}")
+            logger.error(f"❌ Exception details:", exc_info=True)
             flash(f"❌ Ошибка при генерации изображения: {e}", "error")
             logger.error(f"❌ Error generating AI image for car {car.id}: {e}")
-            return redirect(url_for('.edit_view', id=car.id))
-
+        
+        logger.info(f"🔙 Redirecting user to car edit view for car ID={car.id}")
         return redirect(url_for('.edit_view', id=car.id))
 
     @expose('/edit_gallery/<int:id>', methods=['POST'])

@@ -8,13 +8,13 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
         body {
-            background-color: #1c1c21;
-            color: #eee;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #1a1c21;
+            color: #d7dae0;
+            font-family: 'Roboto Mono', monospace;
             margin: 0;
+            font-size: 10px;
+            line-height: 1;
             padding: 0;
-            height: 100vh;
-            overflow: hidden;
         }
         .container-fluid {
             height: 100vh;
@@ -51,36 +51,40 @@
             padding: 0;
         }
         .log-line {
-            padding: 0 2px;
+            padding: 0;
             margin: 0;
-            line-height: 1.1;
-            border-bottom: 1px solid #252730;
+            line-height: 0.9;
+            border-bottom: none;
             display: flex;
+            font-size: 10px;
+            height: 12px;
+            overflow: hidden;
         }
         .log-line:hover {
             background-color: #252730;
         }
         .timestamp-col {
-            flex: 0 0 150px;
+            flex: 0 0 115px;
             color: #98a2b3;
-            padding-right: 5px;
+            padding-right: 2px;
             font-size: 10px;
         }
         .level-col {
-            flex: 0 0 70px;
-            font-weight: bold;
-            padding-right: 5px;
+            flex: 0 0 38px;
+            padding-right: 2px;
+            text-align: center;
+            font-weight: normal;
         }
         .module-col {
-            flex: 0 0 160px;
-            color: #8db4d6;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            padding-right: 5px;
+            flex: 0 0 140px;
+            padding-right: 2px;
+            color: #8897b9;
         }
         .message-col {
             flex: 1;
-            overflow-wrap: break-word;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .log-debug { color: #7dcfb6; }
         .log-info { color: #69b5e4; }
@@ -104,6 +108,13 @@
             margin: 0 !important;
             padding: 0 !important;
             border: none !important;
+            position: absolute !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            width: 0 !important;
+            max-height: 0 !important;
+            line-height: 0 !important;
         }
         
         /* When filters are off, show all */
@@ -114,6 +125,13 @@
             overflow: visible !important;
             border-bottom: 1px solid #252730 !important;
             padding: 0 2px !important;
+            position: static !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            width: 100% !important;
+            max-height: none !important;
+            line-height: 1.1 !important;
         }
         
         /* Active button style for filter toggles */
@@ -280,6 +298,15 @@
         .log-chart-bar.warning { background-color: #f5a700; }
         .log-chart-bar.error { background-color: #f04747; }
         .log-chart-bar.critical { background-color: #ff3838; }
+        
+        .log-container {
+            overflow-y: auto;
+            height: calc(100vh - 100px);
+            background-color: #1a1c21;
+            border: none;
+            padding: 0;
+            margin-top: 0;
+        }
     </style>
 </head>
 <body>
@@ -355,14 +382,7 @@
         </div>
         
         <div class="log-container tabular-view show-http show-periodic" id="log-content">
-            {% for line in log_lines %}
-                <div class="log-line {{ line.level|lower }}">
-                    <div class="timestamp-col">{{ line.timestamp }}</div>
-                    <div class="level-col">{{ line.level }}</div>
-                    <div class="module-col">{{ line.module }}</div>
-                    <div class="message-col">{{ line.message }}</div>
-                </div>
-            {% endfor %}
+            
         </div>
         
         <div class="visualization-row" id="visualization-area">
@@ -443,30 +463,38 @@
                         return response.json();
                     })
                     .then(data => {
-                        // Update log content
-                        let logHtml = '';
+                        // Clear existing content and reconstruct
+                        logContent.innerHTML = '';
+                        
+                        // Update log content - each log entry as a separate div
                         data.lines.forEach(line => {
+                            // Create the log line element
+                            const logLine = document.createElement('div');
+                            
                             // Detect periodic check logs and HTTP logs for filtering
-                            let extraClasses = '';
-                            if (line.message.includes('Periodic log check') || 
-                                line.message.includes('logging is still active')) {
-                                extraClasses += ' periodic-check';
+                            if (line.message && line.message.includes('Periodic log check') || 
+                                line.message && line.message.includes('logging is still active')) {
+                                logLine.classList.add('periodic-check');
                             }
-                            if ((line.message.includes('Request:') || line.message.includes('Response:')) &&
-                                (line.module.includes('flask') || line.module.includes('werkzeug'))) {
-                                extraClasses += ' http-log';
+                            if ((line.message && (line.message.includes('Request:') || line.message.includes('Response:'))) &&
+                                (line.module && (line.module.includes('flask') || line.module.includes('werkzeug')))) {
+                                logLine.classList.add('http-log');
                             }
                             
-                            logHtml += `
-                                <div class="log-line ${line.level.toLowerCase()}${extraClasses}">
-                                    <div class="timestamp-col">${line.time || line.timestamp}</div>
-                                    <div class="level-col">${line.level}</div>
-                                    <div class="module-col">${line.name || line.module}</div>
-                                    <div class="message-col">${line.message}</div>
-                                </div>
+                            // Add common classes
+                            logLine.classList.add('log-line', line.level.toLowerCase());
+                            
+                            // Build the inner structure
+                            logLine.innerHTML = `
+                                <div class="timestamp-col">${line.time || line.timestamp}</div>
+                                <div class="level-col">${line.level}</div>
+                                <div class="module-col">${line.name || line.module}</div>
+                                <div class="message-col">${line.message}</div>
                             `;
+                            
+                            // Append to the container
+                            logContent.appendChild(logLine);
                         });
-                        logContent.innerHTML = logHtml;
                         
                         // Apply search highlighting if needed
                         if (searchTerm) {
