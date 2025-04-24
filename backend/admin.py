@@ -15,6 +15,7 @@ from wtforms import PasswordField
 from wtforms.fields.simple import FileField, MultipleFileField
 from wtforms.widgets.core import HiddenInput
 from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
+from flask_admin.model.form import InlineFormAdmin
 
 from backend.models import Role, User, CarImage, BrandSynonym, Currency
 from backend.models import db, Car, Category, Brand, CarType, Country
@@ -475,15 +476,14 @@ class CountryAdmin(SecureModelView):
     # Не показываем ID
     form_excluded_columns = ['id']
 
+class BrandSynonymInlineModel(InlineFormAdmin):
+    form_columns = ['name']  # Только необходимые поля
 
 class BrandAdmin(SecureModelView):
     column_list = ['logo_preview', 'name', 'slug', 'country']
     column_labels = {'logo_preview': 'Логотип'}
-    inline_models = [
-        (BrandSynonym, {
-            'form_columns': ['name']
-        })
-    ]
+    inline_models = [BrandSynonymInlineModel(BrandSynonym)]
+
 
     form_columns = ['name', 'slug', 'logo', 'country']
     column_searchable_list = ['name', 'slug']
