@@ -584,8 +584,8 @@ def init_admin(app):
     class LogsView(BaseView):
         @expose('/')
         def index(self):
-            return redirect(url_for('logs'))
-
+            return redirect(url_for('view_logs'))
+    
     admin.add_view(CarImageAdmin(CarImage, db.session, name='Фото машин'))
     admin.add_view(CarAdmin(Car, db.session, name='Автомобили'))
     admin.add_view(CategoryAdmin(Category, db.session, name='Категории'))

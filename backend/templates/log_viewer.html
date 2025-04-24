@@ -365,6 +365,11 @@
             // Scroll to bottom of logs initially
             logContent.scrollTop = logContent.scrollHeight;
             
+            // Initialize auto-refresh if checkbox is already checked (e.g. page reload)
+            if (autoRefreshCheckbox.checked) {
+                autoRefreshInterval = setInterval(refreshLogs, 5000);
+            }
+            
             // Ultra-compact mode toggle
             ultraCompactCheckbox.addEventListener('change', function() {
                 if(this.checked) {
@@ -392,22 +397,21 @@
                 window.location.href = '/admin/logs?file=' + this.value;
             });
             
-            // Auto-refresh functionality
-            autoRefreshCheckbox.addEventListener('change', function() {
-                if(this.checked) {
-                    autoRefreshInterval = setInterval(refreshLogs, 5000);
-                } else {
-                    clearInterval(autoRefreshInterval);
-                }
-            });
-            
             function refreshLogs() {
                 const currentFile = logFileSelect.value;
                 const filterLevel = document.querySelector('.btn-filter.active').dataset.level;
                 const searchTerm = searchInput.value;
                 
-                fetch(`/admin/logs/content?file=${currentFile}&level=${filterLevel}&search=${searchTerm}&format=json`)
-                    .then(response => response.json())
+                // Add a unique timestamp to prevent caching
+                const timestamp = new Date().getTime();
+                
+                fetch(`/admin/logs/content?file=${currentFile}&level=${filterLevel}&search=${encodeURIComponent(searchTerm)}&format=json&_=${timestamp}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Network response was not ok: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         // Update log content
                         let logHtml = '';
@@ -433,9 +437,34 @@
                         
                         // Update visualizations
                         updateVisualizations();
+                        
+                        // Maintain scroll position at bottom if we were already at bottom
+                        if (autoRefreshCheckbox.checked) {
+                            logContent.scrollTop = logContent.scrollHeight;
+                        }
+                        
+                        console.log(`Logs refreshed at ${new Date().toLocaleTimeString()}`);
                     })
-                    .catch(error => console.error('Error refreshing logs:', error));
+                    .catch(error => {
+                        console.error('Error refreshing logs:', error);
+                        // Don't stop auto-refresh on error, it will try again
+                    });
             }
+            
+            // Auto-refresh functionality
+            autoRefreshCheckbox.addEventListener('change', function() {
+                if(this.checked) {
+                    console.log("Auto-refresh enabled, setting interval...");
+                    // Clear any existing interval first to prevent duplicates
+                    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = setInterval(refreshLogs, 5000);
+                    // Perform an immediate refresh
+                    refreshLogs();
+                } else {
+                    console.log("Auto-refresh disabled, clearing interval...");
+                    clearInterval(autoRefreshInterval);
+                }
+            });
             
             // Search functionality
             function performSearch() {
@@ -654,11 +683,6 @@
                     performSearch();
                 }
             });
-            
-            // Initial state
-            if (autoRefreshCheckbox.checked) {
-                autoRefreshInterval = setInterval(refreshLogs, 5000);
-            }
         });
     </script>
 </body>
