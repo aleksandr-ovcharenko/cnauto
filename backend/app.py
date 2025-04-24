@@ -20,9 +20,13 @@ from backend.models import Car, Category, Brand, Country, CarType
 from backend.models import User
 from backend.models import db
 from backend.utils.telegram_import import import_car as import_car_handler
+from backend.utils.file_logger import setup_file_logger
 
 # .env
 load_dotenv()
+
+# Import and set up file logging
+log_file_path = setup_file_logger()
 
 # Configure logging for the entire application
 logging.basicConfig(
@@ -224,9 +228,69 @@ def catalog():
 api = Blueprint('api', __name__)
 
 
-@app.route('/api/import_car', methods=['POST'])
+@api.route('/import_car', methods=['POST'])
 def import_car():
     return import_car_handler()
+
+
+# Diagnostic route to help troubleshoot Telegram token issues
+@api.route('/diagnose-telegram', methods=['GET'])
+def diagnose_telegram():
+    from backend.utils.telegram_file import get_telegram_file_url
+    import json
+    
+    logger = logging.getLogger(__name__)
+    
+    # Check environment variables
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    token_status = "✅ Present" if bot_token else "❌ Missing"
+    
+    # Log to the file
+    logger.info(f"TELEGRAM_BOT_TOKEN status: {token_status}")
+    
+    # Check other env vars
+    env_vars = {key: "✅ Set" if os.getenv(key) else "❌ Missing" 
+                for key in ["FLASK_ENV", "IMPORT_API_TOKEN", "CLOUDINARY_URL"]}
+    
+    logger.info(f"Environment variables: {json.dumps(env_vars, indent=2)}")
+    
+    # Test token with a dummy request if available
+    test_result = None
+    if bot_token:
+        import requests
+        try:
+            url = f"https://api.telegram.org/bot{bot_token}/getMe"
+            response = requests.get(url, timeout=5)
+            test_result = response.json()
+            logger.info(f"Telegram API test: {json.dumps(test_result, indent=2)}")
+        except Exception as e:
+            test_result = {"error": str(e)}
+            logger.error(f"Telegram API test failed: {str(e)}")
+    
+    # Return diagnostic info
+    diagnostic_info = {
+        "telegram_token_status": token_status,
+        "environment_variables": env_vars,
+        "telegram_api_test": test_result,
+        "log_file_path": log_file_path
+    }
+    
+    # Also return info as plain text for easy viewing
+    info_text = "\n".join([
+        "===== TELEGRAM IMPORT DIAGNOSTIC =====",
+        f"TELEGRAM_BOT_TOKEN: {token_status}",
+        f"Environment Variables: {json.dumps(env_vars, indent=2)}",
+        f"Telegram API Test: {json.dumps(test_result, indent=2) if test_result else 'Not tested (no token)'}",
+        f"Log File Path: {log_file_path}",
+        "=====================================",
+    ])
+    
+    logger.info(info_text)
+    
+    return f"<pre>{info_text}</pre>"
+
+
+app.register_blueprint(api, url_prefix='/api')
 
 
 if __name__ == '__main__':
