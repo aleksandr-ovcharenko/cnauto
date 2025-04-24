@@ -11,13 +11,10 @@ from backend.utils.cloudinary_upload import upload_image
 from backend.utils.generate_comfyui import generate_with_comfyui
 from backend.utils.generator_photon import generate_with_photon
 from backend.utils.telegram_file import get_telegram_file_url
+from backend.utils.file_logger import get_module_logger
 
-# Configure logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-handler = logging.StreamHandler()
-handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-logger.addHandler(handler)
+# Configure logging using the centralized logger
+logger = get_module_logger(__name__)
 
 REPLICATE_MODE = os.getenv("REPLICATE_MODE", "photon").lower().strip()
 telegram_import = Blueprint('telegram_import', __name__)

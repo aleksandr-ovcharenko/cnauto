@@ -3,8 +3,10 @@ from sqlalchemy import event
 
 from backend.models import Car, CarImage
 from backend.utils.cloudinary_upload import delete_image
+from backend.utils.file_logger import get_module_logger
 
-logger = logging.getLogger(__name__)
+# Use the centralized logger
+logger = get_module_logger(__name__)
 
 def setup_deletion_events():
     """

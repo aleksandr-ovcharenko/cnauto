@@ -30,34 +30,14 @@ load_dotenv()
 # Import and set up file logging
 log_file_path = setup_file_logger()
 
-# Configure logging for the entire application
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()  # Output to console
-    ],
-    force=True  # Override any existing configuration
-)
-
 # Get the root logger
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-
-# Ensure the handler is properly configured
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
 
 # Force debug logger output on startup to verify logging works
 logger.debug("🔍 DEBUG logging is enabled")
 logger.info("ℹ️ INFO logging is enabled")
-
-# Reduce verbosity of some loggers
-logging.getLogger('werkzeug').setLevel(logging.INFO)
-logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
+logger.warning("⚠️ WARNING logging is enabled")
+logger.error("❌ ERROR logging is enabled - this is just a test")
 
 # Flask app
 app = Flask(__name__)
