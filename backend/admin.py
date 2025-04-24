@@ -485,10 +485,10 @@ class CountryAdmin(SecureModelView):
 class BrandAdmin(SecureModelView):
     column_list = ['logo_preview', 'name', 'slug', 'country']
     column_labels = {'logo_preview': 'Логотип'}
-    # Fixed: Convert to a form that prevents 'tuple' has no attribute 'items' error
-    # by using a dict structure instead of direct class instantiation
-    inline_models = [(BrandSynonym, dict(form_columns=['name']))]
-
+    
+    # Temporarily disable inline models to isolate the issue
+    inline_models = None
+    
     form_columns = ['name', 'slug', 'logo', 'country']
     column_searchable_list = ['name', 'slug']
     column_filters = ['country.name']

@@ -56,14 +56,25 @@ def import_car():
 
     brand_created = False
     if not brand:
-        brand = Brand(name=brand_name, slug=brand_name.lower().replace(" ", "-"))
-        db.session.add(brand)
-        db.session.flush()
+        # Check if a brand with this slug already exists (case insensitive)
+        slug = brand_name.lower().replace(" ", "-")
+        existing_brand = Brand.query.filter(Brand.slug == slug).first()
+        
+        if existing_brand:
+            # Use the existing brand instead of creating a new one
+            brand = existing_brand
+            print(f"✅ Using existing brand: {brand.name} (slug: {brand.slug})")
+        else:
+            # Create a new brand only if it doesn't exist
+            brand = Brand(name=brand_name, slug=slug)
+            db.session.add(brand)
+            db.session.flush()
 
-        synonym = BrandSynonym(name=brand_name.lower(), brand=brand)
-        db.session.add(synonym)
-        db.session.flush()
-        brand_created = True
+            synonym = BrandSynonym(name=brand_name.lower(), brand=brand)
+            db.session.add(synonym)
+            db.session.flush()
+            brand_created = True
+            print(f"✅ Created new brand: {brand.name} (slug: {brand.slug})")
 
     car_type = None
     if car_type_name:
