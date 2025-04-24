@@ -6,7 +6,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from flask import flash, request, redirect, url_for
-from flask_admin import Admin, expose
+from flask_admin import Admin, expose, BaseView
 from flask_admin import AdminIndexView
 from flask_admin.actions import action
 from flask_admin.contrib.sqla import ModelView

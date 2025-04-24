@@ -5,119 +5,344 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
+        body {
+            background-color: #1c1c21;
+            color: #eee;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .container-fluid {
+            height: 100vh;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            padding: 5px 10px;
+            background-color: #25262e;
+            border-bottom: 1px solid #343741;
+        }
+        .title-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        h1 {
+            font-size: 18px;
+            margin: 0;
+            color: #ddd;
+        }
         .log-container {
-            background-color: #1e1e1e;
-            color: #d4d4d4;
-            font-family: monospace;
-            height: 80vh;
+            flex: 1;
+            background-color: #1c1c21;
+            color: #ddd;
+            font-family: 'Consolas', 'Monaco', monospace;
             overflow-y: auto;
-            padding: 10px;
-            border-radius: 4px;
             white-space: pre-wrap;
             word-wrap: break-word;
-            font-size: 12px;  
-            line-height: 1.2; 
+            font-size: 11px;
+            line-height: 1.15;
+            margin: 0;
+            padding: 0;
         }
         .log-line {
-            padding: 1px 0;  
-            border-bottom: 1px solid #333;
+            padding: 0 4px;
+            margin: 0;
+            line-height: 1.15;
+            border-bottom: 1px solid #252730;
+            display: flex;
         }
         .log-line:hover {
-            background-color: #2a2a2a;
+            background-color: #252730;
         }
-        .log-debug { color: #6A9955; }
-        .log-info { color: #4FC1FF; }
-        .log-warning { color: #DCDCAA; }
-        .log-error { color: #F14C4C; }
-        .log-critical { color: #FF3333; font-weight: bold; }
-        .highlight { background-color: #6B5B00; }
-        .timestamp { color: #9CDCFE; font-size: 11px; } 
-        .module { color: #CE9178; }
-        .level { font-weight: bold; }
+        .timestamp-col {
+            flex: 0 0 150px;
+            color: #98a2b3;
+            padding-right: 5px;
+            font-size: 10px;
+        }
+        .level-col {
+            flex: 0 0 70px;
+            font-weight: bold;
+            padding-right: 5px;
+        }
+        .module-col {
+            flex: 0 0 160px;
+            color: #8db4d6;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: 5px;
+        }
+        .message-col {
+            flex: 1;
+            overflow-wrap: break-word;
+        }
+        .log-debug { color: #7dcfb6; }
+        .log-info { color: #69b5e4; }
+        .log-warning { color: #f5a700; }
+        .log-error { color: #f04747; }
+        .log-critical { color: #ff3838; font-weight: bold; }
+        .highlight { background-color: rgba(255, 226, 0, 0.2); }
+        
         #log-controls {
-            position: sticky;
-            top: 0;
-            background-color: #f8f9fa;
-            padding: 10px 0;
-            margin-bottom: 10px;
+            background-color: #25262e;
+            padding: 5px 10px;
+            border-bottom: 1px solid #343741;
             z-index: 100;
         }
-        /* Compact mode toggle */
-        .compact-mode .timestamp { display: none; }
-        .compact-mode .module { display: none; }
-        .compact-mode .log-line { padding: 0; line-height: 1.1; }
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+        .form-select, .form-control {
+            background-color: #1c1c21;
+            color: #ddd;
+            border: 1px solid #343741;
+            font-size: 12px;
+            height: 30px;
+            padding: 0 8px;
+        }
+        .form-select:focus, .form-control:focus {
+            background-color: #1c1c21;
+            color: #ddd;
+            border-color: #535871;
+        }
+        .btn-filter {
+            font-size: 11px;
+            padding: 3px 8px;
+            margin-right: 2px;
+            border-radius: 3px;
+            background-color: #1c1c21;
+            color: #ddd;
+            border: 1px solid #343741;
+        }
+        .btn-filter.active {
+            background-color: #343741;
+            font-weight: bold;
+        }
+        .btn-tools {
+            font-size: 11px;
+            padding: 3px 8px;
+            margin-right: 2px;
+            border-radius: 3px;
+            background-color: #1c1c21;
+            color: #ddd;
+            border: 1px solid #343741;
+        }
+        .btn-tools:hover {
+            background-color: #343741;
+            color: #fff;
+        }
+        #log-stats {
+            font-size: 11px;
+            color: #98a2b3;
+        }
+        .form-check-label {
+            font-size: 11px;
+            color: #ddd;
+            margin-left: 3px;
+        }
+        .form-check-input {
+            margin-top: 4px;
+        }
+        
+        /* Compact mode styles */
+        .ultra-compact-mode .timestamp-col,
+        .ultra-compact-mode .module-col {
+            display: none;
+        }
+        
+        .ultra-compact-mode .log-line {
+            line-height: 1.05;
+            padding: 0 2px;
+        }
+        
+        /* Super-compact mode */
+        .super-compact-mode .log-line {
+            font-size: 9px;
+            line-height: 1;
+            padding: 0;
+            border-bottom: none;
+        }
+        
+        .super-compact-mode .level-col {
+            flex: 0 0 50px;
+        }
+        
+        /* Column display modes */
+        .tabular-view .log-line {
+            display: flex;
+        }
+        
+        .wrap-view .log-line {
+            display: block;
+            padding: 2px 4px;
+        }
+        
+        .wrap-view .timestamp-col,
+        .wrap-view .level-col,
+        .wrap-view .module-col,
+        .wrap-view .message-col {
+            display: inline;
+            margin-right: 5px;
+        }
+        
+        /* Filter badges */
+        .filter-badge {
+            display: inline-block;
+            padding: 0px 5px;
+            border-radius: 12px;
+            background-color: #343741;
+            color: #ddd;
+            font-size: 10px;
+            margin-right: 5px;
+            line-height: 1.5;
+        }
+        
+        .filter-badge .remove-filter {
+            cursor: pointer;
+            margin-left: 3px;
+        }
+        
+        /* Visualization elements */
+        .visualization-row {
+            height: 60px;
+            background-color: #25262e;
+            border-top: 1px solid #343741;
+            padding: 5px 10px;
+            display: flex;
+            align-items: center;
+            overflow-x: auto;
+        }
+        
+        .log-chart {
+            min-width: 300px;
+            height: 50px;
+            margin-right: 20px;
+            background-color: #1c1c21;
+            border-radius: 3px;
+            position: relative;
+        }
+        
+        .log-chart-label {
+            position: absolute;
+            bottom: 2px;
+            left: 5px;
+            font-size: 9px;
+            color: #98a2b3;
+        }
+        
+        .log-chart-bar {
+            position: absolute;
+            bottom: 15px;
+            width: 5px;
+            background-color: #69b5e4;
+            border-radius: 1px 1px 0 0;
+        }
+        
+        .log-chart-bar.debug { background-color: #7dcfb6; }
+        .log-chart-bar.info { background-color: #69b5e4; }
+        .log-chart-bar.warning { background-color: #f5a700; }
+        .log-chart-bar.error { background-color: #f04747; }
+        .log-chart-bar.critical { background-color: #ff3838; }
     </style>
 </head>
 <body>
-    <div class="container-fluid mt-3">
-        <h1>CNAuto Log Viewer</h1>
-        
-        <div id="log-controls" class="mb-3">
-            <div class="row">
-                <div class="col-md-4">
-                    <select id="log-file-select" class="form-select">
-                        {% for log_file in log_files %}
-                            <option value="{{ log_file }}" {% if log_file == current_log %}selected{% endif %}>{{ log_file }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <div class="input-group">
-                        <input type="text" id="search-input" class="form-control" placeholder="Search logs...">
-                        <button id="search-button" class="btn btn-primary">Search</button>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="btn-group" role="group">
-                        <button id="filter-all" class="btn btn-outline-secondary active">All</button>
-                        <button id="filter-debug" class="btn btn-outline-success">Debug</button>
-                        <button id="filter-info" class="btn btn-outline-info">Info</button>
-                        <button id="filter-warning" class="btn btn-outline-warning">Warning</button>
-                        <button id="filter-error" class="btn btn-outline-danger">Error</button>
-                    </div>
-                </div>
-            </div>
-            <div class="row mt-2">
-                <div class="col-md-4">
-                    <span id="log-stats" class="text-muted">
-                        Showing {{ log_lines|length }} lines
-                    </span>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="auto-refresh" value="1">
-                        <label class="form-check-label" for="auto-refresh">
-                            Auto-refresh (5s)
-                        </label>
-                    </div>
-                    <div class="form-check ms-3 d-inline-block">
-                        <input class="form-check-input" type="checkbox" id="compact-mode" value="1">
-                        <label class="form-check-label" for="compact-mode">
-                            Ultra-compact mode
-                        </label>
-                    </div>
-                </div>
-                <div class="col-md-4 text-end">
-                    <a href="/admin/logs/raw?file={{ current_log }}" target="_blank" class="btn btn-sm btn-outline-secondary">
-                        <i class="bi bi-file-text"></i> View Raw File
-                    </a>
-                    <a href="/admin/logs/raw?file={{ current_log }}" download="{{ current_log }}" class="btn btn-sm btn-outline-secondary ms-2">
-                        <i class="bi bi-download"></i> Download
-                    </a>
+    <div class="container-fluid">
+        <div class="header">
+            <div class="title-bar">
+                <h1>CNAuto Log Viewer</h1>
+                <div>
+                    <a href="/admin" class="btn btn-tools"><i class="bi bi-arrow-left"></i> Admin</a>
                 </div>
             </div>
         </div>
         
-        <div class="log-container" id="log-content">
+        <div id="log-controls">
+            <div class="control-row">
+                <select id="log-file-select" class="form-select" style="width: 200px;">
+                    {% for log_file in log_files %}
+                        <option value="{{ log_file }}" {% if log_file == current_log %}selected{% endif %}>{{ log_file }}</option>
+                    {% endfor %}
+                </select>
+                
+                <div class="input-group" style="width: 260px;">
+                    <input type="text" id="search-input" class="form-control" placeholder="Search logs...">
+                    <button id="search-button" class="btn-tools"><i class="bi bi-search"></i></button>
+                </div>
+                
+                <div class="d-flex">
+                    <button id="filter-all" class="btn-filter active" data-level="all">All</button>
+                    <button id="filter-debug" class="btn-filter" data-level="debug">Debug</button>
+                    <button id="filter-info" class="btn-filter" data-level="info">Info</button>
+                    <button id="filter-warning" class="btn-filter" data-level="warning">Warning</button>
+                    <button id="filter-error" class="btn-filter" data-level="error">Error</button>
+                </div>
+                
+                <div class="ms-auto">
+                    <a href="/admin/logs/raw?file={{ current_log }}" target="_blank" class="btn-tools">
+                        <i class="bi bi-file-text"></i> Raw
+                    </a>
+                    <a href="/admin/logs/raw?file={{ current_log }}" download="{{ current_log }}" class="btn-tools">
+                        <i class="bi bi-download"></i> Download
+                    </a>
+                </div>
+            </div>
+            
+            <div class="control-row">
+                <span id="log-stats">Showing {{ log_lines|length }} lines</span>
+                
+                <div class="d-flex align-items-center ms-3">
+                    <div class="form-check me-3">
+                        <input class="form-check-input" type="checkbox" id="auto-refresh">
+                        <label class="form-check-label" for="auto-refresh">Auto-refresh (5s)</label>
+                    </div>
+                    
+                    <div class="form-check me-3">
+                        <input class="form-check-input" type="checkbox" id="ultra-compact">
+                        <label class="form-check-label" for="ultra-compact">Ultra-compact</label>
+                    </div>
+                    
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="super-compact">
+                        <label class="form-check-label" for="super-compact">Super-compact</label>
+                    </div>
+                </div>
+                
+                <div class="ms-auto" id="active-filters">
+                    <!-- Active filters will be shown here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="log-container tabular-view" id="log-content">
             {% for line in log_lines %}
                 <div class="log-line {{ line.level|lower }}">
-                    <span class="timestamp">{{ line.timestamp }}</span>
-                    <span class="module">{{ line.module }}</span>
-                    <span class="level">{{ line.level }}</span>
-                    <span class="message">{{ line.message }}</span>
+                    <div class="timestamp-col">{{ line.timestamp }}</div>
+                    <div class="level-col">{{ line.level }}</div>
+                    <div class="module-col">{{ line.module }}</div>
+                    <div class="message-col">{{ line.message }}</div>
                 </div>
             {% endfor %}
+        </div>
+        
+        <div class="visualization-row" id="visualization-area">
+            <div class="log-chart" id="log-level-chart">
+                <div class="log-chart-label">Log Levels</div>
+                <!-- Bars will be generated by JS -->
+            </div>
+            
+            <div class="log-chart" id="log-time-chart">
+                <div class="log-chart-label">Time Distribution</div>
+                <!-- Bars will be generated by JS -->
+            </div>
         </div>
     </div>
 
@@ -129,20 +354,88 @@
             const searchButton = document.getElementById('search-button');
             const logFileSelect = document.getElementById('log-file-select');
             const autoRefreshCheckbox = document.getElementById('auto-refresh');
-            const compactModeCheckbox = document.getElementById('compact-mode');
+            const ultraCompactCheckbox = document.getElementById('ultra-compact');
+            const superCompactCheckbox = document.getElementById('super-compact');
+            const filterButtons = document.querySelectorAll('.btn-filter');
             let autoRefreshInterval;
+            
+            // Initialize visualization
+            updateVisualizations();
             
             // Scroll to bottom of logs initially
             logContent.scrollTop = logContent.scrollHeight;
             
-            // Compact mode toggle
-            compactModeCheckbox.addEventListener('change', function() {
+            // Ultra-compact mode toggle
+            ultraCompactCheckbox.addEventListener('change', function() {
                 if(this.checked) {
-                    logContent.classList.add('compact-mode');
+                    logContent.classList.add('ultra-compact-mode');
+                    superCompactCheckbox.checked = false;
+                    logContent.classList.remove('super-compact-mode');
                 } else {
-                    logContent.classList.remove('compact-mode');
+                    logContent.classList.remove('ultra-compact-mode');
                 }
             });
+            
+            // Super-compact mode toggle
+            superCompactCheckbox.addEventListener('change', function() {
+                if(this.checked) {
+                    logContent.classList.add('super-compact-mode');
+                    ultraCompactCheckbox.checked = false;
+                    logContent.classList.remove('ultra-compact-mode');
+                } else {
+                    logContent.classList.remove('super-compact-mode');
+                }
+            });
+            
+            // Log file selection
+            logFileSelect.addEventListener('change', function() {
+                window.location.href = '/admin/logs?file=' + this.value;
+            });
+            
+            // Auto-refresh functionality
+            autoRefreshCheckbox.addEventListener('change', function() {
+                if(this.checked) {
+                    autoRefreshInterval = setInterval(refreshLogs, 5000);
+                } else {
+                    clearInterval(autoRefreshInterval);
+                }
+            });
+            
+            function refreshLogs() {
+                const currentFile = logFileSelect.value;
+                const filterLevel = document.querySelector('.btn-filter.active').dataset.level;
+                const searchTerm = searchInput.value;
+                
+                fetch(`/admin/logs/content?file=${currentFile}&level=${filterLevel}&search=${searchTerm}&format=json`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update log content
+                        let logHtml = '';
+                        data.lines.forEach(line => {
+                            logHtml += `
+                                <div class="log-line ${line.level.toLowerCase()}">
+                                    <div class="timestamp-col">${line.time}</div>
+                                    <div class="level-col">${line.level}</div>
+                                    <div class="module-col">${line.name}</div>
+                                    <div class="message-col">${line.message}</div>
+                                </div>
+                            `;
+                        });
+                        logContent.innerHTML = logHtml;
+                        
+                        // Update stats
+                        document.getElementById('log-stats').textContent = `Showing ${data.lines.length} lines`;
+                        
+                        // Apply search highlighting if needed
+                        if (searchTerm) {
+                            highlightSearchResults(searchTerm);
+                        }
+                        
+                        // Update visualizations
+                        updateVisualizations();
+                    })
+                    .catch(error => console.error('Error refreshing logs:', error));
+            }
             
             // Search functionality
             function performSearch() {
@@ -152,41 +445,209 @@
                     return;
                 }
                 
-                clearHighlights();
-                
-                const logLines = document.querySelectorAll('.log-line');
-                let firstMatch = null;
+                let found = 0;
+                const logLines = logContent.querySelectorAll('.log-line');
                 
                 logLines.forEach(line => {
                     const text = line.textContent.toLowerCase();
+                    const messageElement = line.querySelector('.message-col');
+                    
                     if (text.includes(searchTerm)) {
-                        // Highlight the search term in the line
-                        const regex = new RegExp(searchTerm, 'gi');
-                        line.innerHTML = line.innerHTML.replace(
-                            regex, 
-                            match => `<span class="highlight">${match}</span>`
-                        );
+                        found++;
+                        line.style.display = '';
                         
-                        if (!firstMatch) {
-                            firstMatch = line;
-                        }
+                        // Highlight the matching text
+                        const message = messageElement.textContent;
+                        const regex = new RegExp(searchTerm, 'gi');
+                        messageElement.innerHTML = message.replace(regex, match => `<span class="highlight">${match}</span>`);
+                    } else {
+                        line.style.display = 'none';
                     }
                 });
                 
-                // Scroll to first match
-                if (firstMatch) {
-                    firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
+                document.getElementById('log-stats').textContent = `Found ${found} matches`;
+                
+                // Add search filter badge
+                addFilterBadge('search', searchTerm);
             }
             
             function clearHighlights() {
-                const highlights = document.querySelectorAll('.highlight');
-                highlights.forEach(el => {
-                    const parent = el.parentNode;
-                    parent.textContent = parent.textContent;
+                const logLines = logContent.querySelectorAll('.log-line');
+                logLines.forEach(line => {
+                    line.style.display = '';
+                    const messageElement = line.querySelector('.message-col');
+                    if (messageElement) {
+                        messageElement.innerHTML = messageElement.textContent;
+                    }
                 });
+                
+                // Remove search filter badge
+                removeFilterBadge('search');
+                
+                // Update stats
+                document.getElementById('log-stats').textContent = `Showing ${logLines.length} lines`;
             }
             
+            // Filter functionality
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Update active button
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const level = this.dataset.level;
+                    
+                    // Filter log lines
+                    const logLines = logContent.querySelectorAll('.log-line');
+                    let visibleCount = 0;
+                    
+                    logLines.forEach(line => {
+                        if (level === 'all' || line.classList.contains(level)) {
+                            line.style.display = '';
+                            visibleCount++;
+                        } else {
+                            line.style.display = 'none';
+                        }
+                    });
+                    
+                    // Update stats
+                    document.getElementById('log-stats').textContent = `Showing ${visibleCount} lines`;
+                    
+                    // Update filter badges
+                    if (level !== 'all') {
+                        addFilterBadge('level', level.toUpperCase());
+                    } else {
+                        removeFilterBadge('level');
+                    }
+                });
+            });
+            
+            // Filter badge management
+            function addFilterBadge(type, value) {
+                const activeFilters = document.getElementById('active-filters');
+                
+                // Remove existing badge of the same type
+                removeFilterBadge(type);
+                
+                // Create new badge
+                const badge = document.createElement('span');
+                badge.className = 'filter-badge';
+                badge.dataset.type = type;
+                badge.innerHTML = `${type}: ${value} <span class="remove-filter">×</span>`;
+                
+                // Add remove event
+                badge.querySelector('.remove-filter').addEventListener('click', function() {
+                    if (type === 'search') {
+                        searchInput.value = '';
+                        clearHighlights();
+                    } else if (type === 'level') {
+                        document.querySelector('.btn-filter[data-level="all"]').click();
+                    }
+                });
+                
+                activeFilters.appendChild(badge);
+            }
+            
+            function removeFilterBadge(type) {
+                const badge = document.querySelector(`.filter-badge[data-type="${type}"]`);
+                if (badge) {
+                    badge.remove();
+                }
+            }
+            
+            // Generate visualizations
+            function updateVisualizations() {
+                updateLogLevelChart();
+                updateTimeDistributionChart();
+            }
+            
+            function updateLogLevelChart() {
+                const chart = document.getElementById('log-level-chart');
+                const logLines = logContent.querySelectorAll('.log-line');
+                
+                // Count log levels
+                const counts = {
+                    debug: 0,
+                    info: 0,
+                    warning: 0,
+                    error: 0,
+                    critical: 0
+                };
+                
+                logLines.forEach(line => {
+                    if (line.classList.contains('debug')) counts.debug++;
+                    else if (line.classList.contains('info')) counts.info++;
+                    else if (line.classList.contains('warning')) counts.warning++;
+                    else if (line.classList.contains('error')) counts.error++;
+                    else if (line.classList.contains('critical')) counts.critical++;
+                });
+                
+                // Clear previous bars
+                const existingBars = chart.querySelectorAll('.log-chart-bar');
+                existingBars.forEach(bar => bar.remove());
+                
+                // Find max count
+                const maxCount = Math.max(...Object.values(counts));
+                if (maxCount === 0) return;
+                
+                // Create bars
+                let position = 10;
+                for (const level in counts) {
+                    if (counts[level] > 0) {
+                        const bar = document.createElement('div');
+                        bar.className = `log-chart-bar ${level}`;
+                        bar.style.height = `${Math.max(3, (counts[level] / maxCount) * 30)}px`;
+                        bar.style.left = `${position}px`;
+                        
+                        // Add tooltip
+                        bar.title = `${level}: ${counts[level]}`;
+                        
+                        chart.appendChild(bar);
+                        position += 10;
+                    }
+                }
+            }
+            
+            function updateTimeDistributionChart() {
+                const chart = document.getElementById('log-time-chart');
+                const logLines = logContent.querySelectorAll('.log-line');
+                
+                // Clear previous bars
+                const existingBars = chart.querySelectorAll('.log-chart-bar');
+                existingBars.forEach(bar => bar.remove());
+                
+                // We'll create a simplified time histogram (just for visual effect)
+                const timeSlots = {};
+                
+                // Group logs by hour
+                logLines.forEach(line => {
+                    const timestamp = line.querySelector('.timestamp-col').textContent;
+                    const hour = timestamp.split(':')[0];
+                    if (!timeSlots[hour]) timeSlots[hour] = 0;
+                    timeSlots[hour]++;
+                });
+                
+                // Find max count
+                const maxCount = Math.max(...Object.values(timeSlots));
+                if (maxCount === 0) return;
+                
+                // Create bars
+                let position = 10;
+                for (const hour in timeSlots) {
+                    const bar = document.createElement('div');
+                    bar.className = 'log-chart-bar';
+                    bar.style.height = `${Math.max(3, (timeSlots[hour] / maxCount) * 30)}px`;
+                    bar.style.left = `${position}px`;
+                    
+                    // Add tooltip
+                    bar.title = `${hour}:00 - ${timeSlots[hour]} logs`;
+                    
+                    chart.appendChild(bar);
+                    position += 10;
+                }
+            }
+            
+            // Event listeners
             searchButton.addEventListener('click', performSearch);
             searchInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
@@ -194,69 +655,10 @@
                 }
             });
             
-            // Log file selection
-            logFileSelect.addEventListener('change', function() {
-                window.location.href = `/admin/logs?file=${this.value}`;
-            });
-            
-            // Log filtering
-            const filterButtons = document.querySelectorAll('[id^="filter-"]');
-            filterButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    // Remove active class from all buttons
-                    filterButtons.forEach(btn => btn.classList.remove('active'));
-                    
-                    // Add active class to clicked button
-                    this.classList.add('active');
-                    
-                    const filter = this.id.replace('filter-', '');
-                    const logLines = document.querySelectorAll('.log-line');
-                    
-                    logLines.forEach(line => {
-                        if (filter === 'all') {
-                            line.style.display = '';
-                        } else {
-                            if (line.classList.contains(`log-${filter}`)) {
-                                line.style.display = '';
-                            } else {
-                                line.style.display = 'none';
-                            }
-                        }
-                    });
-                });
-            });
-            
-            // Auto-refresh functionality
-            autoRefreshCheckbox.addEventListener('change', function() {
-                if (this.checked) {
-                    autoRefreshInterval = setInterval(() => {
-                        const currentFile = logFileSelect.value;
-                        fetch(`/admin/logs/data?file=${currentFile}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                logContent.innerHTML = data.log_lines.map(line => `
-                                    <div class="log-line ${line.level.toLowerCase()}">
-                                        <span class="timestamp">${line.timestamp}</span>
-                                        <span class="module">${line.module}</span>
-                                        <span class="level">${line.level}</span>
-                                        <span class="message">${line.message}</span>
-                                    </div>
-                                `).join('');
-                                
-                                // Re-apply search if needed
-                                if (searchInput.value) {
-                                    performSearch();
-                                }
-                                
-                                // Update stats
-                                document.getElementById('log-stats').textContent = 
-                                    `Showing ${data.log_lines.length} lines`;
-                            });
-                    }, 5000);
-                } else {
-                    clearInterval(autoRefreshInterval);
-                }
-            });
+            // Initial state
+            if (autoRefreshCheckbox.checked) {
+                autoRefreshInterval = setInterval(refreshLogs, 5000);
+            }
         });
     </script>
 </body>
