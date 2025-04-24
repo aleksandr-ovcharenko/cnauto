@@ -479,7 +479,7 @@ class CountryAdmin(SecureModelView):
 
 
 class BrandSynonymInlineModel(InlineFormAdmin):
-    form_columns = ['id', 'name']
+    form_columns = ['name']
 
     def postprocess_form(self, form_class):
         form_class.id = HiddenField()
