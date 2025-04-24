@@ -97,13 +97,10 @@
                                         <button class="btn btn-sm btn-danger btn-block" type="button"
                                                 onclick="removeImage({{ img.id }})">Удалить
                                         </button>
-                                        <form method="POST" action="{{ url_for('.generate_from_gallery', id=img.id) }}" 
-                                              style="margin-top: 10px;"
-                                              onsubmit="return closeModalWithMessage('⏳ Генерация AI изображения запущена. Это может занять 1-2 минуты...')">
-                                            <button class="btn btn-sm btn-primary btn-block" type="submit">
-                                                Сгенерировать (AI)
-                                            </button>
-                                        </form>
+                                        <button class="btn btn-sm btn-primary btn-block" type="button"
+                                                onclick="generateImage({{ img.id }})">
+                                            Сгенерировать (AI)
+                                        </button>
                                     </div>
                                 </div>
                                 <div class="col-sm-8">
@@ -209,6 +206,37 @@
         
         // Return true to allow the form submission to proceed
         return true;
+    }
+    
+    function generateImage(imageId) {
+        // First close the modal
+        $('#galleryModal').modal('hide');
+        
+        // Show message
+        showToast('⏳ Генерация AI изображения запущена. Это может занять 1-2 минуты...', 'info');
+        
+        // Submit the form via fetch to avoid page reload
+        fetch(`{{ url_for('.generate_from_gallery', id=0) }}`.replace('0', imageId), {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Ошибка при запуске генерации');
+            }
+            return response.text();
+        })
+        .then(() => {
+            // Success - do nothing, server will redirect
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        })
+        .catch(error => {
+            showToast(`❌ ${error.message}`, 'danger');
+        });
     }
     
     function showToast(message, type = 'info') {

@@ -85,6 +85,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            position: relative;
         }
         .log-debug { color: #7dcfb6; }
         .log-info { color: #69b5e4; }
@@ -307,6 +308,41 @@
             padding: 0;
             margin-top: 0;
         }
+        
+        /* Expand button for long messages */
+        .expand-btn {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 0;
+            background-color: #2a2c35;
+            color: #69b5e4;
+            border: none;
+            padding: 0 4px;
+            font-size: 10px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+        
+        .log-line:hover .expand-btn {
+            display: inline-block;
+        }
+        
+        /* Extended log message */
+        .log-line.expanded .message-col {
+            white-space: pre-wrap;
+            overflow: visible;
+            background-color: #252730;
+            padding: 5px;
+            border-radius: 3px;
+            z-index: 10;
+        }
+        
+        .log-line.expanded {
+            height: auto;
+            min-height: 12px;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
@@ -484,13 +520,18 @@
                             // Add common classes
                             logLine.classList.add('log-line', line.level.toLowerCase());
                             
-                            // Build the inner structure
-                            logLine.innerHTML = `
+                            // Build the inner structure with expand button for long messages
+                            const messageHTML = `
                                 <div class="timestamp-col">${line.time || line.timestamp}</div>
                                 <div class="level-col">${line.level}</div>
                                 <div class="module-col">${line.name || line.module}</div>
-                                <div class="message-col">${line.message}</div>
+                                <div class="message-col">
+                                    ${line.message}
+                                    <button class="expand-btn" title="Развернуть" onclick="toggleExpand(event, this)">⋯</button>
+                                </div>
                             `;
+                            
+                            logLine.innerHTML = messageHTML;
                             
                             // Append to the container
                             logContent.appendChild(logLine);
@@ -786,6 +827,23 @@
                     scrollPosition = logContent.scrollTop;
                 }, scrollTimeout);
             });
+            
+            // Function to toggle expanded log lines
+            function toggleExpand(event, button) {
+                event.stopPropagation(); // Prevent log line click event
+                
+                const logLine = button.closest('.log-line');
+                
+                if (logLine.classList.contains('expanded')) {
+                    logLine.classList.remove('expanded');
+                    button.textContent = '⋯';
+                    button.title = 'Развернуть';
+                } else {
+                    logLine.classList.add('expanded');
+                    button.textContent = '×';
+                    button.title = 'Свернуть';
+                }
+            }
             
             // Event listeners
             searchButton.addEventListener('click', performSearch);

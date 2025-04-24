@@ -443,19 +443,36 @@ class CarAdmin(SecureModelView):
         logger = get_module_logger(__name__)
         car = Car.query.get_or_404(id)
         ids_in_order = request.form.get('order', '').split(',')
+        
+        # Extract all possible image IDs from the form
+        form_img_ids = {key.split('_')[1] for key in request.form.keys() 
+                         if key.startswith(('title_', 'alt_', 'position_'))}
+        
+        logger.info(f"🖼 Обновление галереи для car_id={id}, найдено {len(form_img_ids)} изображений в форме")
         updated_ids = set()
 
         for img in car.gallery_images:
             str_id = str(img.id)
-            logger.info(f"🔍 Обрабатываем img.id={str_id}")
-            logger.debug(f"📥 request.form: {dict(request.form)}")
-
+            
+            # Skip images that aren't in the form
+            if str_id not in form_img_ids:
+                continue
+                
+            # Only process images where values are actually specified
             if f"title_{str_id}" in request.form or f"alt_{str_id}" in request.form:
-                logger.info(f"✅ Нашли в форме изображение {str_id}")
-                img.title = request.form.get(f"title_{str_id}")
-                img.alt = request.form.get(f"alt_{str_id}")
+                # Log only once for each image, not for each field
+                logger.info(f"✏️ Обновляем данные для изображения id={str_id}")
+                
+                # Only set fields that are actually present in the form
+                if f"title_{str_id}" in request.form:
+                    img.title = request.form.get(f"title_{str_id}")
+                if f"alt_{str_id}" in request.form:
+                    img.alt = request.form.get(f"alt_{str_id}")
+                
+                # Set position if available
                 if str_id in ids_in_order:
                     img.position = ids_in_order.index(str_id)
+                
                 updated_ids.add(str_id)
 
         db.session.commit()
