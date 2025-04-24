@@ -12,9 +12,12 @@ from backend.utils.generate_comfyui import generate_with_comfyui
 from backend.utils.generator_photon import generate_with_photon
 from backend.utils.telegram_file import get_telegram_file_url
 
-# Настройка логгера
-logging.basicConfig(level=logging.INFO)
+# Configure logging
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+logger.addHandler(handler)
 
 REPLICATE_MODE = os.getenv("REPLICATE_MODE", "photon").lower().strip()
 telegram_import = Blueprint('telegram_import', __name__)
@@ -63,7 +66,7 @@ def import_car():
         if existing_brand:
             # Use the existing brand instead of creating a new one
             brand = existing_brand
-            print(f"✅ Using existing brand: {brand.name} (slug: {brand.slug})")
+            logger.info(f"✅ Using existing brand: {brand.name} (slug: {brand.slug})")
         else:
             # Create a new brand only if it doesn't exist
             brand = Brand(name=brand_name, slug=slug)
@@ -74,7 +77,7 @@ def import_car():
             db.session.add(synonym)
             db.session.flush()
             brand_created = True
-            print(f"✅ Created new brand: {brand.name} (slug: {brand.slug})")
+            logger.info(f"✅ Created new brand: {brand.name} (slug: {brand.slug})")
 
     car_type = None
     if car_type_name:
