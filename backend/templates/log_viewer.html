@@ -51,9 +51,9 @@
             padding: 0;
         }
         .log-line {
-            padding: 0 4px;
+            padding: 0 2px;
             margin: 0;
-            line-height: 1.15;
+            line-height: 1.1;
             border-bottom: 1px solid #252730;
             display: flex;
         }
@@ -87,7 +87,31 @@
         .log-warning { color: #f5a700; }
         .log-error { color: #f04747; }
         .log-critical { color: #ff3838; font-weight: bold; }
-        .highlight { background-color: rgba(255, 226, 0, 0.2); }
+        .highlight { 
+            background-color: rgba(255, 226, 0, 0.3); 
+            color: #fff;
+            font-weight: bold;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+        
+        /* Hidden log classes */
+        .log-line.periodic-check,
+        .log-line.http-log {
+            display: none !important;
+        }
+        
+        /* When filters are off, show all */
+        .show-periodic .log-line.periodic-check,
+        .show-http .log-line.http-log {
+            display: flex !important;
+        }
+        
+        /* Active button style for filter toggles */
+        .btn-filter-toggle.active {
+            background-color: #343741;
+            border-color: #535871;
+        }
         
         #log-controls {
             background-color: #25262e;
@@ -174,6 +198,11 @@
         
         .super-compact-mode .level-col {
             flex: 0 0 50px;
+        }
+        
+        /* Time display */
+        .timestamp-visible .timestamp-col {
+            display: block !important;
         }
         
         /* Column display modes */
@@ -301,7 +330,7 @@
                 
                 <div class="d-flex align-items-center ms-3">
                     <div class="form-check me-3">
-                        <input class="form-check-input" type="checkbox" id="auto-refresh">
+                        <input class="form-check-input" type="checkbox" id="auto-refresh" checked>
                         <label class="form-check-label" for="auto-refresh">Auto-refresh (5s)</label>
                     </div>
                     
@@ -310,9 +339,23 @@
                         <label class="form-check-label" for="ultra-compact">Ultra-compact</label>
                     </div>
                     
-                    <div class="form-check">
+                    <div class="form-check me-3">
                         <input class="form-check-input" type="checkbox" id="super-compact">
                         <label class="form-check-label" for="super-compact">Super-compact</label>
+                    </div>
+                    
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="show-time" checked>
+                        <label class="form-check-label" for="show-time">Show time</label>
+                    </div>
+                    
+                    <div class="ms-2 d-flex">
+                        <button id="toggle-http" class="btn-tools btn-filter-toggle" data-filter="http">
+                            <i class="bi bi-eye-slash"></i> HTTP
+                        </button>
+                        <button id="toggle-periodic" class="btn-tools btn-filter-toggle" data-filter="periodic">
+                            <i class="bi bi-eye-slash"></i> Periodic
+                        </button>
                     </div>
                 </div>
                 
@@ -370,6 +413,21 @@
                 autoRefreshInterval = setInterval(refreshLogs, 5000);
             }
             
+            // Initialize timestamp visibility
+            const showTimeCheckbox = document.getElementById('show-time');
+            if (showTimeCheckbox.checked) {
+                logContent.classList.add('timestamp-visible');
+            }
+            
+            // Toggle timestamp visibility
+            showTimeCheckbox.addEventListener('change', function() {
+                if(this.checked) {
+                    logContent.classList.add('timestamp-visible');
+                } else {
+                    logContent.classList.remove('timestamp-visible');
+                }
+            });
+            
             // Ultra-compact mode toggle
             ultraCompactCheckbox.addEventListener('change', function() {
                 if(this.checked) {
@@ -416,11 +474,22 @@
                         // Update log content
                         let logHtml = '';
                         data.lines.forEach(line => {
+                            // Detect periodic check logs and HTTP logs for filtering
+                            let extraClasses = '';
+                            if (line.message.includes('Periodic log check') || 
+                                line.message.includes('logging is still active')) {
+                                extraClasses += ' periodic-check';
+                            }
+                            if ((line.message.includes('Request:') || line.message.includes('Response:')) &&
+                                (line.module.includes('flask') || line.module.includes('werkzeug'))) {
+                                extraClasses += ' http-log';
+                            }
+                            
                             logHtml += `
-                                <div class="log-line ${line.level.toLowerCase()}">
-                                    <div class="timestamp-col">${line.time}</div>
+                                <div class="log-line ${line.level.toLowerCase()}${extraClasses}">
+                                    <div class="timestamp-col">${line.time || line.timestamp}</div>
                                     <div class="level-col">${line.level}</div>
-                                    <div class="module-col">${line.name}</div>
+                                    <div class="module-col">${line.name || line.module}</div>
                                     <div class="message-col">${line.message}</div>
                                 </div>
                             `;
@@ -428,7 +497,7 @@
                         logContent.innerHTML = logHtml;
                         
                         // Update stats
-                        document.getElementById('log-stats').textContent = `Showing ${data.lines.length} lines`;
+                        updateLogStats();
                         
                         // Apply search highlighting if needed
                         if (searchTerm) {
@@ -550,6 +619,30 @@
                     }
                 });
             });
+            
+            // Filter toggles for HTTP and periodic logs
+            const toggleHttpBtn = document.getElementById('toggle-http');
+            const togglePeriodicBtn = document.getElementById('toggle-periodic');
+            
+            toggleHttpBtn.addEventListener('click', function() {
+                logContent.classList.toggle('show-http');
+                this.classList.toggle('active');
+                updateLogStats();
+            });
+            
+            togglePeriodicBtn.addEventListener('click', function() {
+                logContent.classList.toggle('show-periodic');
+                this.classList.toggle('active');
+                updateLogStats();
+            });
+            
+            // Function to update the visible log count
+            function updateLogStats() {
+                const visibleLines = Array.from(logContent.querySelectorAll('.log-line')).filter(
+                    line => line.offsetParent !== null
+                ).length;
+                document.getElementById('log-stats').textContent = `Showing ${visibleLines} of ${logContent.querySelectorAll('.log-line').length} lines`;
+            }
             
             // Filter badge management
             function addFilterBadge(type, value) {

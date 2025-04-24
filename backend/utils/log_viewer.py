@@ -19,6 +19,7 @@ def get_log_files() -> List[str]:
 def parse_log_line(line: str) -> Optional[Dict]:
     """Parse a log line into its components"""
     # Match log format: timestamp - module - level - message
+    # Updated pattern to better handle various logging formats
     pattern = r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) - ([^-]+) - ([A-Z]+) - (.+)$'
     match = re.match(pattern, line)
     
@@ -30,6 +31,20 @@ def parse_log_line(line: str) -> Optional[Dict]:
             'level': level.strip(),
             'message': message.strip()
         }
+    
+    # Try alternate patterns - sometimes logs have different formats
+    # This format is often used by Flask and other libraries: LEVEL [Module] Message
+    alt_pattern = r'^([A-Z]+)\s+\[([^\]]+)\]\s+(.+)$'
+    alt_match = re.match(alt_pattern, line)
+    if alt_match:
+        level, module, message = alt_match.groups()
+        return {
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S,%f')[:-3],  # Use current time as timestamp
+            'module': module.strip(),
+            'level': level.strip(),
+            'message': message.strip()
+        }
+    
     return None
 
 def get_log_content(log_file: str, max_lines: int = 1000) -> List[Dict]:

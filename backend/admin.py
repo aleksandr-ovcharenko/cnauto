@@ -362,6 +362,9 @@ class CarAdmin(SecureModelView):
         from utils.telegram_import import generate_image
         image = CarImage.query.get_or_404(id)
         car = image.car
+        
+        logger = get_module_logger(__name__)
+        logger.info(f"🎨 Generating AI image from gallery image ID={id} for car {car.model}")
 
         prompt = (
             f"Professional car studio shot, clean background, only the car visible. "
@@ -374,19 +377,23 @@ class CarAdmin(SecureModelView):
         )
 
         try:
-            new_image = generate_image(mode="photon", prompt=prompt, image_url=car.gallery_images[0].url,
+            # Use the specific image that was clicked, not the first gallery image
+            new_image = generate_image(mode="photon", prompt=prompt, image_url=image.url,
                                        car_model=car.model, car_brand=car.brand, car_id=car.id)
             if new_image:
                 car.image_url = new_image
                 db.session.commit()
+                flash(f"✅ Изображение успешно обновлено!", "success")
+                logger.info(f"✅ AI image generation successful for car {car.id} from image {id}")
             else:
                 flash(f"❌ Не удалось сгенерировать для {car.model}", "error")
+                logger.warning(f"⚠️ AI image generation failed for car {car.id} - no image returned")
         except Exception as e:
             flash(f"❌ Ошибка при генерации изображения: {e}", "error")
+            logger.error(f"❌ Error generating AI image for car {car.id}: {e}")
+            return redirect(url_for('.edit_view', id=car.id))
 
-        flash(f"✅ Изображение успешно обновлено!", "success")
-
-        return redirect(url_for('.edit_view', id=image.car.id))
+        return redirect(url_for('.edit_view', id=car.id))
 
     @expose('/edit_gallery/<int:id>', methods=['POST'])
     def edit_gallery(self, id):

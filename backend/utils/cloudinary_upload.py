@@ -101,18 +101,18 @@ def delete_image(url=None, public_id=None, folder=None, car_id=None, car_name=No
             logger.info(f"Deleting all images in Cloudinary folder: {folder}")
             try:
                 # Check if the folder exists first by listing resources
-                resources = cloudinary.api.resources(prefix=folder, max_results=1)
+                resources = cloudinary.api.resources(prefix=folder, max_results=1, resource_type="image")
                 if not resources.get('resources'):
                     logger.info(f"⚠️ No resources found in folder {folder}, may be already deleted")
                 else:
-                    result = cloudinary.api.delete_resources_by_prefix(folder)
+                    result = cloudinary.api.delete_resources_by_prefix(folder, resource_type="image")
                 
                 # Try to delete the folder itself, but handle if it doesn't exist
                 try:
-                    cloudinary.api.delete_folder(folder)
+                    cloudinary.api.delete_folder(folder, resource_type="image")
                     logger.info(f"✅ Deleted folder from Cloudinary: {folder}")
-                except:
-                    logger.info(f"⚠️ Could not delete folder {folder}, may not exist or be empty")
+                except Exception as folder_err:
+                    logger.info(f"⚠️ Could not delete folder {folder}: {str(folder_err)}")
                 
                 return True
             except Exception as folder_error:
@@ -134,18 +134,20 @@ def delete_image(url=None, public_id=None, folder=None, car_id=None, car_name=No
             
             try:
                 # Check if the folder exists first by listing resources
-                resources = cloudinary.api.resources(prefix=car_folder, max_results=1)
+                resources = cloudinary.api.resources(prefix=car_folder, max_results=1, resource_type="image")
                 if not resources.get('resources'):
                     logger.info(f"⚠️ No resources found in car folder {car_folder}, may be already deleted")
                 else:
-                    result = cloudinary.api.delete_resources_by_prefix(car_folder)
+                    # Delete all resources in the folder with resource_type specified
+                    result = cloudinary.api.delete_resources_by_prefix(car_folder, resource_type="image")
                 
-                # Try to delete the folder itself, but handle if it doesn't exist
+                # Try to delete the folder itself
                 try:
-                    cloudinary.api.delete_folder(car_folder)
+                    # Specify resource_type to fix the 400 error
+                    cloudinary.api.delete_folder(car_folder, resource_type="image")
                     logger.info(f"✅ Deleted car folder from Cloudinary: {car_folder}")
-                except:
-                    logger.info(f"⚠️ Could not delete car folder {car_folder}, may not exist or be empty")
+                except Exception as folder_error:
+                    logger.warning(f"⚠️ Could not delete car folder structure: {str(folder_error)}")
                 
                 return True
             except Exception as folder_error:
