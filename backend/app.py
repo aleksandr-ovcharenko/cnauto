@@ -21,6 +21,7 @@ from wtforms.validators import InputRequired
 from flask_cors import CORS
 from werkzeug.security import check_password_hash
 from werkzeug.security import generate_password_hash
+from flask import Response
 
 # Use relative imports instead of backend.* package imports
 from admin import init_admin
@@ -345,19 +346,56 @@ def view_raw_log():
     if not selected_file or selected_file not in log_files:
         selected_file = log_files[0] if log_files else None
     
-    content = "No log file available"
-    if selected_file:
-        log_dir = os.path.join(os.path.dirname(__file__), 'logs')
-        log_path = os.path.join(log_dir, selected_file)
-        
-        try:
-            with open(log_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-        except Exception as e:
-            content = f"Error reading log file: {str(e)}"
+    if not selected_file:
+        return "No log files found", 404
     
-    # Return as plain text with proper content type
-    return content, 200, {'Content-Type': 'text/plain; charset=utf-8'}
+    log_path = os.path.join(app.config['LOG_FOLDER'], selected_file)
+    
+    with open(log_path, 'r') as f:
+        content = f.read()
+    
+    return Response(content, mimetype='text/plain')
+
+
+@app.route('/admin/logs/files')
+@login_required
+def get_log_files_api():
+    """
+    API endpoint to get available log files
+    """
+    log_files = get_log_files()
+    return jsonify(log_files)
+
+
+@app.route('/admin/logs/content')
+@login_required
+def get_log_content_api():
+    """
+    API endpoint to get log content with filtering
+    """
+    log_files = get_log_files()
+    selected_file = request.args.get('file')
+    level_filter = request.args.get('level', 'all').lower()
+    search_term = request.args.get('search', '')
+    
+    # If no file specified or file doesn't exist, use the most recent
+    if not selected_file or selected_file not in log_files:
+        selected_file = log_files[0] if log_files else None
+    
+    if not selected_file:
+        return jsonify({"lines": []})
+    
+    log_lines = get_log_content(selected_file)
+    
+    # Apply level filter if not 'all'
+    if level_filter != 'all':
+        log_lines = [line for line in log_lines if line['level'].lower() == level_filter]
+    
+    # Apply search filter if provided
+    if search_term:
+        log_lines = [line for line in log_lines if search_term.lower() in line['message'].lower()]
+    
+    return jsonify({"lines": log_lines})
 
 
 @app.route('/admin/api-docs')

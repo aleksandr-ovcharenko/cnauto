@@ -260,7 +260,7 @@ class CarAdmin(SecureModelView):
 
     form_columns = [
         'model', 'price', 'currency', 'brand', 'car_type',
-        'image_upload', 'image_upload',
+        'image_upload',
         'description', 'year', 'mileage', 'engine', 'in_stock'
     ]
 

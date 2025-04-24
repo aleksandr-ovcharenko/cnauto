@@ -260,7 +260,7 @@
             <div class="title-bar">
                 <h1>CNAuto Log Viewer</h1>
                 <div>
-                    <a href="/admin" class="btn btn-tools"><i class="bi bi-arrow-left"></i> Admin</a>
+                    <a href="{{ url_for('admin.index') }}" class="btn btn-tools"><i class="bi bi-arrow-left"></i> Admin</a>
                 </div>
             </div>
         </div>
@@ -287,10 +287,10 @@
                 </div>
                 
                 <div class="ms-auto">
-                    <a href="/admin/logs/raw?file={{ current_log }}" target="_blank" class="btn-tools">
+                    <a href="/admin/logs/content?file={{ current_log }}" target="_blank" class="btn-tools">
                         <i class="bi bi-file-text"></i> Raw
                     </a>
-                    <a href="/admin/logs/raw?file={{ current_log }}" download="{{ current_log }}" class="btn-tools">
+                    <a href="/admin/logs/content?file={{ current_log }}" download="{{ current_log }}" class="btn-tools">
                         <i class="bi bi-download"></i> Download
                     </a>
                 </div>
