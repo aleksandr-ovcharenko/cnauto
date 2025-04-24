@@ -99,12 +99,21 @@
         .log-line.periodic-check,
         .log-line.http-log {
             display: none !important;
+            height: 0 !important;
+            overflow: hidden !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
         }
         
         /* When filters are off, show all */
         .show-periodic .log-line.periodic-check,
         .show-http .log-line.http-log {
             display: flex !important;
+            height: auto !important;
+            overflow: visible !important;
+            border-bottom: 1px solid #252730 !important;
+            padding: 0 2px !important;
         }
         
         /* Active button style for filter toggles */
@@ -177,50 +186,40 @@
             margin-top: 4px;
         }
         
-        /* Compact mode styles */
-        .ultra-compact-mode .timestamp-col,
-        .ultra-compact-mode .module-col {
-            display: none;
-        }
-        
-        .ultra-compact-mode .log-line {
-            line-height: 1.05;
-            padding: 0 2px;
-        }
-        
-        /* Super-compact mode */
-        .super-compact-mode .log-line {
-            font-size: 9px;
-            line-height: 1;
-            padding: 0;
-            border-bottom: none;
-        }
-        
-        .super-compact-mode .level-col {
-            flex: 0 0 50px;
-        }
-        
-        /* Time display */
-        .timestamp-visible .timestamp-col {
-            display: block !important;
-        }
-        
         /* Column display modes */
         .tabular-view .log-line {
             display: flex;
         }
         
-        .wrap-view .log-line {
-            display: block;
-            padding: 2px 4px;
+        .tabular-view .timestamp-col {
+            flex: 0 0 150px;
+            color: #98a2b3;
+            padding-right: 5px;
+            font-size: 10px;
         }
         
-        .wrap-view .timestamp-col,
-        .wrap-view .level-col,
-        .wrap-view .module-col,
-        .wrap-view .message-col {
-            display: inline;
-            margin-right: 5px;
+        .tabular-view .level-col {
+            flex: 0 0 70px;
+            padding-right: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .tabular-view .module-col {
+            flex: 0 0 150px;
+            padding-right: 5px;
+            color: #8897b9;
+        }
+        
+        .tabular-view .message-col {
+            flex: 1;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        /* Time display */
+        .timestamp-visible .timestamp-col {
+            display: block !important;
         }
         
         /* Filter badges */
@@ -334,27 +333,17 @@
                         <label class="form-check-label" for="auto-refresh">Auto-refresh (5s)</label>
                     </div>
                     
-                    <div class="form-check me-3">
-                        <input class="form-check-input" type="checkbox" id="ultra-compact">
-                        <label class="form-check-label" for="ultra-compact">Ultra-compact</label>
-                    </div>
-                    
-                    <div class="form-check me-3">
-                        <input class="form-check-input" type="checkbox" id="super-compact">
-                        <label class="form-check-label" for="super-compact">Super-compact</label>
-                    </div>
-                    
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="show-time" checked>
                         <label class="form-check-label" for="show-time">Show time</label>
                     </div>
                     
                     <div class="ms-2 d-flex">
-                        <button id="toggle-http" class="btn-tools btn-filter-toggle" data-filter="http">
-                            <i class="bi bi-eye-slash"></i> HTTP
+                        <button id="toggle-http" class="btn-tools btn-filter-toggle active" data-filter="http">
+                            <i class="bi bi-eye"></i> HTTP
                         </button>
-                        <button id="toggle-periodic" class="btn-tools btn-filter-toggle" data-filter="periodic">
-                            <i class="bi bi-eye-slash"></i> Periodic
+                        <button id="toggle-periodic" class="btn-tools btn-filter-toggle active" data-filter="periodic">
+                            <i class="bi bi-eye"></i> Periodic
                         </button>
                     </div>
                 </div>
@@ -365,7 +354,7 @@
             </div>
         </div>
         
-        <div class="log-container tabular-view" id="log-content">
+        <div class="log-container tabular-view show-http show-periodic" id="log-content">
             {% for line in log_lines %}
                 <div class="log-line {{ line.level|lower }}">
                     <div class="timestamp-col">{{ line.timestamp }}</div>
@@ -397,16 +386,18 @@
             const searchButton = document.getElementById('search-button');
             const logFileSelect = document.getElementById('log-file-select');
             const autoRefreshCheckbox = document.getElementById('auto-refresh');
-            const ultraCompactCheckbox = document.getElementById('ultra-compact');
-            const superCompactCheckbox = document.getElementById('super-compact');
             const filterButtons = document.querySelectorAll('.btn-filter');
             let autoRefreshInterval;
             
             // Initialize visualization
             updateVisualizations();
             
-            // Scroll to bottom of logs initially
-            logContent.scrollTop = logContent.scrollHeight;
+            // Store for remembering scroll position
+            let scrollPosition = 0;
+            let isUserScrolling = false;
+            let hasUserScrolled = false; // Track if user has manually scrolled
+            const scrollTimeout = 1000; // How long to consider user "still scrolling" after last scroll
+            let userScrollTimer = null;
             
             // Initialize auto-refresh if checkbox is already checked (e.g. page reload)
             if (autoRefreshCheckbox.checked) {
@@ -428,28 +419,6 @@
                 }
             });
             
-            // Ultra-compact mode toggle
-            ultraCompactCheckbox.addEventListener('change', function() {
-                if(this.checked) {
-                    logContent.classList.add('ultra-compact-mode');
-                    superCompactCheckbox.checked = false;
-                    logContent.classList.remove('super-compact-mode');
-                } else {
-                    logContent.classList.remove('ultra-compact-mode');
-                }
-            });
-            
-            // Super-compact mode toggle
-            superCompactCheckbox.addEventListener('change', function() {
-                if(this.checked) {
-                    logContent.classList.add('super-compact-mode');
-                    ultraCompactCheckbox.checked = false;
-                    logContent.classList.remove('ultra-compact-mode');
-                } else {
-                    logContent.classList.remove('super-compact-mode');
-                }
-            });
-            
             // Log file selection
             logFileSelect.addEventListener('change', function() {
                 window.location.href = '/admin/logs?file=' + this.value;
@@ -459,6 +428,9 @@
                 const currentFile = logFileSelect.value;
                 const filterLevel = document.querySelector('.btn-filter.active').dataset.level;
                 const searchTerm = searchInput.value;
+                
+                // Store the current scroll position before refreshing
+                scrollPosition = logContent.scrollTop;
                 
                 // Add a unique timestamp to prevent caching
                 const timestamp = new Date().getTime();
@@ -496,27 +468,27 @@
                         });
                         logContent.innerHTML = logHtml;
                         
-                        // Update stats
-                        updateLogStats();
-                        
                         // Apply search highlighting if needed
                         if (searchTerm) {
                             highlightSearchResults(searchTerm);
                         }
                         
-                        // Update visualizations
-                        updateVisualizations();
+                        // Update stats
+                        updateLogStats();
                         
-                        // Maintain scroll position at bottom if we were already at bottom
-                        if (autoRefreshCheckbox.checked) {
-                            logContent.scrollTop = logContent.scrollHeight;
+                        // Restore filters state
+                        if (logContent.classList.contains('show-http')) {
+                            document.getElementById('toggle-http').classList.add('active');
+                        }
+                        if (logContent.classList.contains('show-periodic')) {
+                            document.getElementById('toggle-periodic').classList.add('active');
                         }
                         
-                        console.log(`Logs refreshed at ${new Date().toLocaleTimeString()}`);
+                        // Always restore the user's previous scroll position
+                        logContent.scrollTop = scrollPosition;
                     })
                     .catch(error => {
                         console.error('Error refreshing logs:', error);
-                        // Don't stop auto-refresh on error, it will try again
                     });
             }
             
@@ -769,6 +741,24 @@
                 }
             }
             
+            // Track user scrolling
+            logContent.addEventListener('scroll', function() {
+                isUserScrolling = true;
+                hasUserScrolled = true; // User has manually scrolled at least once
+                
+                // Clear any existing timer
+                if (userScrollTimer) {
+                    clearTimeout(userScrollTimer);
+                }
+                
+                // Set a new timer to detect when user stops scrolling
+                userScrollTimer = setTimeout(function() {
+                    isUserScrolling = false;
+                    // Update the stored position
+                    scrollPosition = logContent.scrollTop;
+                }, scrollTimeout);
+            });
+            
             // Event listeners
             searchButton.addEventListener('click', performSearch);
             searchInput.addEventListener('keypress', function(e) {
@@ -776,6 +766,11 @@
                     performSearch();
                 }
             });
+            
+            // Initialize log filters
+            logContent.classList.add('show-http', 'show-periodic');
+            document.getElementById('toggle-http').classList.add('active');
+            document.getElementById('toggle-periodic').classList.add('active');
         });
     </script>
 </body>
