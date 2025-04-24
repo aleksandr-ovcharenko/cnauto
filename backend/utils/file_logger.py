@@ -1,6 +1,7 @@
 import os
 import logging
 import sys
+import platform
 from datetime import datetime
 
 def setup_file_logger():
@@ -42,16 +43,40 @@ def setup_file_logger():
     root_logger.addHandler(file_handler)
     root_logger.addHandler(console_handler)
     
+    # CRITICAL: Force propagation for ALL loggers to ensure logs reach the root logger
+    for name in logging.root.manager.loggerDict:
+        logger = logging.getLogger(name)
+        logger.setLevel(logging.DEBUG)  # Set level to DEBUG for all loggers
+        logger.propagate = True  # Ensure propagation is enabled
+
     # Force debug logs to go to file even if other libraries try to disable it
     logging.getLogger('werkzeug').propagate = True
+    logging.getLogger('werkzeug').setLevel(logging.DEBUG)
+    
     logging.getLogger('sqlalchemy').propagate = True
+    logging.getLogger('sqlalchemy').setLevel(logging.DEBUG)
     
-    # Reduce verbosity of some loggers in console but keep full logs in file
-    logging.getLogger('werkzeug').setLevel(logging.INFO)
-    logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
+    logging.getLogger('flask').propagate = True
+    logging.getLogger('flask').setLevel(logging.DEBUG)
     
-    # Add a message to confirm setup
+    # Log some system information to help with debugging
+    platform_info = {
+        'system': platform.system(),
+        'release': platform.release(),
+        'version': platform.version(),
+        'python': platform.python_version(),
+        'path': sys.path,
+        'cwd': os.getcwd(),
+        'env': {k: v for k, v in os.environ.items() if not k.startswith('_')}
+    }
     root_logger.info(f"✅ Logging initialized: All logs will be saved to {log_file}")
+    root_logger.debug(f"🔧 Platform info: {platform_info}")
+    
+    # Test logging for each configured logger to verify propagation
+    for name in ['werkzeug', 'sqlalchemy', 'flask']:
+        if name in logging.root.manager.loggerDict:
+            test_logger = logging.getLogger(name)
+            test_logger.debug(f"🧪 Test log from {name} logger - propagation={test_logger.propagate}, level={logging.getLevelName(test_logger.level)}")
     
     return log_file
 
@@ -67,5 +92,19 @@ def get_module_logger(name):
         logger.info("Info message")
     """
     logger = logging.getLogger(name)
+    # Ensure this logger has propagation enabled
+    logger.propagate = True
     # No need to add handlers, they're inherited from the root logger
     return logger
+
+def add_test_logs():
+    """
+    Add test log messages at various levels to verify logging is working.
+    Call this function from different parts of the application to test logging.
+    """
+    logger = get_module_logger("test_logger")
+    logger.debug("📝 DEBUG test message - should appear in logs")
+    logger.info("📝 INFO test message - should appear in logs")
+    logger.warning("📝 WARNING test message - should appear in logs")
+    logger.error("📝 ERROR test message - should appear in logs")
+    logger.critical("📝 CRITICAL test message - should appear in logs")

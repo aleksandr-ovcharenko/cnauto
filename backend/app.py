@@ -19,7 +19,7 @@ from backend.config_prod import ProdConfig
 from backend.models import Car, Category, Brand, Country, CarType
 from backend.models import User
 from backend.models import db
-from backend.utils.file_logger import setup_file_logger
+from backend.utils.file_logger import setup_file_logger, add_test_logs
 from backend.utils.log_viewer import get_log_files, get_log_content
 from backend.utils.telegram_import import import_car as import_car_handler
 from backend.events import setup_deletion_events
@@ -39,17 +39,34 @@ logger.info("ℹ️ INFO logging is enabled")
 logger.warning("⚠️ WARNING logging is enabled")
 logger.error("❌ ERROR logging is enabled - this is just a test")
 
+# Add test logs to verify logging is working
+add_test_logs()
+
 # Flask app
 app = Flask(__name__)
 env = os.getenv("FLASK_ENV", "development")
 if env == "production":
     app.config.from_object(ProdConfig)
-    print("✅ ProdConfig загружен")
+    logger.info("✅ ProdConfig loaded")
 else:
     app.config.from_object(DevConfig)
-    print("✅ DevConfig загружен")
+    logger.info("✅ DevConfig loaded")
 
-print("📦 DB URI:", app.config.get("SQLALCHEMY_DATABASE_URI"))
+logger.info(f"📦 DB URI: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
+
+# Add a Flask handler to log all requests
+@app.before_request
+def log_request_info():
+    logger = logging.getLogger('flask.request')
+    logger.debug('Headers: %s', request.headers)
+    logger.debug('Body: %s', request.get_data())
+
+# Add a handler to log all responses
+@app.after_request
+def log_response_info(response):
+    logger = logging.getLogger('flask.response')
+    logger.debug('Response: %s', response.status)
+    return response
 
 # Init extensions
 db.init_app(app)
@@ -318,12 +335,13 @@ def diagnose_telegram():
     # Test token with a dummy request if available
     test_result = None
     if bot_token:
-        import requests
         try:
             url = f"https://api.telegram.org/bot{bot_token}/getMe"
-            response = requests.get(url, timeout=5)
+            logger.info(f"Testing Telegram API with URL: {url}")
+            response = requests.get(url)
+            response.raise_for_status()
             test_result = response.json()
-            logger.info(f"Telegram API test: {json.dumps(test_result, indent=2)}")
+            logger.info(f"Telegram API test successful: {json.dumps(test_result, indent=2)}")
         except Exception as e:
             test_result = {"error": str(e)}
             logger.error(f"Telegram API test failed: {str(e)}")
@@ -331,7 +349,7 @@ def diagnose_telegram():
     # Return diagnostic info
     diagnostic_info = {
         "telegram_token_status": token_status,
-        "environment_variables": env_vars,
+        "env_vars": env_vars,
         "telegram_api_test": test_result,
         "log_file_path": log_file_path
     }
@@ -339,11 +357,62 @@ def diagnose_telegram():
     # Also return info as plain text for easy viewing
     info_text = "\n".join([
         "===== TELEGRAM IMPORT DIAGNOSTIC =====",
-        f"TELEGRAM_BOT_TOKEN: {token_status}",
+        f"Telegram Token: {token_status}",
         f"Environment Variables: {json.dumps(env_vars, indent=2)}",
-        f"Telegram API Test: {json.dumps(test_result, indent=2) if test_result else 'Not tested (no token)'}",
         f"Log File Path: {log_file_path}",
         "=====================================",
+    ])
+
+    logger.info(info_text)
+
+    return f"<pre>{info_text}</pre>"
+
+
+@api.route('/diagnose-replicate', methods=['GET'])
+def diagnose_replicate():
+    import json
+    from backend.utils.generator_photon import check_replicate_api_token
+
+    logger = logging.getLogger(__name__)
+
+    # Check environment variables
+    api_token = os.getenv("REPLICATE_API_TOKEN")
+    token_status = "✅ Present" if api_token else "❌ Missing"
+    
+    # Test token validity
+    token_valid = "Unknown"
+    if api_token:
+        token_valid = "✅ Valid" if check_replicate_api_token() else "❌ Invalid"
+
+    # Log to the file
+    logger.info(f"REPLICATE_API_TOKEN status: {token_status}, validity: {token_valid}")
+
+    # Check other env vars
+    env_vars = {
+        "REPLICATE_API_TOKEN": token_status,
+        "REPLICATE_PHOTON_MODEL": os.getenv("REPLICATE_PHOTON_MODEL", "luma/photon"),
+        "REPLICATE_MODE": os.getenv("REPLICATE_MODE", "photon"),
+        "CLOUDINARY_URL": "✅ Set" if os.getenv("CLOUDINARY_URL") else "❌ Missing"
+    }
+
+    logger.info(f"Environment variables: {json.dumps(env_vars, indent=2)}")
+
+    # Return diagnostic info
+    diagnostic_info = {
+        "replicate_token_status": token_status,
+        "replicate_token_valid": token_valid,
+        "env_vars": env_vars,
+        "log_file_path": log_file_path
+    }
+
+    # Also return info as plain text for easy viewing
+    info_text = "\n".join([
+        "===== REPLICATE API DIAGNOSTIC =====",
+        f"Replicate API Token: {token_status}",
+        f"Token Validity: {token_valid}",
+        f"Environment Variables: {json.dumps(env_vars, indent=2)}",
+        f"Log File Path: {log_file_path}",
+        "====================================="
     ])
 
     logger.info(info_text)
