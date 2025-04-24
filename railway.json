@@ -11,8 +11,5 @@
     "env": {
       "FLASK_APP": "backend.app"
     }
-  },
-  "deploy": {
-    "startCommand": "python backend/app.py"
   }
 }
