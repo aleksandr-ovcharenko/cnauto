@@ -185,11 +185,11 @@ class CarAdmin(SecureModelView):
 
     def _price_formatter(view, context, model, name):
         from app import format_currency_filter
-        
+
         # Use the same format_currency_filter we created for the templates
         # This ensures consistent formatting across admin and frontend
         formatted_price = format_currency_filter(model.price, model.currency)
-        
+
         # No data attributes needed - pure server-side formatting
         return Markup(f'<span class="price">{formatted_price}</span>')
 
@@ -363,7 +363,8 @@ class CarAdmin(SecureModelView):
         )
 
         try:
-            new_image = generate_image (mode="photon", prompt=prompt, image_url=car.gallery_images[0].url, car_model=car.model, car_brand=car.brand, car_id=car.id)
+            new_image = generate_image(mode="photon", prompt=prompt, image_url=car.gallery_images[0].url,
+                                       car_model=car.model, car_brand=car.brand, car_id=car.id)
             if new_image:
                 car.image_url = new_image
                 db.session.commit()
@@ -480,7 +481,7 @@ class BrandAdmin(SecureModelView):
     column_labels = {'logo_preview': 'Логотип'}
     inline_models = [
         (BrandSynonym, {
-            'form_columns': ['id', 'name']
+            'form_columns': ['name']
         })
     ]
 
