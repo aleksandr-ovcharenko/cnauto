@@ -21,6 +21,7 @@ from backend.models import User
 from backend.models import db
 from backend.utils.telegram_import import import_car as import_car_handler
 from backend.utils.file_logger import setup_file_logger
+from backend.utils.log_viewer import get_log_files, get_log_content
 
 # .env
 load_dotenv()
@@ -224,6 +225,53 @@ def catalog():
     return render_template("catalog.html", cars=cars, brands=brands, countries=countries, car_types=car_types,
                            reset_type_url=reset_type_url)
 
+
+@app.route('/admin/logs')
+@login_required
+def view_logs():
+    """
+    Render the log viewer interface
+    """
+    log_files = get_log_files()
+    selected_file = request.args.get('file')
+    
+    # If no file specified or file doesn't exist, use the most recent
+    if not selected_file or selected_file not in log_files:
+        selected_file = log_files[0] if log_files else None
+    
+    log_lines = []
+    if selected_file:
+        log_lines = get_log_content(selected_file)
+    
+    return render_template(
+        'log_viewer.html',
+        log_files=log_files,
+        current_log=selected_file,
+        log_lines=log_lines
+    )
+
+@app.route('/admin/logs/data')
+@login_required
+def get_logs_data():
+    """
+    API endpoint to get log data for auto-refresh
+    """
+    log_files = get_log_files()
+    selected_file = request.args.get('file')
+    
+    # If no file specified or file doesn't exist, use the most recent
+    if not selected_file or selected_file not in log_files:
+        selected_file = log_files[0] if log_files else None
+    
+    log_lines = []
+    if selected_file:
+        log_lines = get_log_content(selected_file)
+    
+    return {
+        'log_files': log_files,
+        'current_log': selected_file,
+        'log_lines': log_lines
+    }
 
 api = Blueprint('api', __name__)
 

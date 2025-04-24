@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CNAuto Log Viewer</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+    <style>
+        .log-container {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: monospace;
+            height: 80vh;
+            overflow-y: auto;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .log-line {
+            padding: 2px 0;
+            border-bottom: 1px solid #333;
+        }
+        .log-line:hover {
+            background-color: #2a2a2a;
+        }
+        .log-debug { color: #6A9955; }
+        .log-info { color: #4FC1FF; }
+        .log-warning { color: #DCDCAA; }
+        .log-error { color: #F14C4C; }
+        .log-critical { color: #FF3333; font-weight: bold; }
+        .highlight { background-color: #6B5B00; }
+        .timestamp { color: #9CDCFE; }
+        .module { color: #CE9178; }
+        .level { font-weight: bold; }
+        #log-controls {
+            position: sticky;
+            top: 0;
+            background-color: #f8f9fa;
+            padding: 10px 0;
+            margin-bottom: 10px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-3">
+        <h1>CNAuto Log Viewer</h1>
+        
+        <div id="log-controls" class="mb-3">
+            <div class="row">
+                <div class="col-md-4">
+                    <select id="log-file-select" class="form-select">
+                        {% for log_file in log_files %}
+                            <option value="{{ log_file }}" {% if log_file == current_log %}selected{% endif %}>{{ log_file }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <input type="text" id="search-input" class="form-control" placeholder="Search logs...">
+                        <button id="search-button" class="btn btn-primary">Search</button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="btn-group" role="group">
+                        <button id="filter-all" class="btn btn-outline-secondary active">All</button>
+                        <button id="filter-debug" class="btn btn-outline-success">Debug</button>
+                        <button id="filter-info" class="btn btn-outline-info">Info</button>
+                        <button id="filter-warning" class="btn btn-outline-warning">Warning</button>
+                        <button id="filter-error" class="btn btn-outline-danger">Error</button>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-4">
+                    <span id="log-stats" class="text-muted">
+                        Showing {{ log_lines|length }} lines
+                    </span>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="auto-refresh" value="1">
+                        <label class="form-check-label" for="auto-refresh">
+                            Auto-refresh (5s)
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="log-container" id="log-content">
+            {% for line in log_lines %}
+                <div class="log-line {{ line.level|lower }}">
+                    <span class="timestamp">{{ line.timestamp }}</span>
+                    <span class="module">{{ line.module }}</span>
+                    <span class="level">{{ line.level }}</span>
+                    <span class="message">{{ line.message }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const logContent = document.getElementById('log-content');
+            const searchInput = document.getElementById('search-input');
+            const searchButton = document.getElementById('search-button');
+            const logFileSelect = document.getElementById('log-file-select');
+            const autoRefreshCheckbox = document.getElementById('auto-refresh');
+            let autoRefreshInterval;
+            
+            // Scroll to bottom of logs initially
+            logContent.scrollTop = logContent.scrollHeight;
+            
+            // Search functionality
+            function performSearch() {
+                const searchTerm = searchInput.value.toLowerCase();
+                if (!searchTerm) {
+                    clearHighlights();
+                    return;
+                }
+                
+                clearHighlights();
+                
+                const logLines = document.querySelectorAll('.log-line');
+                let firstMatch = null;
+                
+                logLines.forEach(line => {
+                    const text = line.textContent.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        // Highlight the search term in the line
+                        const regex = new RegExp(searchTerm, 'gi');
+                        line.innerHTML = line.innerHTML.replace(
+                            regex, 
+                            match => `<span class="highlight">${match}</span>`
+                        );
+                        
+                        if (!firstMatch) {
+                            firstMatch = line;
+                        }
+                    }
+                });
+                
+                // Scroll to first match
+                if (firstMatch) {
+                    firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+            
+            function clearHighlights() {
+                const highlights = document.querySelectorAll('.highlight');
+                highlights.forEach(el => {
+                    const parent = el.parentNode;
+                    parent.textContent = parent.textContent;
+                });
+            }
+            
+            searchButton.addEventListener('click', performSearch);
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+            
+            // Log file selection
+            logFileSelect.addEventListener('change', function() {
+                window.location.href = `/admin/logs?file=${this.value}`;
+            });
+            
+            // Log filtering
+            const filterButtons = document.querySelectorAll('[id^="filter-"]');
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    const filter = this.id.replace('filter-', '');
+                    const logLines = document.querySelectorAll('.log-line');
+                    
+                    logLines.forEach(line => {
+                        if (filter === 'all') {
+                            line.style.display = '';
+                        } else {
+                            if (line.classList.contains(`log-${filter}`)) {
+                                line.style.display = '';
+                            } else {
+                                line.style.display = 'none';
+                            }
+                        }
+                    });
+                });
+            });
+            
+            // Auto-refresh functionality
+            autoRefreshCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    autoRefreshInterval = setInterval(() => {
+                        const currentFile = logFileSelect.value;
+                        fetch(`/admin/logs/data?file=${currentFile}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                logContent.innerHTML = data.log_lines.map(line => `
+                                    <div class="log-line ${line.level.toLowerCase()}">
+                                        <span class="timestamp">${line.timestamp}</span>
+                                        <span class="module">${line.module}</span>
+                                        <span class="level">${line.level}</span>
+                                        <span class="message">${line.message}</span>
+                                    </div>
+                                `).join('');
+                                
+                                // Re-apply search if needed
+                                if (searchInput.value) {
+                                    performSearch();
+                                }
+                                
+                                // Update stats
+                                document.getElementById('log-stats').textContent = 
+                                    `Showing ${data.log_lines.length} lines`;
+                            });
+                    }, 5000);
+                } else {
+                    clearInterval(autoRefreshInterval);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
