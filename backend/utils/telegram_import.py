@@ -6,13 +6,16 @@ import logging
 import requests
 from flask import Blueprint, jsonify, current_app, request, url_for
 
-from backend.models import db, Car, Brand, CarImage, BrandSynonym
-from backend.utils.cloudinary_upload import upload_image
-from backend.utils.generate_comfyui import generate_with_comfyui
-from backend.utils.generator_photon import generate_with_photon
-from backend.utils.telegram_file import get_telegram_file_url
-from backend.utils.file_logger import get_module_logger
-from backend.utils.image_queue import enqueue_image_task, generate_image
+# Use relative imports
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from models import db, Car, Brand, CarImage, BrandSynonym
+from utils.cloudinary_upload import upload_image
+from utils.generate_comfyui import generate_with_comfyui
+from utils.generator_photon import generate_with_photon
+from utils.telegram_file import get_telegram_file_url
+from utils.file_logger import get_module_logger
+from utils.image_queue import enqueue_image_task
 
 # Configure logging using the centralized logger
 logger = get_module_logger(__name__)
@@ -23,7 +26,7 @@ telegram_import = Blueprint('telegram_import', __name__)
 
 @telegram_import.route('/api/import_car', methods=['POST'])
 def import_car():
-    from backend.models import CarType
+    from models import CarType
 
     logger.info("🚗 Started importing car via API")
 
@@ -132,7 +135,7 @@ def import_car():
                 # Enqueue the task with our new queuing system
                 task_id = enqueue_image_task(
                     car_id=car.id,
-                    generator_func=generate_image,
+                    generator_func=generate_image,  # This is our local function
                     params=params,
                     max_retries=3
                 )
@@ -255,6 +258,7 @@ def generate_image(mode: str = None, prompt: str = "", image_url: str = "", car_
     if mode == "photon":
         return generate_with_photon(prompt, ref_url, car_model, car_brand, car_id)
     elif mode == "comfy":
-        return generate_with_comfyui(ref_url, prompt, car_model, car_brand, car_id)
+        return generate_with_comfyui(prompt, ref_url, car_model, car_brand, car_id)
     else:
-        raise ValueError(f"❌ Неизвестный режим генерации: {mode}")
+        logger.warning(f"⚠️ Неизвестный режим генерации: {mode}")
+        return None

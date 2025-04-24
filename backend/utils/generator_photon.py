@@ -1,13 +1,19 @@
 import os
+import sys
+import json
+import logging
 import tempfile
-import traceback
+import requests
+import time
+
+# Reset the path helper for relative imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import replicate
-import requests
 from PIL import Image
 
-from backend.utils.cloudinary_upload import upload_image
-from backend.utils.file_logger import get_module_logger
+from utils.file_logger import get_module_logger
+from utils.cloudinary_upload import upload_image
 
 # Use the centralized logger
 logger = get_module_logger(__name__)

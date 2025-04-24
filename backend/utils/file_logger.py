@@ -4,6 +4,9 @@ import sys
 import platform
 from datetime import datetime
 
+# Reset the path helper for relative imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 def setup_file_logger():
     """
     Set up a file logger that will reliably write logs to a file
@@ -64,7 +67,7 @@ def setup_file_logger():
     logging.getLogger('flask.request').setLevel(logging.INFO)  # Don't log request bodies
     
     # Our application logs - keep at DEBUG level
-    logging.getLogger('backend').setLevel(logging.DEBUG)
+    logging.getLogger('utils.file_logger').setLevel(logging.DEBUG)
     
     # Add a message to confirm setup
     root_logger.info(f"✅ Logging initialized: All logs will be saved to {log_file}")
@@ -91,22 +94,12 @@ def setup_file_logger():
     
     return log_file
 
-def get_module_logger(name):
+def get_module_logger(module_name):
     """
-    Get a logger for a module that will log to both console and file.
-    
-    Usage:
-        from backend.utils.file_logger import get_module_logger
-        logger = get_module_logger(__name__)
-        
-        logger.debug("Debug message")
-        logger.info("Info message")
+    Get a logger for a module that uses the central configuration.
+    Usage in modules:  logger = get_module_logger(__name__)
     """
-    logger = logging.getLogger(name)
-    # Ensure this logger has propagation enabled
-    logger.propagate = True
-    # No need to add handlers, they're inherited from the root logger
-    return logger
+    return logging.getLogger(module_name)
 
 def add_test_logs():
     """

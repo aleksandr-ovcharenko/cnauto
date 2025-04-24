@@ -1,9 +1,15 @@
+import os
+import sys
 import logging
 from sqlalchemy import event
+from sqlalchemy.orm import Session
 
-from backend.models import Car, CarImage
-from backend.utils.cloudinary_upload import delete_image
-from backend.utils.file_logger import get_module_logger
+# Reset the path helper for relative imports
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from models import Car, CarImage
+from utils.cloudinary_upload import delete_image
+from utils.file_logger import get_module_logger
 
 # Use the centralized logger
 logger = get_module_logger(__name__)

@@ -6,8 +6,11 @@ import logging
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 
-from backend.models import db, Car, CarImage
-from backend.utils.file_logger import get_module_logger
+# Use relative imports
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from models import db, Car, CarImage
+from utils.file_logger import get_module_logger
 
 logger = get_module_logger(__name__)
 
@@ -184,16 +187,21 @@ def image_processor_worker(app) -> None:
             logger.exception(f"❌ Unexpected error in image processor worker: {str(e)}")
             # Sleep a bit to prevent excessive CPU usage in case of recurring errors
             time.sleep(5)
+        
+        # Periodically log that the worker is still running
+        if int(time.time()) % 120 == 0:  # Log every 2 minutes (approximately)
+            logger.debug(f"⚙️ Image processor worker is active - {image_queue.qsize()} tasks in queue")
 
 
-def start_image_processor(app) -> None:
+def start_image_processor(app) -> threading.Thread:
     """Start the image processor worker thread"""
     worker_thread = threading.Thread(
         target=image_processor_worker,
         args=(app,),
         daemon=True
     )
+    worker_thread.name = "ImageProcessorThread"  # Name the thread for easier debugging
     worker_thread.start()
-    logger.info("✅ Image processor worker thread started")
+    logger.info(f"✅ Image processor worker thread started: {worker_thread.name} (id: {worker_thread.ident})")
     
     return worker_thread

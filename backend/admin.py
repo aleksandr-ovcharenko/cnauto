@@ -1,4 +1,9 @@
+import logging
 import os
+
+# Add the directory to the path for relative imports
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from flask import flash, request, redirect, url_for
 from flask_admin import Admin, expose
@@ -18,8 +23,8 @@ from wtforms.fields.simple import FileField, MultipleFileField
 from wtforms.widgets.core import HiddenInput
 from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
 
-from backend.models import Role, User, CarImage, BrandSynonym, Currency
-from backend.models import db, Car, Category, Brand, CarType, Country
+from models import Role, User, CarImage, BrandSynonym, Currency
+from models import db, Car, Category, Brand, CarType, Country
 
 # Папка для изображений автомобилей
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'images', 'cars')
@@ -141,7 +146,7 @@ class CarImageAdmin(SecureModelView):
     def on_model_change(self, form, model, is_created):
         file = form.file_upload.data
         if file:
-            from backend.utils.cloudinary_upload import upload_image
+            from utils.cloudinary_upload import upload_image
             uploaded_url = upload_image(file, car_id=model.car_id, car_name=model.car.model)
             if uploaded_url:
                 model.url = uploaded_url
@@ -212,7 +217,7 @@ class CarAdmin(SecureModelView):
 
     def on_model_change(self, form, model, is_created):
         print(f"🧾 Обработка формы: {model.brand.name} {model.model} (ID: {model.id})")
-        from backend.utils.cloudinary_upload import upload_image
+        from utils.cloudinary_upload import upload_image
 
         # Главное изображение
         image_file = form.image_upload.data
@@ -409,7 +414,7 @@ class CarAdmin(SecureModelView):
     @expose('/upload_gallery/<int:id>', methods=['POST'])
     def upload_gallery(self, id):
         car = Car.query.get_or_404(id)
-        from backend.utils.cloudinary_upload import upload_image
+        from utils.cloudinary_upload import upload_image
 
         files = request.files.getlist('new_images')
         for i, file in enumerate(files):

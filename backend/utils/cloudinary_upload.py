@@ -1,9 +1,9 @@
+import os
+import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 import logging
-from flask import current_app
-
-from backend.utils.file_logger import get_module_logger
+from utils.file_logger import get_module_logger
 
 # Use the centralized logger
 logger = get_module_logger(__name__)
