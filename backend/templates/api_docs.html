@@ -265,6 +265,9 @@
 <body>
     <div class="header">
         <div class="title-bar">
+            <a href="/" class="site-logo" style="margin-right: 10px;">
+                <img src="{{ url_for('static', filename='images/site/main_logo.webp') }}" alt="CN-Auto" style="height: 40px; width: auto;">
+            </a>
             <h1>CNAuto API Documentation</h1>
             <div>
                 <a href="{{ url_for('admin.index') }}" class="btn-tools" target="_blank"><i class="bi bi-arrow-left"></i> Back to Admin</a>

@@ -9,7 +9,7 @@
         <div class="product-thumbs">
             {% set thumbs = [car.image_url] + (car.gallery_images | map(attribute='url') | reject('equalto', car.image_url) | list) %}
             {% for thumb_url in thumbs %}
-            <img src="{{ thumb_url | thumb_url(200) }}" data-full="{{ thumb_url }}" alt="Фото {{ loop.index }}" class="car-thumb">
+            <img src="{{ thumb_url | thumb_url(300) }}" data-full="{{ thumb_url }}" alt="Фото {{ loop.index }}" class="car-thumb">
             {% endfor %}
         </div>
 

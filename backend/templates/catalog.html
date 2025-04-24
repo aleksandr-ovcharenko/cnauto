@@ -127,15 +127,15 @@
                         {% set maxDots = 8 %}
                         {% set show_more = gallery_urls|length > maxDots %}
                         {% for img_url in gallery_urls[:maxDots-1] %}
-                        <img class="car-card__gallery-img{% if loop.first %}{{ '' }}{% else %} hidden{% endif %}" src="{{ img_url | thumb_url(200) }}" alt="{{ car.model }} {{ loop.index }}">
+                        <img class="car-card__gallery-img{% if loop.first %}{{ '' }}{% else %} hidden{% endif %}" src="{{ img_url | thumb_url(300) }}" alt="{{ car.model }} {{ loop.index }}">
                         {% endfor %}
                         {% if show_more %}
-                        <img class="car-card__gallery-img hidden" src="{{ gallery_urls[maxDots-1] | thumb_url(200) }}" alt="{{ car.model }} {{ maxDots }}+">
+                        <img class="car-card__gallery-img hidden" src="{{ gallery_urls[maxDots-1] | thumb_url(300) }}" alt="{{ car.model }} {{ maxDots }}+">
                         {% for img_url in gallery_urls[maxDots:] %}
-                        <img class="car-card__gallery-img hidden" src="{{ img_url | thumb_url(200) }}" alt="{{ car.model }} extra">
+                        <img class="car-card__gallery-img hidden" src="{{ img_url | thumb_url(300) }}" alt="{{ car.model }} extra">
                         {% endfor %}
                         {% elif gallery_urls|length == maxDots %}
-                        <img class="car-card__gallery-img hidden" src="{{ gallery_urls[maxDots-1] | thumb_url(200) }}" alt="{{ car.model }} {{ maxDots }}">
+                        <img class="car-card__gallery-img hidden" src="{{ gallery_urls[maxDots-1] | thumb_url(300) }}" alt="{{ car.model }} {{ maxDots }}">
                         {% endif %}
                         <div class="car-card__dots">
                             {% for _ in gallery_urls[:maxDots-1] %}

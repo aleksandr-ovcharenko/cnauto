@@ -8,6 +8,9 @@
 
 {% block body %}
 <div class="admin-header">
+    <a href="/" class="admin-logo" style="margin-right: 10px;">
+        <img src="{{ url_for('static', filename='images/site/main_logo.webp') }}" alt="CN-Auto" style="height: 40px; width: auto;">
+    </a>
     {% if current_user.is_authenticated %}
     <div class="admin-user-info">
         {{ current_user.username }}
