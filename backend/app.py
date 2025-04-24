@@ -30,11 +30,24 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler()  # Output to console
-    ]
+    ],
+    force=True  # Override any existing configuration
 )
 
 # Get the root logger
 logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
+# Ensure the handler is properly configured
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+# Force debug logger output on startup to verify logging works
+logger.debug("🔍 DEBUG logging is enabled")
+logger.info("ℹ️ INFO logging is enabled")
 
 # Reduce verbosity of some loggers
 logging.getLogger('werkzeug').setLevel(logging.INFO)
