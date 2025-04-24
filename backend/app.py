@@ -1,5 +1,5 @@
-import os
 import logging
+import os
 
 from dotenv import load_dotenv
 from flask import Blueprint
@@ -19,9 +19,9 @@ from backend.config_prod import ProdConfig
 from backend.models import Car, Category, Brand, Country, CarType
 from backend.models import User
 from backend.models import db
-from backend.utils.telegram_import import import_car as import_car_handler
 from backend.utils.file_logger import setup_file_logger
 from backend.utils.log_viewer import get_log_files, get_log_content
+from backend.utils.telegram_import import import_car as import_car_handler
 
 # .env
 load_dotenv()
@@ -234,21 +234,22 @@ def view_logs():
     """
     log_files = get_log_files()
     selected_file = request.args.get('file')
-    
+
     # If no file specified or file doesn't exist, use the most recent
     if not selected_file or selected_file not in log_files:
         selected_file = log_files[0] if log_files else None
-    
+
     log_lines = []
     if selected_file:
         log_lines = get_log_content(selected_file)
-    
+
     return render_template(
         'log_viewer.html',
         log_files=log_files,
         current_log=selected_file,
         log_lines=log_lines
     )
+
 
 @app.route('/admin/logs/data')
 @login_required
@@ -258,20 +259,49 @@ def get_logs_data():
     """
     log_files = get_log_files()
     selected_file = request.args.get('file')
-    
+
     # If no file specified or file doesn't exist, use the most recent
     if not selected_file or selected_file not in log_files:
         selected_file = log_files[0] if log_files else None
-    
+
     log_lines = []
     if selected_file:
         log_lines = get_log_content(selected_file)
-    
+
     return {
         'log_files': log_files,
         'current_log': selected_file,
         'log_lines': log_lines
     }
+
+
+@app.route('/admin/logs/raw')
+@login_required
+def view_raw_log():
+    """
+    View raw log file content
+    """
+    log_files = get_log_files()
+    selected_file = request.args.get('file')
+    
+    # If no file specified or file doesn't exist, use the most recent
+    if not selected_file or selected_file not in log_files:
+        selected_file = log_files[0] if log_files else None
+    
+    content = "No log file available"
+    if selected_file:
+        log_dir = os.path.join(os.path.dirname(__file__), 'logs')
+        log_path = os.path.join(log_dir, selected_file)
+        
+        try:
+            with open(log_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+        except Exception as e:
+            content = f"Error reading log file: {str(e)}"
+    
+    # Return as plain text with proper content type
+    return content, 200, {'Content-Type': 'text/plain; charset=utf-8'}
+
 
 api = Blueprint('api', __name__)
 
@@ -284,24 +314,23 @@ def import_car():
 # Diagnostic route to help troubleshoot Telegram token issues
 @api.route('/diagnose-telegram', methods=['GET'])
 def diagnose_telegram():
-    from backend.utils.telegram_file import get_telegram_file_url
     import json
-    
+
     logger = logging.getLogger(__name__)
-    
+
     # Check environment variables
     bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
     token_status = "✅ Present" if bot_token else "❌ Missing"
-    
+
     # Log to the file
     logger.info(f"TELEGRAM_BOT_TOKEN status: {token_status}")
-    
+
     # Check other env vars
-    env_vars = {key: "✅ Set" if os.getenv(key) else "❌ Missing" 
+    env_vars = {key: "✅ Set" if os.getenv(key) else "❌ Missing"
                 for key in ["FLASK_ENV", "IMPORT_API_TOKEN", "CLOUDINARY_URL"]}
-    
+
     logger.info(f"Environment variables: {json.dumps(env_vars, indent=2)}")
-    
+
     # Test token with a dummy request if available
     test_result = None
     if bot_token:
@@ -314,7 +343,7 @@ def diagnose_telegram():
         except Exception as e:
             test_result = {"error": str(e)}
             logger.error(f"Telegram API test failed: {str(e)}")
-    
+
     # Return diagnostic info
     diagnostic_info = {
         "telegram_token_status": token_status,
@@ -322,7 +351,7 @@ def diagnose_telegram():
         "telegram_api_test": test_result,
         "log_file_path": log_file_path
     }
-    
+
     # Also return info as plain text for easy viewing
     info_text = "\n".join([
         "===== TELEGRAM IMPORT DIAGNOSTIC =====",
@@ -332,14 +361,13 @@ def diagnose_telegram():
         f"Log File Path: {log_file_path}",
         "=====================================",
     ])
-    
+
     logger.info(info_text)
-    
+
     return f"<pre>{info_text}</pre>"
 
 
 app.register_blueprint(api, url_prefix='/api')
-
 
 if __name__ == '__main__':
     with app.app_context():

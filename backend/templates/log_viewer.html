@@ -86,6 +86,14 @@
                         </label>
                     </div>
                 </div>
+                <div class="col-md-4 text-end">
+                    <a href="/admin/logs/raw?file={{ current_log }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-file-text"></i> View Raw File
+                    </a>
+                    <a href="/admin/logs/raw?file={{ current_log }}" download="{{ current_log }}" class="btn btn-sm btn-outline-secondary ms-2">
+                        <i class="bi bi-download"></i> Download
+                    </a>
+                </div>
             </div>
         </div>
         
