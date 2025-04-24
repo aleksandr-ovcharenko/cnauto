@@ -587,8 +587,8 @@ def init_admin(app):
         def is_visible(self):
             return True
             
-        def _get_view_url(self, **kwargs):
-            url = super(ApiDocsView, self)._get_view_url(**kwargs)
+        def _get_view_url(self, admin_view, **kwargs):
+            url = super(ApiDocsView, self)._get_view_url(admin_view, **kwargs)
             return url + '" target="_blank'
     
     # Add Logs view link
@@ -600,8 +600,8 @@ def init_admin(app):
         def is_visible(self):
             return True
             
-        def _get_view_url(self, **kwargs):
-            url = super(LogsView, self)._get_view_url(**kwargs)
+        def _get_view_url(self, admin_view, **kwargs):
+            url = super(LogsView, self)._get_view_url(admin_view, **kwargs)
             return url + '" target="_blank'
     
     admin.add_view(CarImageAdmin(CarImage, db.session, name='Фото машин'))
