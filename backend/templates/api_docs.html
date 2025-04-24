@@ -1,226 +1,293 @@
-{% extends 'admin/master.html' %}
-{% block head_css %}
-{{ super() }}
-<style>
-    .api-docs {
-        padding: 20px;
-        font-family: 'Roboto', 'Helvetica', sans-serif;
-    }
-    .api-section {
-        margin-bottom: 30px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-    }
-    .section-header {
-        padding: 10px 15px;
-        background-color: #f8f9fa;
-        border-bottom: 1px solid #ddd;
-        border-radius: 3px 3px 0 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .section-header h3 {
-        margin: 0;
-        font-size: 1.2em;
-    }
-    .section-content {
-        padding: 15px;
-    }
-    .api-item {
-        margin-bottom: 20px;
-        padding-bottom: 20px;
-        border-bottom: 1px solid #eee;
-    }
-    .api-item:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
-        padding-bottom: 0;
-    }
-    .api-title {
-        display: flex;
-        align-items: center;
-        margin-bottom: 10px;
-    }
-    .api-method {
-        padding: 4px 8px;
-        border-radius: 3px;
-        font-weight: bold;
-        font-size: 0.8em;
-        color: white;
-        margin-right: 10px;
-        min-width: 60px;
-        text-align: center;
-    }
-    .method-get { background-color: #61affe; }
-    .method-post { background-color: #49cc90; }
-    .method-put { background-color: #fca130; }
-    .method-delete { background-color: #f93e3e; }
-    .api-path {
-        font-family: monospace;
-        font-size: 1.1em;
-        font-weight: 500;
-    }
-    .api-description {
-        margin-bottom: 10px;
-        color: #555;
-    }
-    .api-params, .api-response {
-        margin-top: 10px;
-    }
-    .api-params h5, .api-response h5 {
-        margin-bottom: 5px;
-        font-size: 1em;
-        color: #333;
-    }
-    pre {
-        background-color: #f5f5f5;
-        padding: 10px;
-        border-radius: 3px;
-        overflow-x: auto;
-    }
-    .response-code {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 3px;
-        margin-right: 10px;
-        font-weight: bold;
-    }
-    .code-200 { background-color: #dff0d8; color: #3c763d; }
-    .code-400, .code-401, .code-403, .code-404, .code-500 { background-color: #f2dede; color: #a94442; }
-    .endpoint-tester {
-        margin-top: 15px;
-        padding: 15px;
-        background-color: #f9f9f9;
-        border: 1px solid #eee;
-        border-radius: 4px;
-    }
-    .try-it {
-        background-color: #4CAF50;
-        color: white;
-        border: none;
-        padding: 5px 10px;
-        border-radius: 3px;
-        cursor: pointer;
-    }
-    .try-it:hover {
-        background-color: #45a049;
-    }
-    .auth-required {
-        background-color: #ff9800;
-        color: white;
-        padding: 2px 5px;
-        border-radius: 3px;
-        font-size: 0.8em;
-        margin-left: 10px;
-    }
-    .auth-none {
-        background-color: #4CAF50;
-        color: white;
-        padding: 2px 5px;
-        border-radius: 3px;
-        font-size: 0.8em;
-        margin-left: 10px;
-    }
-    .api-test-response {
-        margin-top: 10px;
-        display: none;
-    }
-    .status-success {
-        color: #3c763d;
-    }
-    .status-error {
-        color: #a94442;
-    }
-    .tab-container {
-        margin-top: 20px;
-    }
-    .tab {
-        display: flex;
-        border-bottom: 1px solid #ddd;
-    }
-    .tab-button {
-        background-color: inherit;
-        border: none;
-        outline: none;
-        cursor: pointer;
-        padding: 10px 16px;
-        transition: 0.3s;
-        font-size: 17px;
-    }
-    .tab-button:hover {
-        background-color: #ddd;
-    }
-    .tab-button.active {
-        background-color: #f1f1f1;
-        border-bottom: 2px solid #4CAF50;
-    }
-    .tab-content {
-        display: none;
-        padding: 15px;
-        border: 1px solid #ddd;
-        border-top: none;
-    }
-    .copied-indicator {
-        display: none;
-        color: #4CAF50;
-        margin-left: 10px;
-    }
-    .copy-button {
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: #007bff;
-        padding: 0;
-        font-size: 0.9em;
-    }
-    .copy-button:hover {
-        text-decoration: underline;
-    }
-    /* Collapsible sections */
-    .collapsible {
-        cursor: pointer;
-        width: 100%;
-        text-align: left;
-    }
-    .section-header .chevron {
-        transition: transform 0.3s;
-    }
-    .section-header.collapsed .chevron {
-        transform: rotate(-90deg);
-    }
-    .hidden {
-        display: none;
-    }
-</style>
-{% endblock %}
-
-{% block body %}
-<div class="api-docs">
-    <h1>API Documentation</h1>
-    <p>This page provides documentation for all available APIs in the application.</p>
-
-    <div class="api-sections">
-        <!-- Diagnostic APIs Section -->
-        <div class="api-section">
-            <div class="section-header collapsible">
-                <h3>Diagnostic APIs</h3>
-                <span class="chevron">▼</span>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Documentation - CNAuto</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #1c1c21;
+            color: #eee;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        .header {
+            padding: 10px 15px;
+            background-color: #25262e;
+            border-bottom: 1px solid #343741;
+        }
+        .title-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        h1 {
+            font-size: 24px;
+            margin: 0;
+            color: #ddd;
+        }
+        .container {
+            padding: 20px;
+        }
+        .api-section {
+            margin-bottom: 30px;
+            border: 1px solid #343741;
+            border-radius: 4px;
+            background-color: #25262e;
+        }
+        .section-header {
+            padding: 10px 15px;
+            background-color: #2d2e36;
+            border-bottom: 1px solid #343741;
+            border-radius: 3px 3px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .section-header h3 {
+            margin: 0;
+            font-size: 1.2em;
+            color: #ddd;
+        }
+        .section-content {
+            padding: 15px;
+        }
+        .api-item {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #343741;
+        }
+        .api-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .api-title {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .api-method {
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 0.8em;
+            color: white;
+            margin-right: 10px;
+            min-width: 60px;
+            text-align: center;
+        }
+        .method-get { background-color: #61affe; }
+        .method-post { background-color: #49cc90; }
+        .method-put { background-color: #fca130; }
+        .method-delete { background-color: #f93e3e; }
+        .api-path {
+            font-family: monospace;
+            font-size: 1.1em;
+            font-weight: 500;
+            color: #ddd;
+        }
+        .api-description {
+            margin-bottom: 10px;
+            color: #aaa;
+        }
+        .api-params, .api-response {
+            margin-top: 10px;
+        }
+        .api-params h5, .api-response h5 {
+            margin-bottom: 5px;
+            font-size: 1em;
+            color: #ddd;
+        }
+        pre {
+            background-color: #1c1c21;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+            color: #ddd;
+            border: 1px solid #343741;
+        }
+        code {
+            color: #ddd;
+        }
+        .response-code {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .code-200 { background-color: #49cc90; color: #fff; }
+        .code-400, .code-401, .code-403, .code-404, .code-500 { background-color: #f93e3e; color: #fff; }
+        .endpoint-tester {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #2d2e36;
+            border: 1px solid #343741;
+            border-radius: 4px;
+        }
+        .try-it {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .try-it:hover {
+            background-color: #45a049;
+        }
+        .auth-required {
+            background-color: #ff9800;
+            color: white;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+        .auth-none {
+            background-color: #4CAF50;
+            color: white;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+        .api-test-response {
+            margin-top: 10px;
+            display: none;
+        }
+        .status-success {
+            color: #4CAF50;
+        }
+        .status-error {
+            color: #f93e3e;
+        }
+        .tab-container {
+            margin-top: 20px;
+        }
+        .tab {
+            display: flex;
+            border-bottom: 1px solid #343741;
+        }
+        .tab-button {
+            background-color: inherit;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 10px 16px;
+            transition: 0.3s;
+            font-size: 17px;
+            color: #ddd;
+        }
+        .tab-button:hover {
+            background-color: #343741;
+        }
+        .tab-button.active {
+            background-color: #343741;
+            border-bottom: 2px solid #4CAF50;
+        }
+        .tab-content {
+            display: none;
+            padding: 15px;
+            border: 1px solid #343741;
+            border-top: none;
+        }
+        .copied-indicator {
+            display: none;
+            color: #4CAF50;
+            margin-left: 10px;
+        }
+        .copy-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #61affe;
+            padding: 0;
+            font-size: 0.9em;
+        }
+        .copy-button:hover {
+            text-decoration: underline;
+        }
+        /* Collapsible sections */
+        .collapsible {
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+        }
+        .section-header .chevron {
+            transition: transform 0.3s;
+            color: #ddd;
+        }
+        .section-header.collapsed .chevron {
+            transform: rotate(-90deg);
+        }
+        .hidden {
+            display: none;
+        }
+        a {
+            color: #61affe;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+            color: #4fa0e0;
+        }
+        .btn-tools {
+            font-size: 12px;
+            padding: 5px 10px;
+            margin-right: 5px;
+            border-radius: 3px;
+            background-color: #1c1c21;
+            color: #ddd;
+            border: 1px solid #343741;
+            text-decoration: none;
+        }
+        .btn-tools:hover {
+            background-color: #343741;
+            color: #fff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title-bar">
+            <h1>CNAuto API Documentation</h1>
+            <div>
+                <a href="/admin" class="btn-tools"><i class="bi bi-arrow-left"></i> Back to Admin</a>
             </div>
-            <div class="section-content">
-                <!-- Diagnose Telegram API -->
-                <div class="api-item">
-                    <div class="api-title">
-                        <span class="api-method method-get">GET</span>
-                        <span class="api-path">/api/diagnose-telegram</span>
-                        <span class="auth-required">Admin Required</span>
-                    </div>
-                    <div class="api-description">
-                        Checks the Telegram API configuration and returns diagnostic information.
-                    </div>
-                    <div class="api-response">
-                        <h5>Response:</h5>
-                        <pre><code>{
+        </div>
+    </div>
+
+    <div class="container">
+        <p class="text-muted mb-4">This page provides documentation for all available APIs in the application.</p>
+
+        <div class="api-sections">
+            <!-- Diagnostic APIs Section -->
+            <div class="api-section">
+                <div class="section-header collapsible">
+                    <h3>Diagnostic APIs</h3>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content">
+                    <!-- Diagnose Telegram API -->
+                    <div class="api-item">
+                        <div class="api-title">
+                            <span class="api-method method-get">GET</span>
+                            <span class="api-path">/api/diagnose-telegram</span>
+                            <span class="auth-required">Admin Required</span>
+                        </div>
+                        <div class="api-description">
+                            Checks the Telegram API configuration and returns diagnostic information.
+                        </div>
+                        <div class="api-response">
+                            <h5>Response:</h5>
+                            <pre><code>{
   "telegram_token_status": "✅ Present",
   "telegram_token_valid": "✅ Valid",
   "env_vars": {
@@ -229,22 +296,22 @@
   },
   "log_file_path": "/path/to/logs/app_YYYYMMDD.log"
 }</code></pre>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Diagnose Replicate API -->
-                <div class="api-item">
-                    <div class="api-title">
-                        <span class="api-method method-get">GET</span>
-                        <span class="api-path">/api/diagnose-replicate</span>
-                        <span class="auth-required">Admin Required</span>
-                    </div>
-                    <div class="api-description">
-                        Checks the Replicate API configuration and returns diagnostic information.
-                    </div>
-                    <div class="api-response">
-                        <h5>Response:</h5>
-                        <pre><code>{
+                    <!-- Diagnose Replicate API -->
+                    <div class="api-item">
+                        <div class="api-title">
+                            <span class="api-method method-get">GET</span>
+                            <span class="api-path">/api/diagnose-replicate</span>
+                            <span class="auth-required">Admin Required</span>
+                        </div>
+                        <div class="api-description">
+                            Checks the Replicate API configuration and returns diagnostic information.
+                        </div>
+                        <div class="api-response">
+                            <h5>Response:</h5>
+                            <pre><code>{
   "replicate_token_status": "✅ Present",
   "replicate_token_valid": "✅ Valid",
   "env_vars": {
@@ -255,33 +322,33 @@
   },
   "log_file_path": "/path/to/logs/app_YYYYMMDD.log"
 }</code></pre>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Car Import APIs Section -->
-        <div class="api-section">
-            <div class="section-header collapsible">
-                <h3>Car Import APIs</h3>
-                <span class="chevron">▼</span>
-            </div>
-            <div class="section-content">
-                <!-- Import Car API -->
-                <div class="api-item">
-                    <div class="api-title">
-                        <span class="api-method method-post">POST</span>
-                        <span class="api-path">/api/import_car</span>
-                        <span class="auth-required">API Token Required</span>
-                    </div>
-                    <div class="api-description">
-                        Imports a car into the system with provided details and images from Telegram.
-                    </div>
-                    <div class="api-params">
-                        <h5>Headers:</h5>
-                        <pre><code>X-API-TOKEN: your_import_api_token</code></pre>
-                        <h5>Request Body:</h5>
-                        <pre><code>{
+            <!-- Car Import APIs Section -->
+            <div class="api-section">
+                <div class="section-header collapsible">
+                    <h3>Car Import APIs</h3>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content">
+                    <!-- Import Car API -->
+                    <div class="api-item">
+                        <div class="api-title">
+                            <span class="api-method method-post">POST</span>
+                            <span class="api-path">/api/import_car</span>
+                            <span class="auth-required">API Token Required</span>
+                        </div>
+                        <div class="api-description">
+                            Imports a car into the system with provided details and images from Telegram.
+                        </div>
+                        <div class="api-params">
+                            <h5>Headers:</h5>
+                            <pre><code>X-API-TOKEN: your_import_api_token</code></pre>
+                            <h5>Request Body:</h5>
+                            <pre><code>{
   "model": "A4",
   "brand": "Audi",
   "price": 15000,
@@ -292,48 +359,48 @@
   "description": "Good condition, one owner",
   "image_file_ids": ["telegram_file_id_1", "telegram_file_id_2"]
 }</code></pre>
-                    </div>
-                    <div class="api-response">
-                        <h5>Success Response (200):</h5>
-                        <pre><code>{
+                        </div>
+                        <div class="api-response">
+                            <h5>Success Response (200):</h5>
+                            <pre><code>{
   "success": true,
   "car_id": 123,
   "car_url": "http://example.com/car/123",
   "admin_edit_url": "http://example.com/admin/car/edit/?id=123"
 }</code></pre>
-                        <h5>Error Response (400/403):</h5>
-                        <pre><code>{
+                            <h5>Error Response (400/403):</h5>
+                            <pre><code>{
   "error": "Missing required fields: model, brand, image_file_ids"
 }</code></pre>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Image Generation APIs Section -->
-        <div class="api-section">
-            <div class="section-header collapsible">
-                <h3>Image Generation APIs</h3>
-                <span class="chevron">▼</span>
-            </div>
-            <div class="section-content">
-                <!-- Image Tasks List API -->
-                <div class="api-item">
-                    <div class="api-title">
-                        <span class="api-method method-get">GET</span>
-                        <span class="api-path">/api/image-tasks</span>
-                        <span class="auth-required">Admin Required</span>
-                    </div>
-                    <div class="api-description">
-                        Retrieves a list of image generation tasks. Can be filtered by car ID.
-                    </div>
-                    <div class="api-params">
-                        <h5>Query Parameters:</h5>
-                        <pre><code>car_id: (optional) Filter tasks by car ID</code></pre>
-                    </div>
-                    <div class="api-response">
-                        <h5>Response:</h5>
-                        <pre><code>{
+            <!-- Image Generation APIs Section -->
+            <div class="api-section">
+                <div class="section-header collapsible">
+                    <h3>Image Generation APIs</h3>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content">
+                    <!-- Image Tasks List API -->
+                    <div class="api-item">
+                        <div class="api-title">
+                            <span class="api-method method-get">GET</span>
+                            <span class="api-path">/api/image-tasks</span>
+                            <span class="auth-required">Admin Required</span>
+                        </div>
+                        <div class="api-description">
+                            Retrieves a list of image generation tasks. Can be filtered by car ID.
+                        </div>
+                        <div class="api-params">
+                            <h5>Query Parameters:</h5>
+                            <pre><code>car_id: (optional) Filter tasks by car ID</code></pre>
+                        </div>
+                        <div class="api-response">
+                            <h5>Response:</h5>
+                            <pre><code>{
   "tasks": [
     {
       "task_id": "img_task_123_1714139951",
@@ -348,26 +415,26 @@
   ],
   "total_count": 1
 }</code></pre>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Image Task Details API -->
-                <div class="api-item">
-                    <div class="api-title">
-                        <span class="api-method method-get">GET</span>
-                        <span class="api-path">/api/image-tasks/{task_id}</span>
-                        <span class="auth-required">Admin Required</span>
-                    </div>
-                    <div class="api-description">
-                        Retrieves details for a specific image generation task.
-                    </div>
-                    <div class="api-params">
-                        <h5>Path Parameters:</h5>
-                        <pre><code>task_id: ID of the image generation task</code></pre>
-                    </div>
-                    <div class="api-response">
-                        <h5>Success Response:</h5>
-                        <pre><code>{
+                    <!-- Image Task Details API -->
+                    <div class="api-item">
+                        <div class="api-title">
+                            <span class="api-method method-get">GET</span>
+                            <span class="api-path">/api/image-tasks/{task_id}</span>
+                            <span class="auth-required">Admin Required</span>
+                        </div>
+                        <div class="api-description">
+                            Retrieves details for a specific image generation task.
+                        </div>
+                        <div class="api-params">
+                            <h5>Path Parameters:</h5>
+                            <pre><code>task_id: ID of the image generation task</code></pre>
+                        </div>
+                        <div class="api-response">
+                            <h5>Success Response:</h5>
+                            <pre><code>{
   "task_id": "img_task_123_1714139951",
   "car_id": 123,
   "status": "completed",
@@ -377,35 +444,35 @@
   "result": "https://example.com/image.jpg",
   "error": null
 }</code></pre>
-                        <h5>Error Response (404):</h5>
-                        <pre><code>{
+                            <h5>Error Response (404):</h5>
+                            <pre><code>{
   "error": "Task not found"
 }</code></pre>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Admin APIs Section -->
-        <div class="api-section">
-            <div class="section-header collapsible">
-                <h3>Admin & Logs APIs</h3>
-                <span class="chevron">▼</span>
-            </div>
-            <div class="section-content">
-                <!-- Log Files API -->
-                <div class="api-item">
-                    <div class="api-title">
-                        <span class="api-method method-get">GET</span>
-                        <span class="api-path">/admin/logs/files</span>
-                        <span class="auth-required">Admin Required</span>
-                    </div>
-                    <div class="api-description">
-                        Retrieves a list of available log files.
-                    </div>
-                    <div class="api-response">
-                        <h5>Response:</h5>
-                        <pre><code>{
+            <!-- Admin APIs Section -->
+            <div class="api-section">
+                <div class="section-header collapsible">
+                    <h3>Admin & Logs APIs</h3>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content">
+                    <!-- Log Files API -->
+                    <div class="api-item">
+                        <div class="api-title">
+                            <span class="api-method method-get">GET</span>
+                            <span class="api-path">/admin/logs/files</span>
+                            <span class="auth-required">Admin Required</span>
+                        </div>
+                        <div class="api-description">
+                            Retrieves a list of available log files.
+                        </div>
+                        <div class="api-response">
+                            <h5>Response:</h5>
+                            <pre><code>{
   "files": [
     {
       "name": "app_20250424.log",
@@ -419,30 +486,30 @@
     }
   ]
 }</code></pre>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Log Content API -->
-                <div class="api-item">
-                    <div class="api-title">
-                        <span class="api-method method-get">GET</span>
-                        <span class="api-path">/admin/logs/content</span>
-                        <span class="auth-required">Admin Required</span>
-                    </div>
-                    <div class="api-description">
-                        Retrieves content from a log file with optional filtering.
-                    </div>
-                    <div class="api-params">
-                        <h5>Query Parameters:</h5>
-                        <pre><code>file: Name of the log file to view (e.g., app_20250424.log)
+                    <!-- Log Content API -->
+                    <div class="api-item">
+                        <div class="api-title">
+                            <span class="api-method method-get">GET</span>
+                            <span class="api-path">/admin/logs/content</span>
+                            <span class="auth-required">Admin Required</span>
+                        </div>
+                        <div class="api-description">
+                            Retrieves content from a log file with optional filtering.
+                        </div>
+                        <div class="api-params">
+                            <h5>Query Parameters:</h5>
+                            <pre><code>file: Name of the log file to view (e.g., app_20250424.log)
 level: (optional) Filter by log level (e.g., ERROR, INFO)
 search: (optional) Search term to filter log entries
 compact: (optional) Return compact view (1 or 0)
 raw: (optional) Return raw log file content (1 or 0)</code></pre>
-                    </div>
-                    <div class="api-response">
-                        <h5>Response:</h5>
-                        <pre><code>{
+                        </div>
+                        <div class="api-response">
+                            <h5>Response:</h5>
+                            <pre><code>{
   "lines": [
     {
       "time": "2025-04-24 12:32:31,123",
@@ -460,67 +527,69 @@ raw: (optional) Return raw log file content (1 or 0)</code></pre>
   "count": 2,
   "file": "app_20250424.log"
 }</code></pre>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle collapsible sections
-    const headers = document.querySelectorAll('.section-header.collapsible');
-    headers.forEach(header => {
-        header.addEventListener('click', function() {
-            const content = this.nextElementSibling;
-            const isVisible = content.style.display !== 'none';
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle collapsible sections
+            const headers = document.querySelectorAll('.section-header.collapsible');
+            headers.forEach(header => {
+                header.addEventListener('click', function() {
+                    const content = this.nextElementSibling;
+                    const isVisible = content.style.display !== 'none';
+                    
+                    if (isVisible) {
+                        content.style.display = 'none';
+                        this.classList.add('collapsed');
+                    } else {
+                        content.style.display = 'block';
+                        this.classList.remove('collapsed');
+                    }
+                });
+            });
             
-            if (isVisible) {
-                content.style.display = 'none';
-                this.classList.add('collapsed');
-            } else {
-                content.style.display = 'block';
-                this.classList.remove('collapsed');
+            // Function to copy code to clipboard
+            function copyToClipboard(text, button) {
+                navigator.clipboard.writeText(text).then(function() {
+                    const indicator = button.nextElementSibling;
+                    indicator.style.display = 'inline';
+                    setTimeout(() => {
+                        indicator.style.display = 'none';
+                    }, 2000);
+                });
             }
+            
+            // Add copy buttons to all code blocks
+            document.querySelectorAll('pre code').forEach((codeBlock, index) => {
+                const pre = codeBlock.parentNode;
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-button';
+                copyBtn.textContent = 'Copy';
+                
+                const indicator = document.createElement('span');
+                indicator.className = 'copied-indicator';
+                indicator.textContent = 'Copied!';
+                
+                const buttonContainer = document.createElement('div');
+                buttonContainer.style.textAlign = 'right';
+                buttonContainer.style.marginTop = '5px';
+                
+                buttonContainer.appendChild(copyBtn);
+                buttonContainer.appendChild(indicator);
+                
+                pre.parentNode.insertBefore(buttonContainer, pre.nextSibling);
+                
+                copyBtn.addEventListener('click', () => {
+                    copyToClipboard(codeBlock.textContent, copyBtn);
+                });
+            });
         });
-    });
-    
-    // Function to copy code to clipboard
-    function copyToClipboard(text, button) {
-        navigator.clipboard.writeText(text).then(function() {
-            const indicator = button.nextElementSibling;
-            indicator.style.display = 'inline';
-            setTimeout(() => {
-                indicator.style.display = 'none';
-            }, 2000);
-        });
-    }
-    
-    // Add copy buttons to all code blocks
-    document.querySelectorAll('pre code').forEach((codeBlock, index) => {
-        const pre = codeBlock.parentNode;
-        const copyBtn = document.createElement('button');
-        copyBtn.className = 'copy-button';
-        copyBtn.textContent = 'Copy';
-        
-        const indicator = document.createElement('span');
-        indicator.className = 'copied-indicator';
-        indicator.textContent = 'Copied!';
-        
-        const buttonContainer = document.createElement('div');
-        buttonContainer.style.textAlign = 'right';
-        buttonContainer.style.marginTop = '5px';
-        
-        buttonContainer.appendChild(copyBtn);
-        buttonContainer.appendChild(indicator);
-        
-        pre.parentNode.insertBefore(buttonContainer, pre.nextSibling);
-        
-        copyBtn.addEventListener('click', () => {
-            copyToClipboard(codeBlock.textContent, copyBtn);
-        });
-    });
-});
-</script>
-{% endblock %}
+    </script>
+</body>
+</html>
