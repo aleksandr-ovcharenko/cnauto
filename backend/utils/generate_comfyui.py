@@ -113,7 +113,7 @@ def generate_with_comfyui(image_url: str, prompt: str, car_model, car_brand, car
     convert_to_webp(output_path, webp_path)
 
     try:
-        from utils.cloudinary_upload import upload_image
+        from backend.utils.cloudinary_upload import upload_image
         uploaded_url = upload_image(
             webp_path,
             car_id=car_id,

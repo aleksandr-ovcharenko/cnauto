@@ -6,7 +6,7 @@ import replicate
 import requests
 from PIL import Image
 
-from utils.cloudinary_upload import upload_image
+from backend.utils.cloudinary_upload import upload_image
 
 REPLICATE_PHOTON_MODEL = os.getenv("REPLICATE_PHOTON_MODEL", "luma/photon")
 REPLICATE_PHOTON_DEFAULTS = {
