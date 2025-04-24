@@ -95,10 +95,10 @@
                                         <img src="{{ img.url }}" class="img-thumbnail mb-2"
                                              style="width: 100%; object-fit: cover;">
                                         <button class="btn btn-sm btn-danger btn-block" type="button"
-                                                onclick="removeImage({{ img.id }})">Удалить
+                                                onclick="removeImage('{{ img.id }}')">Удалить
                                         </button>
                                         <button class="btn btn-sm btn-primary btn-block" type="button"
-                                                onclick="generateImage({{ img.id }})">
+                                                onclick="generateImage('{{ img.id }}')">
                                             Сгенерировать (AI)
                                         </button>
                                     </div>
@@ -212,7 +212,10 @@
         // First close the modal
         $('#galleryModal').modal('hide');
         
-        // Show message
+        // Add a prominent in-page message
+        addGeneratingMessage();
+        
+        // Show toast notification
         showToast('⏳ Генерация AI изображения запущена. Это может занять 1-2 минуты...', 'info');
         
         // Submit the form via fetch to avoid page reload
@@ -235,8 +238,53 @@
             }, 2000);
         })
         .catch(error => {
+            removeGeneratingMessage();
             showToast(`❌ ${error.message}`, 'danger');
         });
+    }
+    
+    function addGeneratingMessage() {
+        // Remove any existing message first
+        removeGeneratingMessage();
+        
+        // Create the message element
+        const messageContainer = document.createElement('div');
+        messageContainer.id = 'generating-message';
+        messageContainer.className = 'alert alert-info';
+        messageContainer.style.position = 'fixed';
+        messageContainer.style.top = '20%';
+        messageContainer.style.left = '50%';
+        messageContainer.style.transform = 'translateX(-50%)';
+        messageContainer.style.zIndex = '9999';
+        messageContainer.style.padding = '20px 30px';
+        messageContainer.style.borderRadius = '10px';
+        messageContainer.style.boxShadow = '0 4px 20px rgba(0,0,0,0.2)';
+        messageContainer.style.maxWidth = '90%';
+        messageContainer.style.width = '600px';
+        messageContainer.style.textAlign = 'center';
+        
+        // Add the spinner and text
+        messageContainer.innerHTML = `
+            <div class="d-flex align-items-center justify-content-center">
+                <div class="spinner-border text-primary mr-3" role="status">
+                    <span class="sr-only">Загрузка...</span>
+                </div>
+                <div class="ml-3" style="margin-left: 15px;">
+                    <h4 class="mb-1">Генерация AI изображения...</h4>
+                    <p class="mb-0">Это может занять 1-2 минуты. Страница обновится автоматически по завершении.</p>
+                </div>
+            </div>
+        `;
+        
+        // Add to the page
+        document.body.appendChild(messageContainer);
+    }
+    
+    function removeGeneratingMessage() {
+        const existingMessage = document.getElementById('generating-message');
+        if (existingMessage) {
+            existingMessage.parentNode.removeChild(existingMessage);
+        }
     }
     
     function showToast(message, type = 'info') {

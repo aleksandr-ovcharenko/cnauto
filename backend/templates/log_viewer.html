@@ -51,33 +51,32 @@
             padding: 0;
         }
         .log-line {
-            padding: 0;
+            padding: 0 2px;
             margin: 0;
-            line-height: 1;
+            line-height: 1.2;
             border-bottom: none;
             display: flex;
             font-size: 12px;
-            height: 14px;
-            overflow: hidden;
+            min-height: 14px;
         }
         .log-line:hover {
             background-color: #252730;
         }
         .timestamp-col {
-            flex: 0 0 115px;
+            flex: 0 0 145px;
             color: #98a2b3;
-            padding-right: 2px;
+            padding-right: 5px;
             font-size: 12px;
         }
         .level-col {
-            flex: 0 0 45px;
-            padding-right: 2px;
-            text-align: center;
+            flex: 0 0 70px;
+            padding-right: 5px;
+            text-align: left;
             font-weight: normal;
         }
         .module-col {
-            flex: 0 0 140px;
-            padding-right: 2px;
+            flex: 0 0 160px;
+            padding-right: 5px;
             color: #8897b9;
         }
         .message-col {
@@ -86,6 +85,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
             position: relative;
+            padding-right: 20px; /* Space for expand button */
         }
         .log-debug { color: #7dcfb6; }
         .log-info { color: #69b5e4; }
@@ -526,7 +526,7 @@
                                 <div class="level-col">${line.level}</div>
                                 <div class="module-col">${line.name || line.module}</div>
                                 <div class="message-col">
-                                    ${line.message}
+                                    <span>${line.message}</span>
                                     <button class="expand-btn" title="Развернуть" onclick="toggleExpand(event, this)">⋯</button>
                                 </div>
                             `;
