@@ -23,8 +23,8 @@ from wtforms.fields.simple import FileField, MultipleFileField
 from wtforms.widgets.core import HiddenInput
 from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
 
-from models import Role, User, CarImage, BrandSynonym, Currency
-from models import db, Car, Category, Brand, CarType, Country
+from models import Role, User, CarImage, BrandSynonym, Currency, CarType
+from models import db, Car, Category, Brand, Country
 
 # Папка для изображений автомобилей
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'images', 'cars')
@@ -571,14 +571,32 @@ def init_admin(app):
     )
 
     @app.context_processor
-    def inject_user():
+    def admin_context():
         return dict(current_user=current_user)
+
+    # Add API Docs link to admin
+    class ApiDocsView(BaseView):
+        @expose('/')
+        def index(self):
+            return redirect(url_for('api_docs'))
+    
+    # Add Logs view link
+    class LogsView(BaseView):
+        @expose('/')
+        def index(self):
+            return redirect(url_for('logs'))
 
     admin.add_view(CarImageAdmin(CarImage, db.session, name='Фото машин'))
     admin.add_view(CarAdmin(Car, db.session, name='Автомобили'))
     admin.add_view(CategoryAdmin(Category, db.session, name='Категории'))
-    admin.add_view(BrandAdmin(Brand, db.session, name='Бренды'))
-    admin.add_view(CarTypeAdmin(CarType, db.session, name='Типы авто'))
+    admin.add_view(BrandAdmin(Brand, db.session, name='Марки'))
     admin.add_view(CountryAdmin(Country, db.session, name='Страны'))
     admin.add_view(UserAdmin(User, db.session, name='Пользователи'))
+    admin.add_view(CarTypeAdmin(CarType, db.session, name='Типы авто'))
     admin.add_view(CurrencyAdmin(Currency, db.session, name='Currencies'))
+    
+    # Add tool views
+    admin.add_view(ApiDocsView(name='API Документация', category='Инструменты'))
+    admin.add_view(LogsView(name='Логи', category='Инструменты'))
+
+    return admin

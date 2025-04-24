@@ -360,6 +360,13 @@ def view_raw_log():
     return content, 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 
+@app.route('/admin/api-docs')
+@login_required
+def api_docs():
+    """Render the API documentation page"""
+    return render_template('api_docs.html')
+
+
 api = Blueprint('api', __name__)
 
 
