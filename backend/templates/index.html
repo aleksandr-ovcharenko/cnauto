@@ -22,7 +22,7 @@
                 <div class="swiper-slide">
                     <div class="car-card car-card--slider">
                         <img src="{{ car.image_url }}" alt="{{ car.model }}">
-                        <h3>{{ car.model }}</h3>
+                        <h3>{{ car.brand.name }} {{ car.model }}{% if car.modification %} {{ car.modification }}{% endif %}{% if car.trim %} {{ car.trim }}{% endif %}</h3>
                         <p class="price">
                             {{ car.price | format_currency(car.currency) }}
                         </p>

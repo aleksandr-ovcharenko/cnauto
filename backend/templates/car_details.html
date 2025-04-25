@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ car.model }} — CN-Auto{% endblock %}
+{% block title %}{{ car.brand.name }} {{ car.model }}{% if car.modification %} {{ car.modification }}{% endif %}{% if car.trim %} {{ car.trim }}{% endif %} — CN-Auto{% endblock %}
 
 {% block content %}
 <section class="product-detail">
@@ -20,11 +20,11 @@
     </div>
 
     <div class="product-right">
-        <h1 class="product-title">{{ car.model }}</h1>
+        <h1 class="product-title">{{ car.brand.name }} {{ car.model }}{% if car.modification %} {{ car.modification }}{% endif %}{% if car.trim %} {{ car.trim }}{% endif %}</h1>
         <p class="product-meta">
             Производитель: <strong>{{ car.brand.name }}</strong> |
             Тип: <strong>{{ car.car_type.name }}</strong> |
-            Модель: <strong>{{ car.model }}</strong>
+            Модель: <strong>{{ car.model }}{% if car.modification %} {{ car.modification }}{% endif %}{% if car.trim %} {{ car.trim }}{% endif %}</strong>
         </p>
 
         <div class="product-config">

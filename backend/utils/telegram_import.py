@@ -67,6 +67,8 @@ def import_car():
         return jsonify({"error": "invalid json"}), 400
 
     model = data.get("model", "").strip()
+    modification = data.get("modification", "").strip()
+    trim = data.get("trim", "").strip()
     price = int(data.get("price", 0) or 0)
     year = int(data.get("year", 0) or 0)
     mileage = int(data.get("mileage", 0) or 0)
@@ -75,6 +77,10 @@ def import_car():
     brand_name = data.get("brand", "").strip()
     description = data.get("description", "").strip()
     image_file_ids = data.get("image_file_ids", [])
+
+    # Validation: block car creation without brand and model
+    if not brand_name or not model:
+        return jsonify({"error": "Нельзя создать автомобиль без бренда и модели."}), 400
 
     missing_fields = [field for field in ["model", "brand", "image_file_ids"] if not data.get(field)]
     if missing_fields:
@@ -122,6 +128,8 @@ def import_car():
 
     car = Car(
         model=model,
+        modification=modification,
+        trim=trim,
         price=price,
         year=year,
         mileage=mileage,
@@ -135,13 +143,15 @@ def import_car():
     db.session.flush()
 
     prompt_hint = (
-        "Professional car studio shot, clean background, only the car visible. "
-        f"Car: {brand.name} {model}, fully isolated, no other objects or cars. "
-        "License plate must clearly show 'cncars.ru'. "
-        "Car positioned diagonally: front facing left, rear facing right. "
-        "Clean, sharp details, high-quality render, studio lighting. "
-        "Remove all background elements, shadows, and distractions. "
-        "The car should look like a perfect 3D model on a white background."
+        "Professional car studio shot, ultra-clean pure white background, only the car visible with ample empty space around it. "
+        f"Car: {car.model}-{car.brand.name}, perfectly isolated with at least 2 meters of empty space on all sides, no other objects or cars visible. "
+        "License plate must clearly and legibly display 'cncars.ru' in proper format. "
+        "Car positioned diagonally in frame: front facing 30 degrees left, rear facing 30 degrees right, with slight perspective as if viewed from eye level. "
+        "The car should be positioned not too close - about 5-7 meters from the virtual camera, showing full body with space around. "
+        "Crisp, ultra-sharp details, 8K quality render, professional three-point studio lighting with soft shadows. "
+        "Absolutely no background elements, no reflections of surroundings, no stray shadows - only clean, pure white backdrop. "
+        "The car should appear as a flawless 3D model with perfect proportions, slightly matte surface to avoid glare. "
+        "Add subtle ambient occlusion shadows under the car for natural grounding effect."
     )
 
     real_urls = []

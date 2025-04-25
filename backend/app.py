@@ -15,17 +15,22 @@ from sqlalchemy.orm import joinedload
 from wtforms import StringField, PasswordField, BooleanField
 from wtforms.validators import InputRequired
 
-# Use relative imports instead of backend.* package imports
-from admin import init_admin
-from app_decorators import admin_required
-from config_dev import DevConfig
-from config_prod import ProdConfig
-from events import setup_deletion_events
-from models import Car, Category, Brand, Country, CarType, User, db, ImageTask
-from utils.file_logger import setup_file_logger
-from utils.image_queue import start_image_processor
-from utils.log_viewer import get_log_files, get_log_content
-from utils.telegram_import import import_car as import_car_handler
+# Use absolute imports instead of relative imports
+from backend.admin import init_admin
+from backend.app_decorators import admin_required
+from backend.config_dev import DevConfig
+from backend.config_prod import ProdConfig
+from backend.events import setup_deletion_events
+from backend.models import Car, Category, Brand, Country, CarType, User, db, ImageTask
+from backend.utils.file_logger import setup_file_logger, get_module_logger
+from backend.utils.image_queue import start_image_processor, get_car_tasks, task_status, get_task_status
+from backend.utils.log_viewer import get_log_files, get_log_content
+from backend.utils.telegram_import import import_car as import_car_handler, telegram_import
+from backend.seeds.seed_brand_synonyms import seed_brand_synonyms
+from backend.seeds.seed_cars1 import seed_cars
+from backend.seeds.seed_data import seed_types
+from backend.seeds.seed_categories import seed_categories
+from backend.seeds.seed_users import seed_users
 
 # .env
 load_dotenv()
@@ -473,7 +478,7 @@ def diagnose_telegram():
 @api.route('/diagnose-replicate', methods=['GET'])
 def diagnose_replicate():
     import json
-    from utils.generator_photon import check_replicate_api_token
+    from backend.utils.generator_photon import check_replicate_api_token
 
     logger = logging.getLogger(__name__)
 
@@ -528,7 +533,7 @@ def list_image_tasks():
     """
     Get a list of all image generation tasks or filter by car ID
     """
-    from utils.image_queue import get_car_tasks, task_status
+    from backend.utils.image_queue import get_car_tasks, task_status
 
     car_id = request.args.get('car_id')
 
@@ -558,7 +563,7 @@ def get_image_task(task_id):
     """
     Get details for a specific image generation task
     """
-    from utils.image_queue import get_task_status
+    from backend.utils.image_queue import get_task_status
 
     task = get_task_status(task_id)
 
@@ -741,13 +746,14 @@ if __name__ == '__main__':
         try:
             from alembic.config import Config
             from alembic import command
-            from seeds.seed_brand_synonyms import seed_brand_synonyms
+            from backend.seeds.seed_brand_synonyms import seed_brand_synonyms
+            from backend.seeds.seed_categories import seed_categories
 
             # Путь к актуальному alembic.ini
             alembic_cfg = Config(os.path.join(os.path.dirname(__file__), '..', 'alembic.ini'))
             command.upgrade(alembic_cfg, 'head')
             logger.info("✅ Миграции применены")
-
+            seed_categories()
         except Exception as e:
             logger.error("⚠️ Ошибка при миграции: %s", e)
 

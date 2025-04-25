@@ -156,11 +156,11 @@ class CarAdmin(SecureModelView):
     base_template = 'admin/custom_admin_base.html'
     list_template = 'admin/model/list.html'
 
-    column_list = ['image_preview', 'brand_preview', 'model', 'price', 'currency', 'car_type']
-    column_labels = {'image_preview': 'Фото', 'brand_preview': 'Бренд', 'currency': 'Валюта'}
+    column_list = ['image_preview', 'brand_preview', 'model', 'modification', 'trim', 'price', 'currency', 'car_type']
+    column_labels = {'image_preview': 'Фото', 'brand_preview': 'Бренд', 'currency': 'Валюта', 'modification': 'Модификация', 'trim': 'Комплектация'}
 
-    column_searchable_list = ['model']
-    column_filters = ['price', 'car_type', 'in_stock']
+    column_searchable_list = ['model', 'modification', 'trim']
+    column_filters = ['price', 'car_type', 'in_stock', 'modification', 'trim']
     page_size = 20
     can_view_details = True
     can_export = True
@@ -220,6 +220,11 @@ class CarAdmin(SecureModelView):
         logger.info(f"🧾 Обработка формы: {model.brand.name} {model.model} (ID: {model.id})")
         from utils.cloudinary_upload import upload_image
 
+        # Block car creation without brand and model
+        if is_created:
+            if not model.brand or not model.model or not str(model.model).strip():
+                raise ValueError("Нельзя создать автомобиль без бренда и модели.")
+
         # Главное изображение
         image_file = form.image_upload.data
         if image_file and image_file.filename:
@@ -260,7 +265,7 @@ class CarAdmin(SecureModelView):
     }
 
     form_columns = [
-        'model', 'price', 'currency', 'brand', 'car_type',
+        'model', 'modification', 'trim', 'price', 'currency', 'brand', 'car_type',
         'image_upload',
         'description', 'year', 'mileage', 'engine', 'in_stock'
     ]

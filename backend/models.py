@@ -109,8 +109,18 @@ class Car(db.Model):
     car_type = db.relationship('CarType', backref='cars')
     car_type_slug = db.Column(db.String(50))
 
+    modification = db.Column(db.String(100))
+    trim = db.Column(db.String(100))
+
     def __str__(self):
-        return f'{self.model} ({self.price} ₽)'
+        # Display as: Brand Model Modification Trim (Price ₽)
+        brand = self.brand.name if self.brand else ''
+        model = self.model or ''
+        modification = self.modification or ''
+        trim = self.trim or ''
+        parts = [brand, model, modification, trim]
+        name = ' '.join([p for p in parts if p]).strip()
+        return f'{name} ({self.price} ₽)'
 
     @property
     def formatted_price(self):

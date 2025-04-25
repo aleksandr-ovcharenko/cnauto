@@ -167,7 +167,7 @@
                         <span>{{ car.brand.name }}</span>
                     </div>
 
-                    <h3 class="car-card__title">{{ car.model }}</h3>
+                    <h3 class="car-card__title">{{ car.brand.name }} {{ car.model }}{% if car.modification %} {{ car.modification }}{% endif %}{% if car.trim %} {{ car.trim }}{% endif %}</h3>
 
                     <div class="car-card__price-row">
                         {% if car.in_stock %}
