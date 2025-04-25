@@ -73,6 +73,15 @@ def setup_file_logger():
     # Add a message to confirm setup
     root_logger.info(f"✅ Logging initialized: All logs will be saved to {log_file}")
 
+    # --- PROPAGATION AND HANDLER CHECKS ---
+    # Check all loggers for propagate=False or extra handlers
+    for name, logger_obj in logging.root.manager.loggerDict.items():
+        if isinstance(logger_obj, logging.Logger):
+            if hasattr(logger_obj, 'propagate') and not logger_obj.propagate:
+                root_logger.warning(f"⚠️ Logger '{name}' has propagate=False: logs may not reach the root logger and file!")
+            if hasattr(logger_obj, 'handlers') and logger_obj.handlers:
+                root_logger.warning(f"⚠️ Logger '{name}' has its own handlers: {logger_obj.handlers}. This may cause logs to bypass the root logger!")
+
     # Testing flag to verify logging configuration
     os.environ["LOGGING_INITIALIZED"] = "1"
 
