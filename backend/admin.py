@@ -322,6 +322,7 @@ class CarAdmin(SecureModelView):
             year=car.year,
             mileage=car.mileage,
             engine=car.engine,
+            currency=car.currency  # <-- copy currency
         )
         db.session.add(new_car)
         db.session.commit()
@@ -349,7 +350,8 @@ class CarAdmin(SecureModelView):
                     description=car.description,
                     year=car.year,
                     mileage=car.mileage,
-                    engine=car.engine
+                    engine=car.engine,
+                    currency=car.currency  # <-- copy currency
                 )
                 db.session.add(new_car)
 

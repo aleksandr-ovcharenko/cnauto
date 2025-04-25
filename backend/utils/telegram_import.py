@@ -7,7 +7,7 @@ import requests
 from flask import Blueprint, jsonify, current_app, request, url_for
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models import db, Car, Brand, CarImage, BrandSynonym
+from models import db, Car, Brand, CarImage, BrandSynonym, Currency
 from utils.cloudinary_upload import upload_image
 from utils.generate_comfyui import generate_with_comfyui
 from utils.generator_photon import generate_with_photon
@@ -113,6 +113,13 @@ def import_car():
             db.session.add(car_type)
             db.session.flush()
 
+    currency_code = data.get("currency")
+    currency = None
+    if currency_code:
+        currency = Currency.query.filter_by(code=currency_code).first()
+        if not currency:
+            logger.warning(f"⚠️ Currency with code '{currency_code}' not found. Defaulting to None.")
+
     car = Car(
         model=model,
         price=price,
@@ -122,6 +129,7 @@ def import_car():
         brand=brand,
         car_type=car_type,
         description=description,
+        currency=currency,
     )
     db.session.add(car)
     db.session.flush()
