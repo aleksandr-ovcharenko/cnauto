@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+  <h1 class="mb-4">Admin Dashboard</h1>
+  <div class="row">
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header">Server Stats</div>
+        <div class="card-body">
+          <pre id="server-stats">Loading...</pre>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header">Application Stats</div>
+        <div class="card-body">
+          <pre id="app-stats">Loading...</pre>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header">System Health</div>
+        <div class="card-body">
+          <pre id="health-stats">Loading...</pre>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header">Miscellaneous</div>
+        <div class="card-body">
+          <pre id="misc-stats">Loading...</pre>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 mb-4">
+      <div class="card">
+        <div class="card-header">Traffic Visualization</div>
+        <div class="card-body">
+          <canvas id="traffic-chart" height="80"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+<script src="/static/dashboard.js"></script>
+{% endblock %}

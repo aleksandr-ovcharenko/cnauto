@@ -147,7 +147,7 @@ def admin_login():
         user = User.query.filter_by(username=form.username.data).first()
         if user and user.check_password(form.password.data) and user.has_role('admin'):
             login_user(user, remember=form.remember.data)
-            return redirect(url_for('admin.index'))
+            return redirect(url_for('admin_dashboard_main'))
         flash('Неверные данные для входа или недостаточно прав', 'error')
         logging.getLogger(__name__).warning('Неверные данные для входа или недостаточно прав')
     return render_template('admin/login.html', form=form)
@@ -629,6 +629,106 @@ def image_tasks_api():
 def image_tasks_view():
     """Web interface for viewing image task history"""
     return render_template('image_tasks.html')
+
+
+@app.route('/admin/')
+@admin_required
+@login_required
+def admin_dashboard_main():
+    return render_template('admin/dashboard.html')
+
+
+@app.route('/admin/dashboard')
+@admin_required
+@login_required
+def admin_dashboard():
+    return render_template('admin_dashboard.html')
+
+
+import psutil
+import platform
+import datetime
+
+# --- Admin Dashboard Stats Endpoints ---
+@app.route('/admin/stats/server')
+@admin_required
+@login_required
+def admin_stats_server():
+    """Return server stats: CPU, memory, disk, uptime."""
+    boot_time = datetime.datetime.fromtimestamp(psutil.boot_time())
+    uptime = (datetime.datetime.now() - boot_time).total_seconds()
+    stats = {
+        'cpu_percent': psutil.cpu_percent(interval=0.5),
+        'memory': psutil.virtual_memory()._asdict(),
+        'disk': psutil.disk_usage('/')._asdict(),
+        'uptime_seconds': int(uptime),
+        'platform': platform.platform(),
+        'hostname': platform.node(),
+        'boot_time': boot_time.isoformat(),
+    }
+    return jsonify(stats)
+
+@app.route('/admin/stats/app')
+@admin_required
+@login_required
+def admin_stats_app():
+    """Return application stats stub."""
+    # TODO: Replace with real queries
+    stats = {
+        'active_users': 0,  # Implement logic
+        'visits_today': 0,  # Implement logic
+        'recent_logins': [],
+        'error_count_24h': 0,
+        'queue_length': 0,
+    }
+    return jsonify(stats)
+
+@app.route('/admin/stats/health')
+@admin_required
+@login_required
+def admin_stats_health():
+    """Return system health stub."""
+    # TODO: Implement real checks
+    stats = {
+        'db_status': 'ok',
+        'cache_status': 'ok',
+        'worker_status': 'ok',
+        'recent_deploy': None,
+        'pending_updates': False,
+    }
+    return jsonify(stats)
+
+@app.route('/admin/stats/visualizations')
+@admin_required
+@login_required
+def admin_stats_visualizations():
+    """Return data for dashboard visualizations."""
+    # Example traffic data: hourly visits for the past 12 hours
+    import datetime
+    now = datetime.datetime.now()
+    traffic = []
+    for i in range(12):
+        hour = (now - datetime.timedelta(hours=11-i)).strftime('%H:00')
+        visits = 10 + (i * 7) % 23  # Dummy data, replace with real stats
+        traffic.append({'hour': hour, 'visits': visits})
+    stats = {
+        'traffic': traffic,
+        'cpu_history': [],
+        'memory_history': [],
+    }
+    return jsonify(stats)
+
+@app.route('/admin/stats/misc')
+@admin_required
+@login_required
+def admin_stats_misc():
+    """Return miscellaneous info."""
+    stats = {
+        'announcements': [],
+        'version': os.getenv('APP_VERSION', 'dev'),
+        'commit': os.getenv('GIT_COMMIT', ''),
+    }
+    return jsonify(stats)
 
 
 app.register_blueprint(api, url_prefix='/api')

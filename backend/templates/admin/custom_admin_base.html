@@ -4,29 +4,230 @@
 {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<style>
+  .dashboard-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #1a237e;
+    text-shadow: 0 2px 8px #e3e6fd;
+    margin-bottom: 0.5em;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    flex-wrap: wrap;
+    word-break: break-word;
+  }
+  .dashboard-title i {
+    color: #3949ab;
+    font-size: 2.2rem;
+  }
+  .card-header.fw-bold {
+    background: linear-gradient(90deg, #e3e6fd 0%, #f0f4ff 100%);
+    color: #283593;
+    font-size: 1.25rem;
+    border-bottom: 2px solid #c5cae9;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 6px rgba(44,62,80,0.04);
+    text-transform: uppercase;
+    padding: 0.75rem 1.25rem;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: 54px;
+    word-break: break-word;
+  }
+  .card {
+    border-radius: 1rem;
+    box-shadow: 0 4px 24px rgba(44,62,80,0.07);
+    border: none;
+    margin-bottom: 1.5rem;
+    transition: box-shadow 0.2s;
+  }
+  .card:hover {
+    box-shadow: 0 8px 32px rgba(44,62,80,0.13);
+  }
+  .card-body {
+    background: #fafbff;
+    border-radius: 0 0 1rem 1rem;
+    padding: 1.5rem 1.25rem;
+  }
+  .btn {
+    font-weight: 600;
+    border-radius: 0.5rem !important;
+    transition: box-shadow 0.2s, background 0.2s;
+    box-shadow: 0 2px 8px rgba(44,62,80,0.06);
+  }
+  .btn:active, .btn:focus {
+    box-shadow: 0 0 0 0.15rem #c5cae9;
+  }
+  .badge-success {
+    background: #43a047;
+  }
+  .badge-danger {
+    background: #e53935;
+  }
+  .role-badge {
+    background: #e3e6fd;
+    color: #283593;
+    font-size: 0.95em;
+    border-radius: 0.4em;
+    padding: 0.2em 0.6em;
+    margin-left: 0.3em;
+  }
+  @media (max-width: 991px) {
+    .dashboard-title {
+      font-size: 1.5rem;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .card-header.fw-bold {
+      font-size: 1.1rem;
+      padding: 0.65rem 1rem;
+    }
+    .card-body {
+      padding: 1rem 0.75rem;
+    }
+  }
+  @media (max-width: 600px) {
+    .dashboard-title {
+      font-size: 1.1rem;
+      gap: 0.2em;
+    }
+    .card-header.fw-bold {
+      font-size: 1rem;
+      padding: 0.5rem 0.5rem;
+      min-height: 36px;
+    }
+    .card {
+      border-radius: 0.7rem;
+    }
+    .card-body {
+      padding: 0.7rem 0.4rem;
+    }
+  }
+</style>
 {% endblock %}
 
 {% block body %}
-<div class="admin-header">
-    <a href="/" class="admin-logo" style="margin-right: 10px;">
-        <img src="{{ url_for('static', filename='images/site/main_logo.webp') }}" alt="CN-Auto" style="height: 40px; width: auto;">
+<div class="admin-header d-flex align-items-center justify-content-between">
+  <div class="d-flex align-items-center">
+    <a href="/" class="admin-logo d-flex align-items-center" style="margin-right: 10px;">
+      <img src="{{ url_for('static', filename='images/site/main_logo.webp') }}" alt="CN-Auto" style="height: 100px;width: auto;">
     </a>
-    {% if current_user.is_authenticated %}
-    <div class="admin-user-info">
-        {{ current_user.username }}
-        {% for role in current_user.roles %}
-        <span class="role-badge">роль: {{ role.name }}</span>
-        {% endfor %}
-        |
-        <a href="{{ url_for('admin_logout') }}">Выйти</a>
-    </div>
-    {% endif %}
+    <a href="/" class="btn btn-link ms-2">Go to Site</a>
+    <a href="/catalog" class="btn btn-link ms-2">Catalog</a>
+  </div>
+  {% if current_user.is_authenticated %}
+  <div class="admin-user-info">
+    {{ current_user.username }}
+    {% for role in current_user.roles %}
+    <span class="role-badge">роль: {{ role.name }}</span>
+    {% endfor %}
+    |
+    <a href="{{ url_for('admin_logout') }}">Выйти</a>
+  </div>
+  {% endif %}
 </div>
+<div class="container mb-4">
+  <div class="card mb-4">
+    <div class="card-header fw-bold" style="font-weight:bold;">Actions</div>
+    <div class="card-body d-flex flex-wrap gap-2">
+      <a href="{{ url_for('admin_stats_misc') }}" class="btn btn-outline-dark">Misc Stats</a>
+      <a href="{{ url_for('admin_stats_server') }}" class="btn btn-outline-dark">Server Stats (JSON)</a>
+      <a href="{{ url_for('admin_stats_app') }}" class="btn btn-outline-dark">App Stats (JSON)</a>
+      <a href="{{ url_for('admin_stats_health') }}" class="btn btn-outline-dark">Health Stats (JSON)</a>
+      <a href="{{ url_for('admin_stats_visualizations') }}" class="btn btn-outline-dark">Traffic Data (JSON)</a>
+      <a href="{{ url_for('view_logs') }}" class="btn btn-outline-secondary" target="_blank">Log Viewer</a>
+      <a href="{{ url_for('api_docs') }}" class="btn btn-outline-primary" target="_blank">API Docs</a>
+      <a href="{{ url_for('admin_logout') }}" class="btn btn-outline-danger">Logout</a>
+    </div>
+  </div>
+</div>
+{{ self.admin_dashboard() }}
 {{ super() }}
 {% endblock %}
 
 {% block extra_js %}
 {{ super() }}
+{% endblock %}
+
+{% block admin_dashboard %}
+<div class="container mt-4">
+  <h1 class="dashboard-title"><i class="bi bi-speedometer2"></i> Admin Dashboard</h1>
+  <div class="container mb-4">
+    <div class="card mb-4">
+      <div class="card-header fw-bold" style="font-weight:bold;">
+        <span>Traffic</span><br>
+        <span>Visualization</span>
+      </div>
+      <div class="card-body">
+        <canvas id="traffic-chart" height="80"></canvas>
+        <div class="row mt-4">
+          <div class="col-md-6">
+            <canvas id="traffic-bar-chart" height="80"></canvas>
+          </div>
+          <div class="col-md-6">
+            <canvas id="traffic-pie-chart" height="80"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header fw-bold" style="font-weight:bold;">Server Stats</div>
+        <div class="card-body" id="server-stats">
+          <div>CPU Usage: <span id="cpu-percent"></span>%</div>
+          <div>Memory Usage: <span id="mem-used"></span> / <span id="mem-total"></span> (<span id="mem-percent"></span>%)</div>
+          <div>Disk Usage: <span id="disk-used"></span> / <span id="disk-total"></span> (<span id="disk-percent"></span>%)</div>
+          <div>Uptime: <span id="uptime"></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header fw-bold" style="font-weight:bold;">Application Stats</div>
+        <div class="card-body" id="app-stats">
+          <div>Active Users: <span id="active-users"></span></div>
+          <div>Visits Today: <span id="visits-today"></span></div>
+          <div>Error Count (24h): <span id="error-count"></span></div>
+          <div>Queue Length: <span id="queue-length"></span></div>
+          <div>Recent Logins:</div>
+          <ul id="recent-logins"></ul>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header fw-bold" style="font-weight:bold;">System Health</div>
+        <div class="card-body" id="health-stats">
+          <div>DB: <span id="db-status" class="badge"></span></div>
+          <div>Cache: <span id="cache-status" class="badge"></span></div>
+          <div>Worker: <span id="worker-status" class="badge"></span></div>
+          <div>Recent Deploy: <span id="recent-deploy"></span></div>
+          <div>Pending Updates: <span id="pending-updates" class="badge"></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header fw-bold" style="font-weight:bold;">Miscellaneous</div>
+        <div class="card-body" id="misc-stats">
+          <div>Version: <span id="version"></span></div>
+          <div>Commit: <span id="commit"></span></div>
+          <div>Announcements:</div>
+          <ul id="announcements"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+<script src="/static/dashboard.js"></script>
 {% endblock %}
 
 {% block tail %}
