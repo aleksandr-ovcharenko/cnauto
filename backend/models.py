@@ -2,7 +2,6 @@ from datetime import datetime
 
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Text
 
 db = SQLAlchemy()
 
@@ -78,7 +77,8 @@ class CarImage(db.Model):
 
 class Car(db.Model):
     __tablename__ = 'cars'
-    form_columns = ['model', 'price', 'currency', 'image', 'brand_logo', 'description', 'in_stock', 'category', 'brand', 'car_type']
+    form_columns = ['model', 'price', 'currency', 'image', 'brand_logo', 'description', 'in_stock', 'category', 'brand',
+                    'car_type']
     id = db.Column(db.Integer, primary_key=True)
     model = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
@@ -178,41 +178,41 @@ class Currency(db.Model):
 class ImageTask(db.Model):
     """Model to track history of image generation and upload tasks"""
     __tablename__ = 'image_tasks'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     car_id = db.Column(db.Integer, db.ForeignKey('cars.id'), nullable=True)
     car = db.relationship('Car', backref='image_tasks')
-    
+
     # Source can be: 'gallery_ai', 'upload', 'telegram', etc.
     source = db.Column(db.String(50), nullable=False)
-    
+
     # Status: 'pending', 'processing', 'completed', 'failed'
     status = db.Column(db.String(20), default='pending')
-    
+
     # Original image if AI generation
     source_image_id = db.Column(db.Integer, db.ForeignKey('car_images.id'), nullable=True)
     source_image = db.relationship('CarImage', foreign_keys=[source_image_id])
-    
+
     # Result image (if any)
     result_image_id = db.Column(db.Integer, db.ForeignKey('car_images.id'), nullable=True)
     result_image = db.relationship('CarImage', foreign_keys=[result_image_id])
-    
+
     # Store any prompt used for generation
     prompt = db.Column(db.Text, nullable=True)
-    
+
     # Error message if failed
     error = db.Column(db.Text, nullable=True)
-    
+
     # URLs for source and result
     source_url = db.Column(db.String(512), nullable=True)
     result_url = db.Column(db.String(512), nullable=True)
-    
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     def __str__(self):
         return f"ImageTask #{self.id} ({self.source}) - {self.status}"
-    
+
     def to_dict(self):
         """Convert task to dictionary for API responses"""
         return {

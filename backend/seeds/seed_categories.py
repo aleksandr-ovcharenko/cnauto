@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from backend.models import db, Category
@@ -18,3 +19,4 @@ def seed_categories():
 
     db.session.commit()
     print("✅ Категории добавлены")
+    logging.getLogger(__name__).info("✅ Категории добавлены")

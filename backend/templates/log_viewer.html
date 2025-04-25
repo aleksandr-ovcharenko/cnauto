@@ -12,7 +12,7 @@
             color: #d7dae0;
             font-family: 'Roboto Mono', monospace;
             margin: 0;
-            font-size: 12px;
+            font-size: 16px;
             line-height: 1;
             padding: 0;
         }
@@ -45,39 +45,43 @@
             overflow-y: auto;
             white-space: pre-wrap;
             word-wrap: break-word;
-            font-size: 11px;
+            font-size: 14px;
             line-height: 1.15;
             margin: 0;
             padding: 0;
         }
         .log-line {
-            padding: 0 2px;
+            padding: 0 1px;
             margin: 0;
-            line-height: 1.2;
+            line-height: 1.1;
             border-bottom: none;
             display: flex;
-            font-size: 12px;
-            min-height: 14px;
+            font-size: 14px;
+            min-height: 12px;
         }
         .log-line:hover {
             background-color: #252730;
         }
         .timestamp-col {
-            flex: 0 0 145px;
+            flex: 0 0 90px;
             color: #98a2b3;
-            padding-right: 5px;
-            font-size: 12px;
+            padding-right: 3px;
+            font-size: 14px;
         }
         .level-col {
-            flex: 0 0 70px;
-            padding-right: 5px;
+            flex: 0 0 48px;
+            padding-right: 3px;
             text-align: left;
             font-weight: normal;
         }
         .module-col {
-            flex: 0 0 160px;
-            padding-right: 5px;
+            flex: 0 0 190px;
+            padding-right: 2px;
             color: #8897b9;
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .message-col {
             flex: 1;
@@ -85,7 +89,42 @@
             overflow: hidden;
             text-overflow: ellipsis;
             position: relative;
-            padding-right: 20px; /* Space for expand button */
+            padding-right: 4px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            margin-left: 12px;
+        }
+        .expand-btn {
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 13px;
+            cursor: pointer;
+            margin-left: 2px;
+            padding: 0 2px;
+            display: none;
+        }
+        .log-line.long-message .expand-btn {
+            display: inline;
+        }
+        .expanded-message {
+            background: #23242a;
+            color: #fff;
+            border-radius: 3px;
+            margin-top: 2px;
+            padding: 6px 8px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 16px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            box-shadow: 0 2px 8px #0003;
+            z-index: 10;
+            position: absolute;
+            left: 0;
+            top: 100%;
+            min-width: 300px;
+            max-width: 80vw;
         }
         .log-debug { color: #7dcfb6; }
         .log-info { color: #69b5e4; }
@@ -157,7 +196,7 @@
             background-color: #1c1c21;
             color: #ddd;
             border: 1px solid #343741;
-            font-size: 12px;
+            font-size: 14px;
             height: 30px;
             padding: 0 8px;
         }
@@ -167,7 +206,7 @@
             border-color: #535871;
         }
         .btn-filter {
-            font-size: 11px;
+            font-size: 14px;
             padding: 3px 8px;
             margin-right: 2px;
             border-radius: 3px;
@@ -180,7 +219,7 @@
             font-weight: bold;
         }
         .btn-tools {
-            font-size: 11px;
+            font-size: 14px;
             padding: 3px 8px;
             margin-right: 2px;
             border-radius: 3px;
@@ -193,11 +232,11 @@
             color: #fff;
         }
         #log-stats {
-            font-size: 11px;
+            font-size: 14px;
             color: #98a2b3;
         }
         .form-check-label {
-            font-size: 11px;
+            font-size: 14px;
             color: #ddd;
             margin-left: 3px;
         }
@@ -211,10 +250,10 @@
         }
         
         .tabular-view .timestamp-col {
-            flex: 0 0 150px;
+            flex: 0 0 250px;
             color: #98a2b3;
             padding-right: 5px;
-            font-size: 10px;
+            font-size: 14px;
         }
         
         .tabular-view .level-col {
@@ -225,15 +264,20 @@
         }
         
         .tabular-view .module-col {
-            flex: 0 0 150px;
+            flex: 0 0 220px;
             padding-right: 5px;
             color: #8897b9;
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         
         .tabular-view .message-col {
             flex: 1;
             white-space: pre-wrap;
             word-break: break-word;
+            margin-left: 12px;
         }
         
         /* Time display */
@@ -248,7 +292,7 @@
             border-radius: 12px;
             background-color: #343741;
             color: #ddd;
-            font-size: 10px;
+            font-size: 14px;
             margin-right: 5px;
             line-height: 1.5;
         }
@@ -259,89 +303,28 @@
         }
         
         /* Visualization elements */
-        .visualization-row {
-            height: 60px;
-            background-color: #25262e;
-            border-top: 1px solid #343741;
-            padding: 5px 10px;
-            display: flex;
-            align-items: center;
-            overflow-x: auto;
-        }
-        
-        .log-chart {
-            min-width: 300px;
-            height: 50px;
-            margin-right: 20px;
-            background-color: #1c1c21;
-            border-radius: 3px;
-            position: relative;
-        }
-        
-        .log-chart-label {
-            position: absolute;
-            bottom: 2px;
-            left: 5px;
-            font-size: 9px;
-            color: #98a2b3;
-        }
-        
-        .log-chart-bar {
-            position: absolute;
-            bottom: 15px;
-            width: 5px;
-            background-color: #69b5e4;
-            border-radius: 1px 1px 0 0;
-        }
-        
-        .log-chart-bar.debug { background-color: #7dcfb6; }
-        .log-chart-bar.info { background-color: #69b5e4; }
-        .log-chart-bar.warning { background-color: #f5a700; }
-        .log-chart-bar.error { background-color: #f04747; }
-        .log-chart-bar.critical { background-color: #ff3838; }
-        
-        .log-container {
-            overflow-y: auto;
-            height: calc(100vh - 100px);
-            background-color: #1a1c21;
-            border: none;
-            padding: 0;
-            margin-top: 0;
-        }
-        
-        /* Expand button for long messages */
-        .expand-btn {
-            display: none;
-            position: absolute;
-            right: 0;
-            top: 0;
-            background-color: #2a2c35;
-            color: #69b5e4;
-            border: none;
-            padding: 0 4px;
-            font-size: 10px;
-            cursor: pointer;
-            margin-left: 5px;
-        }
-        
-        .log-line:hover .expand-btn {
-            display: inline-block;
-        }
-        
-        /* Extended log message */
-        .log-line.expanded .message-col {
-            white-space: pre-wrap;
-            overflow: visible;
-            background-color: #252730;
-            padding: 5px;
-            border-radius: 3px;
-            z-index: 10;
-        }
-        
-        .log-line.expanded {
-            height: auto;
-            min-height: 12px;
+        #visualization-row {
+            background: #181a20;
+            padding: 10px 0 0 0;
             margin-bottom: 5px;
+            border-radius: 8px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            min-height: 180px;
+        }
+        #visualization-row > div {
+            flex: 1 1 200px;
+            min-width: 180px;
+            text-align: center;
+        }
+        #visualization-row canvas {
+            height: 120px;
+        }
+        #visualization-row div:last-child {
+            min-width: 220px;
         }
     </style>
 </head>
@@ -355,6 +338,12 @@
                 <h1>CNAuto Log Viewer</h1>
                 <div>
                     <a href="{{ url_for('admin.index') }}" class="btn btn-tools" target="_blank"><i class="bi bi-arrow-left"></i> Admin</a>
+                    <a href="/admin/api-docs" target="_blank" rel="noopener noreferrer" style="margin-right:18px;">
+                        API Documentation <span style="font-size:14px;vertical-align:middle;">&#128279;</span>
+                    </a>
+                    <a href="/admin/logs" target="_blank" rel="noopener noreferrer">
+                        Logs <span style="font-size:14px;vertical-align:middle;">&#128279;</span>
+                    </a>
                 </div>
             </div>
         </div>
@@ -392,18 +381,11 @@
             
             <div class="control-row">
                 <span id="log-stats">Showing {{ log_lines|length }} lines</span>
-                
                 <div class="d-flex align-items-center ms-3">
                     <div class="form-check me-3">
                         <input class="form-check-input" type="checkbox" id="auto-refresh" checked>
                         <label class="form-check-label" for="auto-refresh">Auto-refresh (5s)</label>
                     </div>
-                    
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="show-time" checked>
-                        <label class="form-check-label" for="show-time">Show time</label>
-                    </div>
-                    
                     <div class="ms-2 d-flex">
                         <button id="toggle-http" class="btn-tools btn-filter-toggle active" data-filter="http">
                             <i class="bi bi-eye"></i> HTTP
@@ -413,32 +395,42 @@
                         </button>
                     </div>
                 </div>
-                
                 <div class="ms-auto" id="active-filters">
                     <!-- Active filters will be shown here -->
                 </div>
             </div>
         </div>
         
-        <div class="log-container tabular-view show-http show-periodic" id="log-content">
-            
+        <div id="visualization-row">
+            <div style="flex:1 1 200px;min-width:180px;text-align:center;">
+                <canvas id="levelChart" height="120"></canvas>
+                <div style="color:#8897b9;font-size:13px;margin-top:3px;">Log Levels</div>
+            </div>
+            <div style="flex:1 1 200px;min-width:180px;text-align:center;">
+                <canvas id="moduleChart" height="120"></canvas>
+                <div style="color:#8897b9;font-size:13px;margin-top:3px;">By Module</div>
+            </div>
+            <div style="flex:1 1 260px;min-width:220px;text-align:center;">
+                <canvas id="timeChart" height="120"></canvas>
+                <div style="color:#8897b9;font-size:13px;margin-top:3px;">Log Activity</div>
+            </div>
         </div>
         
-        <div class="visualization-row" id="visualization-area">
-            <div class="log-chart" id="log-level-chart">
-                <div class="log-chart-label">Log Levels</div>
-                <!-- Bars will be generated by JS -->
-            </div>
-            
-            <div class="log-chart" id="log-time-chart">
-                <div class="log-chart-label">Time Distribution</div>
-                <!-- Bars will be generated by JS -->
+        <div class="log-container tabular-view show-http show-periodic" id="log-content">
+            <div class="log-table-header" style="display: flex; font-weight: bold; background: #23242a; border-bottom: 1px solid #343741; font-size: 16px;">
+                <div class="timestamp-col">Time</div>
+                <div class="level-col">Level</div>
+                <div class="module-col">Module</div>
+                <div class="message-col">Message</div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        let levelChart, moduleChart, timeChart; // <-- Ensure these are global for the script
+
         document.addEventListener('DOMContentLoaded', function() {
             const logContent = document.getElementById('log-content');
             const searchInput = document.getElementById('search-input');
@@ -447,6 +439,73 @@
             const autoRefreshCheckbox = document.getElementById('auto-refresh');
             const filterButtons = document.querySelectorAll('.btn-filter');
             let autoRefreshInterval;
+            let hiddenModules = new Set();
+            
+            function hideModule(event, moduleName) {
+                event.stopPropagation();
+                hiddenModules.add(moduleName);
+                refreshLogs();
+            }
+            
+            function updateVisualizations(lines) {
+                if (!Array.isArray(lines) || lines.length === 0) {
+                    // Show placeholder text if no logs
+                    ["levelChart","moduleChart","timeChart"].forEach(id => {
+                        const ctx = document.getElementById(id).getContext('2d');
+                        ctx.clearRect(0,0,400,120);
+                        ctx.font = "14px sans-serif";
+                        ctx.fillStyle = "#8897b9";
+                        ctx.textAlign = "center";
+                        ctx.fillText("No data", 100, 60);
+                    });
+                    return;
+                }
+                // --- Level chart ---
+                const levelCounts = {};
+                lines.forEach(l => { levelCounts[l.level] = (levelCounts[l.level]||0)+1; });
+                const levelLabels = Object.keys(levelCounts);
+                const levelData = Object.values(levelCounts);
+                const levelColors = ["#36a2eb","#ff6384","#ffce56","#4bc0c0","#9966ff","#f47b20"];
+                const levelCtx = document.getElementById("levelChart").getContext('2d');
+                if (levelChart) { levelChart.destroy(); }
+                levelChart = new Chart(levelCtx, {
+                    type: 'bar',
+                    data: { labels: levelLabels, datasets: [{ label: 'Count', data: levelData, backgroundColor: levelColors }] },
+                    options: { plugins: { legend: { display: false } }, scales: { x: { grid: {display:false} }, y: { beginAtZero:true, grid:{color:'#23242a'} } }, responsive:true }
+                });
+                // --- Module chart ---
+                const moduleCounts = {};
+                lines.forEach(l => { moduleCounts[l.module] = (moduleCounts[l.module]||0)+1; });
+                const moduleLabels = Object.keys(moduleCounts);
+                const moduleData = Object.values(moduleCounts);
+                const moduleColors = moduleLabels.map((_,i)=>levelColors[i%levelColors.length]);
+                const moduleCtx = document.getElementById("moduleChart").getContext('2d');
+                if (moduleChart) { moduleChart.destroy(); }
+                moduleChart = new Chart(moduleCtx, {
+                    type: 'bar',
+                    data: { labels: moduleLabels, datasets: [{ label: 'Count', data: moduleData, backgroundColor: moduleColors }] },
+                    options: { plugins: { legend: { display: false } }, indexAxis:'y', scales:{ x:{ beginAtZero:true, grid:{color:'#23242a'} }, y:{ grid:{display:false} } }, responsive:true }
+                });
+                // --- Time chart ---
+                // Group by hour/minute
+                const timeCounts = {};
+                lines.forEach(l => {
+                    let ts = l.timestamp || l.time;
+                    if (!ts) return;
+                    let hour = ts.split(' ')[1]?.slice(0,5); // HH:MM
+                    if (!hour) return;
+                    timeCounts[hour] = (timeCounts[hour]||0)+1;
+                });
+                const timeLabels = Object.keys(timeCounts);
+                const timeData = Object.values(timeCounts);
+                const timeCtx = document.getElementById("timeChart").getContext('2d');
+                if (timeChart) { timeChart.destroy(); }
+                timeChart = new Chart(timeCtx, {
+                    type: 'line',
+                    data: { labels: timeLabels, datasets: [{ label: 'Count', data: timeData, borderColor:'#36a2eb', backgroundColor:'rgba(54,162,235,0.2)', tension:0.2 }] },
+                    options: { plugins: { legend: { display: false } }, scales: { x:{ grid:{display:false} }, y:{ beginAtZero:true, grid:{color:'#23242a'} } }, responsive:true }
+                });
+            }
             
             // Initialize visualization
             updateVisualizations();
@@ -462,21 +521,6 @@
             if (autoRefreshCheckbox.checked) {
                 autoRefreshInterval = setInterval(refreshLogs, 5000);
             }
-            
-            // Initialize timestamp visibility
-            const showTimeCheckbox = document.getElementById('show-time');
-            if (showTimeCheckbox.checked) {
-                logContent.classList.add('timestamp-visible');
-            }
-            
-            // Toggle timestamp visibility
-            showTimeCheckbox.addEventListener('change', function() {
-                if(this.checked) {
-                    logContent.classList.add('timestamp-visible');
-                } else {
-                    logContent.classList.remove('timestamp-visible');
-                }
-            });
             
             // Log file selection
             logFileSelect.addEventListener('change', function() {
@@ -502,41 +546,54 @@
                         return response.json();
                     })
                     .then(data => {
-                        // Clear existing content and reconstruct
-                        logContent.innerHTML = '';
+                        // Remove all log lines
+                        logContent.querySelectorAll('.log-line').forEach(e => e.remove());
                         
-                        // Update log content - each log entry as a separate div
                         data.lines.forEach(line => {
-                            // Create the log line element
+                            // Module-based filtering
+                            if (hiddenModules.has(line.module)) return;
+
+                            // Detect HTTP and periodic logs
+                            const isHttp = ['flask.request', 'flask.response', 'werkzeug'].includes(line.module);
+                            const isPeriodic = line.message && line.message.includes('Periodic log check');
+
                             const logLine = document.createElement('div');
-                            
-                            // Detect periodic check logs and HTTP logs for filtering
-                            if (line.message && line.message.includes('Periodic log check') || 
-                                line.message && line.message.includes('logging is still active')) {
-                                logLine.classList.add('periodic-check');
+                            logLine.className = 'log-line';
+                            if (isHttp) logLine.classList.add('http-log');
+                            if (isPeriodic) logLine.classList.add('periodic-check');
+
+                            // Long message detection
+                            let isLong = line.message && line.message.length > 120;
+                            if (isLong) logLine.classList.add('long-message');
+
+                            // Module column with cross
+                            const moduleCol = `<div class="module-col" style="display:flex;align-items:center;gap:2px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                <span title="${line.module || ''}">${line.module || ''}</span>
+                                <button class="hide-module-btn" title="Hide this module" style="background:none;border:none;color:#f04747;font-size:13px;cursor:pointer;padding:0 2px;" onclick="hideModule(event, decodeURIComponent('${encodeURIComponent(line.module || '')}'))">×</button>
+                            </div>`;
+
+                            // Message rendering
+                            function formatTimestamp(ts) {
+                                if (!ts) return '';
+                                const [datePart, msPart] = ts.split(',');
+                                const d = new Date(datePart.replace(' ', 'T') + (msPart ? '.' + msPart : ''));
+                                if (isNaN(d.getTime())) return ts;
+                                const pad = v => v.toString().padStart(2, '0');
+                                const date = `${pad(d.getDate())} ${d.toLocaleString('en-US', { month: 'short' })} ${d.getFullYear()}`;
+                                const time = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}${msPart ? '.' + msPart : ''}`;
+                                return `${date} / ${time}`;
                             }
-                            if ((line.message && (line.message.includes('Request:') || line.message.includes('Response:'))) &&
-                                (line.module && (line.module.includes('flask') || line.module.includes('werkzeug')))) {
-                                logLine.classList.add('http-log');
-                            }
-                            
-                            // Add common classes
-                            logLine.classList.add('log-line', line.level.toLowerCase());
-                            
-                            // Build the inner structure with expand button for long messages
+
                             const messageHTML = `
-                                <div class="timestamp-col">${line.time || line.timestamp}</div>
-                                <div class="level-col">${line.level}</div>
-                                <div class="module-col">${line.name || line.module}</div>
+                                <div class="timestamp-col">${formatTimestamp(line.timestamp || line.time || '')}</div>
+                                <div class="level-col">${line.level || ''}</div>
+                                ${moduleCol}
                                 <div class="message-col">
-                                    <span>${line.message}</span>
-                                    <button class="expand-btn" title="Развернуть" onclick="toggleExpand(event, this)">⋯</button>
+                                    <span class="log-msg-text">${escapeHtml(line.message || '')}</span>
+                                    ${isLong ? '<button class="expand-btn" title="Expand" onclick="toggleExpand(event, this)">⋯</button>' : ''}
                                 </div>
                             `;
-                            
                             logLine.innerHTML = messageHTML;
-                            
-                            // Append to the container
                             logContent.appendChild(logLine);
                         });
                         
@@ -558,6 +615,8 @@
                         
                         // Always restore the user's previous scroll position
                         logContent.scrollTop = scrollPosition;
+                        
+                        updateVisualizations(data.lines || []);
                     })
                     .catch(error => {
                         console.error('Error refreshing logs:', error);
@@ -721,98 +780,6 @@
                 }
             }
             
-            // Generate visualizations
-            function updateVisualizations() {
-                updateLogLevelChart();
-                updateTimeDistributionChart();
-            }
-            
-            function updateLogLevelChart() {
-                const chart = document.getElementById('log-level-chart');
-                const logLines = logContent.querySelectorAll('.log-line');
-                
-                // Count log levels
-                const counts = {
-                    debug: 0,
-                    info: 0,
-                    warning: 0,
-                    error: 0,
-                    critical: 0
-                };
-                
-                logLines.forEach(line => {
-                    if (line.classList.contains('debug')) counts.debug++;
-                    else if (line.classList.contains('info')) counts.info++;
-                    else if (line.classList.contains('warning')) counts.warning++;
-                    else if (line.classList.contains('error')) counts.error++;
-                    else if (line.classList.contains('critical')) counts.critical++;
-                });
-                
-                // Clear previous bars
-                const existingBars = chart.querySelectorAll('.log-chart-bar');
-                existingBars.forEach(bar => bar.remove());
-                
-                // Find max count
-                const maxCount = Math.max(...Object.values(counts));
-                if (maxCount === 0) return;
-                
-                // Create bars
-                let position = 10;
-                for (const level in counts) {
-                    if (counts[level] > 0) {
-                        const bar = document.createElement('div');
-                        bar.className = `log-chart-bar ${level}`;
-                        bar.style.height = `${Math.max(3, (counts[level] / maxCount) * 30)}px`;
-                        bar.style.left = `${position}px`;
-                        
-                        // Add tooltip
-                        bar.title = `${level}: ${counts[level]}`;
-                        
-                        chart.appendChild(bar);
-                        position += 10;
-                    }
-                }
-            }
-            
-            function updateTimeDistributionChart() {
-                const chart = document.getElementById('log-time-chart');
-                const logLines = logContent.querySelectorAll('.log-line');
-                
-                // Clear previous bars
-                const existingBars = chart.querySelectorAll('.log-chart-bar');
-                existingBars.forEach(bar => bar.remove());
-                
-                // We'll create a simplified time histogram (just for visual effect)
-                const timeSlots = {};
-                
-                // Group logs by hour
-                logLines.forEach(line => {
-                    const timestamp = line.querySelector('.timestamp-col').textContent;
-                    const hour = timestamp.split(':')[0];
-                    if (!timeSlots[hour]) timeSlots[hour] = 0;
-                    timeSlots[hour]++;
-                });
-                
-                // Find max count
-                const maxCount = Math.max(...Object.values(timeSlots));
-                if (maxCount === 0) return;
-                
-                // Create bars
-                let position = 10;
-                for (const hour in timeSlots) {
-                    const bar = document.createElement('div');
-                    bar.className = 'log-chart-bar';
-                    bar.style.height = `${Math.max(3, (timeSlots[hour] / maxCount) * 30)}px`;
-                    bar.style.left = `${position}px`;
-                    
-                    // Add tooltip
-                    bar.title = `${hour}:00 - ${timeSlots[hour]} logs`;
-                    
-                    chart.appendChild(bar);
-                    position += 10;
-                }
-            }
-            
             // Track user scrolling
             logContent.addEventListener('scroll', function() {
                 isUserScrolling = true;
@@ -835,17 +802,29 @@
             function toggleExpand(event, button) {
                 event.stopPropagation(); // Prevent log line click event
                 
-                const logLine = button.closest('.log-line');
-                
-                if (logLine.classList.contains('expanded')) {
-                    logLine.classList.remove('expanded');
-                    button.textContent = '⋯';
-                    button.title = 'Развернуть';
-                } else {
-                    logLine.classList.add('expanded');
-                    button.textContent = '×';
-                    button.title = 'Свернуть';
+                const messageSpan = button.parentElement.querySelector('.log-msg-text');
+                let fullText = messageSpan.textContent;
+                try {
+                    // Try to pretty print JSON
+                    const json = JSON.parse(fullText);
+                    fullText = JSON.stringify(json, null, 2);
+                } catch (e) {}
+                let expanded = button.parentElement.querySelector('.expanded-message');
+                if (expanded) {
+                    expanded.remove();
+                    return;
                 }
+                expanded = document.createElement('div');
+                expanded.className = 'expanded-message';
+                expanded.textContent = fullText;
+                button.parentElement.appendChild(expanded);
+            }
+            
+            function escapeHtml(text) {
+                if (typeof text !== 'string') text = String(text);
+                return text.replace(/[&<>"']/g, function(m) {
+                    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m];
+                });
             }
             
             // Event listeners
@@ -860,6 +839,12 @@
             logContent.classList.add('show-http', 'show-periodic');
             document.getElementById('toggle-http').classList.add('active');
             document.getElementById('toggle-periodic').classList.add('active');
+            
+            window.hideModule = function(event, moduleName) {
+                event.stopPropagation();
+                hiddenModules.add(moduleName);
+                refreshLogs();
+            }
         });
     </script>
 </body>

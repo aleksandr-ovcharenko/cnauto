@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from backend.models import db, CarType
@@ -17,3 +18,4 @@ def seed_types():
 
     db.session.commit()
     print("✅ Типы авто добавлены")
+    logging.getLogger(__name__).info("✅ Типы авто добавлены")

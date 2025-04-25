@@ -1,15 +1,11 @@
 import logging
 import os
-import sys
-import time
-import threading
-import datetime
-import requests
-import json
 
+import requests
 from dotenv import load_dotenv
 from flask import Blueprint
 from flask import Flask
+from flask import Response
 from flask import render_template, redirect, url_for, flash, request, jsonify
 from flask_login import LoginManager
 from flask_login import login_user, logout_user, login_required
@@ -18,22 +14,18 @@ from flask_wtf import FlaskForm
 from sqlalchemy.orm import joinedload
 from wtforms import StringField, PasswordField, BooleanField
 from wtforms.validators import InputRequired
-from flask_cors import CORS
-from werkzeug.security import check_password_hash
-from werkzeug.security import generate_password_hash
-from flask import Response
 
 # Use relative imports instead of backend.* package imports
 from admin import init_admin
+from app_decorators import admin_required
 from config_dev import DevConfig
 from config_prod import ProdConfig
+from events import setup_deletion_events
 from models import Car, Category, Brand, Country, CarType, User, db, ImageTask
-from utils.file_logger import setup_file_logger, add_test_logs, get_module_logger
+from utils.file_logger import setup_file_logger
+from utils.image_queue import start_image_processor
 from utils.log_viewer import get_log_files, get_log_content
 from utils.telegram_import import import_car as import_car_handler
-from events import setup_deletion_events
-from utils.image_queue import start_image_processor, get_car_tasks, task_status, get_task_status
-from app_decorators import admin_required
 
 # .env
 load_dotenv()
@@ -43,15 +35,6 @@ log_file_path = setup_file_logger()
 
 # Get the root logger
 logger = logging.getLogger()
-
-# Force debug logger output on startup to verify logging works
-logger.debug("🔍 DEBUG logging is enabled")
-logger.info("ℹ️ INFO logging is enabled")
-logger.warning("⚠️ WARNING logging is enabled")
-logger.error("❌ ERROR logging is enabled - this is just a test")
-
-# Add test logs to verify logging is working
-add_test_logs()
 
 # Flask app
 app = Flask(__name__)
@@ -65,6 +48,7 @@ else:
 
 logger.info(f"📦 DB URI: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
 
+
 # Add a Flask handler to log all requests - with reduced verbosity
 @app.before_request
 def log_request_info():
@@ -72,12 +56,14 @@ def log_request_info():
     logger = logging.getLogger('flask.request')
     logger.info(f"Request: {request.method} {request.path}")
 
+
 # Add a handler to log all responses - with reduced verbosity
 @app.after_request
 def log_response_info(response):
     logger = logging.getLogger('flask.response')
     logger.info(f"Response: {response.status}")
     return response
+
 
 # Init extensions
 db.init_app(app)
@@ -96,15 +82,16 @@ with app.app_context():
 # Add a verification point to ensure logs are being captured
 log_capture_test_interval = 60  # seconds
 
+
 # Use Flask 2.0+ compatible approach for first request handling
 def start_periodic_logging():
     """Start a background thread to periodically log verification messages"""
     import time
     import threading
-    
-    logger = logging.getLogger("runtime_verification")
+
+    logger = logging.getLogger("runtime_verif")
     logger.info("🔄 Application started - verifying logging is working")
-    
+
     def log_check_thread():
         count = 0
         while True:
@@ -118,17 +105,18 @@ def start_periodic_logging():
                 logger.error(f"Error in log check thread: {str(e)}")
                 # Continue the loop even if there's an error
                 time.sleep(5)
-    
+
     # Create and start the thread
     t = threading.Thread(target=log_check_thread, daemon=True)
     t.name = "LogVerificationThread"  # Name the thread for easier debugging
     t.start()
-    
+
     # Keep a reference to the thread to prevent garbage collection
     global log_verification_thread
     log_verification_thread = t
-    
+
     logger.info(f"🧵 Started log verification thread: {t.name} (id: {t.ident})")
+
 
 # Store a reference to the thread
 log_verification_thread = None
@@ -161,6 +149,7 @@ def admin_login():
             login_user(user, remember=form.remember.data)
             return redirect(url_for('admin.index'))
         flash('Неверные данные для входа или недостаточно прав', 'error')
+        logging.getLogger(__name__).warning('Неверные данные для входа или недостаточно прав')
     return render_template('admin/login.html', form=form)
 
 
@@ -169,6 +158,7 @@ def admin_login():
 def admin_logout():
     logout_user()
     flash('Вы вышли из системы', 'info')
+    logging.getLogger(__name__).info('Вы вышли из системы')
     return redirect(url_for('admin_login'))
 
 
@@ -196,7 +186,7 @@ def thumb_url_filter(url, width=400):
         if url is None:
             logger.warning("⚠️ thumb_url_filter received None instead of a URL")
             return ""
-            
+
         parts = url.split('/upload/')
         if len(parts) != 2:
             # Not a standard Cloudinary URL or already transformed
@@ -352,19 +342,19 @@ def view_raw_log():
     """
     log_files = get_log_files()
     selected_file = request.args.get('file')
-    
+
     # If no file specified or file doesn't exist, use the most recent
     if not selected_file or selected_file not in log_files:
         selected_file = log_files[0] if log_files else None
-    
+
     if not selected_file:
         return "No log files found", 404
-    
+
     log_path = os.path.join(app.config['LOG_FOLDER'], selected_file)
-    
+
     with open(log_path, 'r') as f:
         content = f.read()
-    
+
     return Response(content, mimetype='text/plain')
 
 
@@ -388,24 +378,24 @@ def get_log_content_api():
     selected_file = request.args.get('file')
     level_filter = request.args.get('level', 'all').lower()
     search_term = request.args.get('search', '')
-    
+
     # If no file specified or file doesn't exist, use the most recent
     if not selected_file or selected_file not in log_files:
         selected_file = log_files[0] if log_files else None
-    
+
     if not selected_file:
         return jsonify({"lines": []})
-    
+
     log_lines = get_log_content(selected_file)
-    
+
     # Apply level filter if not 'all'
     if level_filter != 'all':
         log_lines = [line for line in log_lines if line['level'].lower() == level_filter]
-    
+
     # Apply search filter if provided
     if search_term:
         log_lines = [line for line in log_lines if search_term.lower() in line['message'].lower()]
-    
+
     return jsonify({"lines": log_lines})
 
 
@@ -490,7 +480,7 @@ def diagnose_replicate():
     # Check environment variables
     api_token = os.getenv("REPLICATE_API_TOKEN")
     token_status = "✅ Present" if api_token else "❌ Missing"
-    
+
     # Test token validity
     token_valid = "Unknown"
     if api_token:
@@ -539,9 +529,9 @@ def list_image_tasks():
     Get a list of all image generation tasks or filter by car ID
     """
     from utils.image_queue import get_car_tasks, task_status
-    
+
     car_id = request.args.get('car_id')
-    
+
     if car_id:
         try:
             car_id = int(car_id)
@@ -569,12 +559,12 @@ def get_image_task(task_id):
     Get details for a specific image generation task
     """
     from utils.image_queue import get_task_status
-    
+
     task = get_task_status(task_id)
-    
+
     if task['status'] == 'unknown':
         return jsonify({'error': 'Task not found'}), 404
-        
+
     return jsonify(task)
 
 
@@ -599,10 +589,10 @@ def image_tasks_api():
         car_id = request.args.get('car_id')
         limit = int(request.args.get('limit', 50))
         offset = int(request.args.get('offset', 0))
-        
+
         # Build query
         query = ImageTask.query
-        
+
         # Apply filters if provided
         if status:
             query = query.filter(ImageTask.status == status)
@@ -610,17 +600,17 @@ def image_tasks_api():
             query = query.filter(ImageTask.source == source)
         if car_id:
             query = query.filter(ImageTask.car_id == car_id)
-        
+
         # Order by newest first
         query = query.order_by(ImageTask.created_at.desc())
-        
+
         # Apply pagination
         total = query.count()
         tasks = query.limit(limit).offset(offset).all()
-        
+
         # Convert to dictionaries
         task_dicts = [task.to_dict() for task in tasks]
-        
+
         # Return as JSON
         return jsonify({
             'total': total,

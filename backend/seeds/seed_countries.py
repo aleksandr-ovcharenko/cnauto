@@ -17,6 +17,8 @@ def seed_countries():
             db.session.add(Country(name=name))
     db.session.commit()
     print("✅ Страны успешно добавлены")
+    import logging;
+    logging.getLogger(__name__).info("✅ Страны успешно добавлены")
 
 
 if __name__ == "__main__":

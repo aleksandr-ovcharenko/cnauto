@@ -9,4 +9,3 @@ class DevConfig:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SERVER_NAME = "localhost:5000"
     CLOUDINARY_FOLDER = "cn-auto/dev"
-

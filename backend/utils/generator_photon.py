@@ -1,10 +1,8 @@
 import os
 import sys
-import json
-import logging
 import tempfile
+
 import requests
-import time
 
 # Reset the path helper for relative imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -37,7 +35,7 @@ def check_replicate_api_token():
     if not token:
         logger.error("❌ REPLICATE_API_TOKEN environment variable is not set")
         return False
-    
+
     # Validate the token by making a test request
     try:
         # Use the client directly to make a request to the API
@@ -55,7 +53,7 @@ def generate_with_photon(prompt: str, image_url: str, car_model: str, car_brand,
         if not os.getenv("REPLICATE_API_TOKEN"):
             logger.error("❌ REPLICATE_API_TOKEN environment variable is not set")
             return None
-            
+
         logger.info("⚙️ Generating with Luma Photon...")
         input_params = {
             "prompt": prompt,

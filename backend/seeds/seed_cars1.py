@@ -1,5 +1,6 @@
+import logging
+
 from backend.models import db, Car, Brand, CarType
-from datetime import datetime
 
 
 def seed_cars():
@@ -45,6 +46,7 @@ def seed_cars():
 
         if not brand or not car_type:
             print(f"❌ Пропущено: {data['model']} (нет бренда или типа)")
+            logging.getLogger(__name__).warning(f"❌ Пропущено: {data['model']} (нет бренда или типа)")
             continue
 
         car = Car(
@@ -63,6 +65,7 @@ def seed_cars():
 
     db.session.commit()
     print("✅ Машины успешно добавлены.")
+    logging.getLogger(__name__).info("✅ Машины успешно добавлены.")
 
 
 if __name__ == "__main__":

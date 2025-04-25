@@ -1,7 +1,7 @@
 import os
 import sys
+
 import requests
-import logging
 
 # Reset the path helper for relative imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -12,21 +12,22 @@ from flask import current_app
 # Configure logger
 logger = get_module_logger(__name__)
 
+
 def get_telegram_file_url(file_id, bot_token=None):
     # First try the passed token
     if not bot_token:
         # Try environment variable
         bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
-        
+
     # Try config (in case it's set there)
     if not bot_token and current_app:
         bot_token = current_app.config.get("TELEGRAM_BOT_TOKEN")
-    
+
     if not bot_token:
         logger.error("❌ TELEGRAM_BOT_TOKEN is not set in environment or app config!")
         logger.error(f"Failed to get URL for file_id: {file_id}")
         return None  # Return None instead of raising an exception
-        
+
     try:
         logger.info(f"🔄 Requesting file_path for file_id: {file_id}")
         url = f"https://api.telegram.org/bot{bot_token}/getFile?file_id={file_id}"

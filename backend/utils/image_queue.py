@@ -1,13 +1,12 @@
 import os
-import time
 import queue
-import threading
-import logging
-from datetime import datetime
-from typing import Dict, Any, List, Optional
-
 # Use relative imports
 import sys
+import threading
+import time
+from datetime import datetime
+from typing import Dict, Any, List
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models import db, Car, CarImage
 from utils.file_logger import get_module_logger
@@ -23,12 +22,14 @@ task_status: Dict[str, Dict[str, Any]] = {}
 # Lock for thread-safe access to task_status
 status_lock = threading.Lock()
 
+
 class ImageTask:
     """Represents an image generation task"""
-    def __init__(self, 
-                 task_id: str, 
-                 car_id: int, 
-                 generator_func: callable, 
+
+    def __init__(self,
+                 task_id: str,
+                 car_id: int,
+                 generator_func: callable,
                  params: Dict[str, Any],
                  max_retries: int = 3,
                  retry_delay: int = 30):
@@ -40,7 +41,7 @@ class ImageTask:
         self.retry_delay = retry_delay
         self.retries = 0
         self.created_at = datetime.now()
-        
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert task to dictionary for status tracking"""
         return {
@@ -58,7 +59,7 @@ class ImageTask:
 def enqueue_image_task(car_id: int, generator_func: callable, params: Dict[str, Any], max_retries: int = 3) -> str:
     """Add an image generation task to the queue"""
     task_id = f"img_task_{car_id}_{int(time.time())}"
-    
+
     task = ImageTask(
         task_id=task_id,
         car_id=car_id,
@@ -66,14 +67,14 @@ def enqueue_image_task(car_id: int, generator_func: callable, params: Dict[str, 
         params=params,
         max_retries=max_retries
     )
-    
+
     # Add to queue
     image_queue.put(task)
-    
+
     # Record initial status
     with status_lock:
         task_status[task_id] = task.to_dict()
-    
+
     logger.info(f"✅ Added image task to queue: {task_id} for car_id={car_id}")
     return task_id
 
@@ -106,10 +107,10 @@ def get_car_tasks(car_id: int) -> List[Dict[str, Any]]:
 def process_image_task(task: ImageTask, app) -> None:
     """Process a single image generation task"""
     logger.info(f"🔄 Processing image task {task.task_id} for car_id={task.car_id}")
-    
+
     # Update status to processing
     update_task_status(task.task_id, 'processing')
-    
+
     try:
         # Run the generator function with app context
         with app.app_context():
@@ -119,14 +120,14 @@ def process_image_task(task: ImageTask, app) -> None:
                 logger.warning(f"⚠️ Car {task.car_id} not found, abandoning task {task.task_id}")
                 update_task_status(task.task_id, 'failed', error='Car not found')
                 return
-            
+
             # Run the generator function
             result = task.generator_func(**task.params)
-            
+
             if result:
                 # Update the car with the generated image
                 car.image_url = result
-                
+
                 # Also create a gallery image
                 gallery_image = CarImage(
                     car_id=task.car_id,
@@ -137,7 +138,7 @@ def process_image_task(task: ImageTask, app) -> None:
                 )
                 db.session.add(gallery_image)
                 db.session.commit()
-                
+
                 logger.info(f"✅ Successfully processed image task {task.task_id}, image saved: {result}")
                 update_task_status(task.task_id, 'completed', result=result)
             else:
@@ -153,7 +154,7 @@ def process_image_task(task: ImageTask, app) -> None:
                     update_task_status(task.task_id, 'failed', error='Max retries exceeded')
     except Exception as e:
         logger.exception(f"❌ Error in image task {task.task_id}: {str(e)}")
-        
+
         # Retry if within retry limit
         if task.retries < task.max_retries:
             task.retries += 1
@@ -169,15 +170,15 @@ def process_image_task(task: ImageTask, app) -> None:
 def image_processor_worker(app) -> None:
     """Worker function to process image tasks from the queue"""
     logger.info("🚀 Starting image processor worker")
-    
+
     while True:
         try:
             # Get a task from the queue
             task = image_queue.get(block=True, timeout=1)
-            
+
             # Process the task
             process_image_task(task, app)
-            
+
             # Mark the task as done
             image_queue.task_done()
         except queue.Empty:
@@ -187,7 +188,7 @@ def image_processor_worker(app) -> None:
             logger.exception(f"❌ Unexpected error in image processor worker: {str(e)}")
             # Sleep a bit to prevent excessive CPU usage in case of recurring errors
             time.sleep(5)
-        
+
         # Periodically log that the worker is still running
         if int(time.time()) % 120 == 0:  # Log every 2 minutes (approximately)
             logger.debug(f"⚙️ Image processor worker is active - {image_queue.qsize()} tasks in queue")
@@ -203,5 +204,5 @@ def start_image_processor(app) -> threading.Thread:
     worker_thread.name = "ImageProcessorThread"  # Name the thread for easier debugging
     worker_thread.start()
     logger.info(f"✅ Image processor worker thread started: {worker_thread.name} (id: {worker_thread.ident})")
-    
+
     return worker_thread

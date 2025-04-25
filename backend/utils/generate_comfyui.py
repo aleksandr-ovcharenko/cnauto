@@ -9,7 +9,7 @@ from PIL import Image
 
 REPLICATE_TOKEN = os.getenv("REPLICATE_API_TOKEN")
 DEFAULT_REPLICATE_MODEL = os.getenv("DEFAULT_REPLICATE_MODEL",
-                            "fofr/any-comfyui-workflow:8d7883b5a9e7968b4c85dd59c8b4e87351f4a04ac390a426b3b0421e05596e4c")
+                                    "fofr/any-comfyui-workflow:8d7883b5a9e7968b4c85dd59c8b4e87351f4a04ac390a426b3b0421e05596e4c")
 
 RAW_WORKFLOW_JSON = """{
   "3": {

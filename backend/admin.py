@@ -3,6 +3,7 @@ import os
 
 # Add the directory to the path for relative imports
 import sys
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from flask import flash, request, redirect, url_for
@@ -12,13 +13,11 @@ from flask_admin.actions import action
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.form.upload import FileUploadField
 from flask_admin.helpers import get_url
-from flask_admin.model.form import InlineFormAdmin
 from flask_login import current_user
 from markupsafe import Markup
 from sqlalchemy.orm.attributes import flag_modified
 from werkzeug.security import generate_password_hash
 from wtforms import PasswordField
-from wtforms.fields import HiddenField
 from wtforms.fields.simple import FileField, MultipleFileField
 from wtforms.widgets.core import HiddenInput
 from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
@@ -110,6 +109,7 @@ class UserAdmin(SecureModelView):
         db.session.commit()
 
         flash(f'✅ Пользователь "{new_user.username}" скопирован. Пароль: newpassword123', 'success')
+        logging.getLogger(__name__).info(f'✅ Пользователь "{new_user.username}" скопирован. Пароль: newpassword123')
         return redirect(url_for('.edit_view', id=new_user.id))
 
     @action('duplicate', 'Копировать', 'Вы уверены, что хотите скопировать выбранных пользователей?')
@@ -127,6 +127,7 @@ class UserAdmin(SecureModelView):
             db.session.add(new_user)
         db.session.commit()
         flash(f'✅ Скопировано: {len(ids)} пользователей. Пароль у всех: newpassword123', 'success')
+        logging.getLogger(__name__).info(f'✅ Скопировано: {len(ids)} пользователей. Пароль у всех: newpassword123')
 
 
 class CarImageAdmin(SecureModelView):
@@ -326,6 +327,7 @@ class CarAdmin(SecureModelView):
         db.session.commit()
 
         flash(f'✅ Автомобиль "{new_car.model}" скопирован.', 'success')
+        logging.getLogger(__name__).info(f'✅ Автомобиль "{new_car.model}" скопирован.')
         return redirect(url_for('.edit_view', id=new_car.id))
 
     @action('duplicate', 'Копировать', 'Вы уверены, что хотите скопировать выбранные авто?')
@@ -353,9 +355,11 @@ class CarAdmin(SecureModelView):
 
             db.session.commit()
             flash(f"✅ Успешно скопировано: {len(ids)} авто.", "success")
+            logging.getLogger(__name__).info(f"✅ Успешно скопировано: {len(ids)} авто.")
         except Exception as e:
             db.session.rollback()
             flash(f"❌ Ошибка при копировании: {e}", "error")
+            logging.getLogger(__name__).error(f"❌ Ошибка при копировании: {e}")
 
     @expose('/generate_from_gallery/<int:id>', methods=['POST'])
     def generate_from_gallery(self, id):
@@ -364,12 +368,12 @@ class CarAdmin(SecureModelView):
         from utils.file_logger import get_module_logger
         from models import ImageTask
         logger = get_module_logger(__name__)
-        
+
         # Get the gallery image by ID
         image = CarImage.query.get_or_404(id)
         car = image.car
         logger.info(f"🔍 Starting AI image generation for car ID={car.id} from image ID={id}")
-        
+
         # Create a new ImageTask record
         image_task = ImageTask(
             car_id=car.id,
@@ -381,27 +385,27 @@ class CarAdmin(SecureModelView):
         db.session.add(image_task)
         db.session.commit()
         logger.info(f"📝 Created ImageTask record #{image_task.id} for car ID={car.id}")
-        
+
         try:
             # Get the prompt from the image or car information
             prompt_hint = f"{car.brand.name if car.brand else ''} {car.model}"
             logger.info(f"🔤 Using prompt hint: '{prompt_hint}'")
-            
+
             # Call the image generation function
             from utils.generator_photon import generate_with_photon
             logger.info(f"🚀 Calling Photon generator with image URL: {image.url}")
-            
+
             # Image lookup and generation process
             new_image_url = generate_with_photon(
                 image_url=image.url,
                 prompt_hint=prompt_hint,
                 car_id=car.id
             )
-            
+
             # Update the task with the status
             if new_image_url:
                 logger.info(f"✅ Successfully generated image, URL: {new_image_url}")
-                
+
                 # Create a new gallery image with the generated image
                 new_image = CarImage(
                     car_id=car.id,
@@ -410,7 +414,7 @@ class CarAdmin(SecureModelView):
                 )
                 db.session.add(new_image)
                 db.session.flush()  # Get the new ID without committing
-                
+
                 # Update the task with the result
                 image_task.status = 'completed'
                 image_task.result_image_id = new_image.id
@@ -418,26 +422,30 @@ class CarAdmin(SecureModelView):
                 db.session.commit()
                 logger.info(f"✅ Database commit successful, image updated for car ID={car.id}")
                 flash(f"✅ Изображение успешно обновлено для {car.model}!", "success")
+                logging.getLogger(__name__).info(f"✅ Изображение успешно обновлено для {car.model}!")
                 logger.info(f"✅ AI image generation workflow completed successfully for car {car.id} from image {id}")
             else:
                 # More detailed error message when generation fails but doesn't raise an exception
                 image_task.status = 'failed'
                 image_task.error = "AI generation returned None but no exception was raised"
                 db.session.commit()
-                logger.warning(f"⚠️ AI generation returned None but no exception was raised. Car ID={car.id}, Image ID={id}")
+                logger.warning(
+                    f"⚠️ AI generation returned None but no exception was raised. Car ID={car.id}, Image ID={id}")
                 flash(f"❌ Не удалось сгенерировать изображение для {car.model}. Проверьте логи для деталей.", "error")
+                logging.getLogger(__name__).error(
+                    f"❌ Не удалось сгенерировать изображение для {car.model}. Проверьте логи для деталей.")
                 logger.warning(f"⚠️ AI image generation failed for car {car.id} - no image returned")
         except Exception as e:
             # Update the task with the error
             image_task.status = 'failed'
             image_task.error = str(e)
             db.session.commit()
-            
+
             logger.error(f"❌ AI generation exception: {str(e)}")
             logger.error(f"❌ Exception details:", exc_info=True)
             flash(f"❌ Ошибка при генерации изображения: {e}", "error")
-            logger.error(f"❌ Error generating AI image for car {car.id}: {e}")
-        
+            logging.getLogger(__name__).error(f"❌ Ошибка при генерации изображения: {e}")
+
         logger.info(f"🔙 Redirecting user to car edit view for car ID={car.id}")
         return redirect(url_for('.edit_view', id=car.id))
 
@@ -448,41 +456,42 @@ class CarAdmin(SecureModelView):
         logger = get_module_logger(__name__)
         car = Car.query.get_or_404(id)
         ids_in_order = request.form.get('order', '').split(',')
-        
+
         # Extract all possible image IDs from the form
-        form_img_ids = {key.split('_')[1] for key in request.form.keys() 
-                         if key.startswith(('title_', 'alt_', 'position_'))}
-        
+        form_img_ids = {key.split('_')[1] for key in request.form.keys()
+                        if key.startswith(('title_', 'alt_', 'position_'))}
+
         logger.info(f"🖼 Обновление галереи для car_id={id}, найдено {len(form_img_ids)} изображений в форме")
         updated_ids = set()
 
         for img in car.gallery_images:
             str_id = str(img.id)
-            
+
             # Skip images that aren't in the form
             if str_id not in form_img_ids:
                 continue
-                
+
             # Only process images where values are actually specified
             if f"title_{str_id}" in request.form or f"alt_{str_id}" in request.form:
                 # Log only once for each image, not for each field
                 logger.info(f"✏️ Обновляем данные для изображения id={str_id}")
-                
+
                 # Only set fields that are actually present in the form
                 if f"title_{str_id}" in request.form:
                     img.title = request.form.get(f"title_{str_id}")
                 if f"alt_{str_id}" in request.form:
                     img.alt = request.form.get(f"alt_{str_id}")
-                
+
                 # Set position if available
                 if str_id in ids_in_order:
                     img.position = ids_in_order.index(str_id)
-                
+
                 updated_ids.add(str_id)
 
         db.session.commit()
         logger.info(f"✅ Галерея обновлена для car_id={id}, обработано {len(updated_ids)} изображений")
         flash("✅ Галерея обновлена", "success")
+        logging.getLogger(__name__).info("✅ Галерея обновлена")
         return redirect(url_for('.edit_view', id=car.id))
 
     @expose('/upload_gallery/<int:id>', methods=['POST'])
@@ -500,6 +509,7 @@ class CarAdmin(SecureModelView):
 
         db.session.commit()
         flash("✅ Новые изображения загружены", "success")
+        logging.getLogger(__name__).info("✅ Новые изображения загружены")
         return redirect(url_for('.edit_view', id=car.id))
 
     @expose('/car-image/delete/<int:id>', methods=['POST'])
@@ -564,11 +574,11 @@ class CountryAdmin(SecureModelView):
 class BrandAdmin(SecureModelView):
     column_list = ['logo_preview', 'name', 'slug', 'country']
     column_labels = {'logo_preview': 'Логотип'}
-    
+
     # Fixed implementation of inline_models that avoids the tuple error
     # Each item must be a proper model class or a dict with configuration
     inline_models = [BrandSynonym]  # This is a list with one class, not a tuple
-    
+
     form_columns = ['name', 'slug', 'logo', 'country']
     column_searchable_list = ['name', 'slug']
     column_filters = ['country.name']
@@ -653,19 +663,19 @@ def init_admin(app):
         @expose('/')
         def index(self):
             return redirect(url_for('api_docs'), code=302)
-            
+
         def is_visible(self):
             return True
-            
+
     # Add Logs view link
     class LogsView(BaseView):
         @expose('/')
         def index(self):
             return redirect(url_for('view_logs'), code=302)
-            
+
         def is_visible(self):
             return True
-            
+
     admin.add_view(CarImageAdmin(CarImage, db.session, name='Фото машин'))
     admin.add_view(CarAdmin(Car, db.session, name='Автомобили'))
     admin.add_view(CategoryAdmin(Category, db.session, name='Категории'))
@@ -674,7 +684,7 @@ def init_admin(app):
     admin.add_view(UserAdmin(User, db.session, name='Пользователи'))
     admin.add_view(CarTypeAdmin(CarType, db.session, name='Типы авто'))
     admin.add_view(CurrencyAdmin(Currency, db.session, name='Currencies'))
-    
+
     # Add tool views
     admin.add_view(ApiDocsView(name='API Документация', category='Инструменты'))
     admin.add_view(LogsView(name='Логи', category='Инструменты'))

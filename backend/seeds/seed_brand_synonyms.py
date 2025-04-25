@@ -1,5 +1,6 @@
 from backend.models import db, Brand, BrandSynonym
 
+
 def seed_brand_synonyms():
     brand_synonyms_data = {
         "Audi": ["AUDI", "Audi", "audi", "Ауди", "ауди"],
@@ -21,7 +22,8 @@ def seed_brand_synonyms():
         "Forthing": ["FORTHING", "Forthing", "forthing", "Фортинг", "ФОРТИНГ", "фортинг"],
         "GAC": ["GAC", "Gac", "gac", "ГАК", "гак", "Guangzhou Automobile Group", "GUANGZHOU AUTOMOBILE GROUP"],
         "Geely": ["GEELY", "Geely", "geely", "Джили", "ДЖИЛИ", "джили"],
-        "Great Wall": ["GREAT WALL", "GREAT-WALL", "GREATWALL", "Great Wall", "Greatwall", "great wall", "greatwall", "Грейт Вол", "Грейт-Вол", "ГрейтВол"],
+        "Great Wall": ["GREAT WALL", "GREAT-WALL", "GREATWALL", "Great Wall", "Greatwall", "great wall", "greatwall",
+                       "Грейт Вол", "Грейт-Вол", "ГрейтВол"],
         "Haval": ["HAVAL", "Haval", "haval", "Хавейл", "ХАВЕЙЛ", "хавейл"],
         "HiPhi": ["HIPHI", "HiPhi", "hiphi", "ХайФай", "Хай-Фай", "ХайФай"],
         "Honda": ["HONDA", "Honda", "honda", "Хонда", "ХОНДА", "хонда"],
@@ -34,15 +36,18 @@ def seed_brand_synonyms():
         "Jetta": ["JETTA", "Jetta", "jetta", "Джетта", "ДЖЕТТА", "джетта"],
         "Jishi": ["JISHI", "Jishi", "jishi", "Джиши", "ДЖИШИ", "джиши"],
         "Kia": ["KIA", "Kia", "kia", "Киа", "КИА", "киа"],
-        "Land Rover": ["LAND ROVER", "LANDROVER", "Land Rover", "Landrover", "land rover", "landrover", "Ленд Ровер", "Ленд-Ровер", "ЛендРовер"],
+        "Land Rover": ["LAND ROVER", "LANDROVER", "Land Rover", "Landrover", "land rover", "landrover", "Ленд Ровер",
+                       "Ленд-Ровер", "ЛендРовер"],
         "Leamotor": ["LEAMOTOR", "Leamotor", "leamotor", "Лимото", "ЛИМОТО", "лимото"],
         "Lexus": ["LEXUS", "Lexus", "lexus", "Лексус", "ЛЕКСУС", "лексус"],
         "Lincoln": ["LINCOLN", "Lincoln", "lincoln", "Линкольн", "ЛИНКОЛЬН", "линкольн"],
         "LiXiang": ["LIXIANG", "LiXiang", "Li Auto", "LI AUTO", "lixiang", "ЛиСян", "ЛИ СЯН", "Ли Сян", "ли сян"],
         "Lotus": ["LOTUS", "Lotus", "lotus", "Лотус", "ЛОТУС", "лотус"],
-        "Lynk & Co": ["LYNK & CO", "LYNKCO", "Lynk & Co", "LynkCo", "lynk & co", "lynkco", "Линк энд Ко", "ЛИНК ЭНД КО"],
+        "Lynk & Co": ["LYNK & CO", "LYNKCO", "Lynk & Co", "LynkCo", "lynk & co", "lynkco", "Линк энд Ко",
+                      "ЛИНК ЭНД КО"],
         "Mazda": ["MAZDA", "Mazda", "mazda", "Мазда", "МАЗДА", "мазда"],
-        "Mercedes-Benz": ["MERCEDES-BENZ", "Mercedes-Benz", "mercedes-benz", "MB", "mb", "Мерседес", "МЕРСЕДЕС", "мерседес", "Мерс", "МЕРС"],
+        "Mercedes-Benz": ["MERCEDES-BENZ", "Mercedes-Benz", "mercedes-benz", "MB", "mb", "Мерседес", "МЕРСЕДЕС",
+                          "мерседес", "Мерс", "МЕРС"],
         "MG": ["MG", "Mg", "mg", "ЭмДжи", "ЭМДЖИ", "эмджи", "Morris Garages", "MORRIS GARAGES"],
         "Mini": ["MINI", "Mini", "mini", "Мини", "МИНИ", "мини"],
         "Mitsubishi": ["MITSUBISHI", "Mitsubishi", "mitsubishi", "Митсубиси", "МИЦУБИСИ", "мицубиси"],
@@ -58,7 +63,8 @@ def seed_brand_synonyms():
         "Tesla": ["TESLA", "Tesla", "tesla", "Тесла", "ТЕСЛА", "тесла"],
         "Toyota": ["TOYOTA", "Toyota", "toyota", "Тойота", "ТОЙОТА", "тойота"],
         "Venucia": ["VENUCIA", "Venucia", "venucia", "Венуча", "ВЕНУЧА", "венуча"],
-        "Volkswagen": ["VOLKSWAGEN", "Volkswagen", "volkswagen", "VW", "vw", "Фольксваген", "ФОЛЬКСВАГЕН", "фольксваген"],
+        "Volkswagen": ["VOLKSWAGEN", "Volkswagen", "volkswagen", "VW", "vw", "Фольксваген", "ФОЛЬКСВАГЕН",
+                       "фольксваген"],
         "Volvo": ["VOLVO", "Volvo", "volvo", "Вольво", "ВОЛЬВО", "вольво"],
         "Voyah": ["VOYAH", "Voyah", "voyah", "Воях", "ВОЯХ", "воях"],
         "Wuling": ["WULING", "Wuling", "wuling", "Улин", "УЛИН", "улин"],

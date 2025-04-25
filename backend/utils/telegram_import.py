@@ -1,13 +1,11 @@
 import os
+# Use relative imports
+import sys
 import tempfile
-import threading
-import logging
 
 import requests
 from flask import Blueprint, jsonify, current_app, request, url_for
 
-# Use relative imports
-import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models import db, Car, Brand, CarImage, BrandSynonym
 from utils.cloudinary_upload import upload_image
@@ -26,6 +24,7 @@ telegram_import = Blueprint('telegram_import', __name__)
 # Store a reference to the Flask app - will be set when the blueprint is registered
 _app = None
 
+
 def get_app_context():
     """Get the app context safely, either from current_app or stored _app reference"""
     global _app
@@ -41,12 +40,14 @@ def get_app_context():
             logger.error("❌ No Flask app context available and no stored app reference")
             raise RuntimeError("No Flask app context available")
 
+
 @telegram_import.record
 def record_app(state):
     """Store a reference to the Flask app when the blueprint is registered"""
     global _app
     _app = state.app
     logger.info("✅ Stored Flask app reference for background processing")
+
 
 @telegram_import.route('/api/import_car', methods=['POST'])
 def import_car():
@@ -87,7 +88,7 @@ def import_car():
         # Check if a brand with this slug already exists (case insensitive)
         slug = brand_name.lower().replace(" ", "-")
         existing_brand = Brand.query.filter(Brand.slug == slug).first()
-        
+
         if existing_brand:
             # Use the existing brand instead of creating a new one
             brand = existing_brand
@@ -155,7 +156,7 @@ def import_car():
                     'car_brand': brand,
                     'car_id': car.id
                 }
-                
+
                 # Enqueue the task with our new queuing system
                 task_id = enqueue_image_task(
                     car_id=car.id,
@@ -186,7 +187,7 @@ def import_car():
     for i, url in enumerate(real_urls):
         image = CarImage(car_id=car.id, url=url, position=i)
         db.session.add(image)
-    
+
     db.session.commit()
 
     # Get the admin edit URL for the car

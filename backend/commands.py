@@ -1,5 +1,6 @@
 from backend.models import db, Category
 
+
 def init_categories():
     categories = [
         {"name": "New cars", "slug": "new", "icon": "new.png"},

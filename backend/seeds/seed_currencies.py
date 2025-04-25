@@ -1,5 +1,6 @@
 from backend.models import db, Currency
 
+
 def seed_currencies():
     currencies = [
         {"code": "RUB", "name": "Russian Ruble", "symbol": "₽"},
@@ -14,3 +15,5 @@ def seed_currencies():
             db.session.add(Currency(**cur))
     db.session.commit()
     print("✅ Валюты успешно добавлены.")
+    import logging;
+    logging.getLogger(__name__).info("✅ Валюты успешно добавлены.")
