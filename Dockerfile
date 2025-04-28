@@ -13,4 +13,4 @@ ENV PYTHONPATH=/app
 RUN pip install --upgrade pip
 RUN pip install -r backend/requirements.txt
 
-CMD ["python", "backend/app.py"]
+CMD ["python", "-m", "backend.app"]
