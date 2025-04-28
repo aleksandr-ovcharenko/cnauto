@@ -67,185 +67,187 @@ def import_car():
     except Exception:
         return jsonify({"error": "invalid json"}), 400
 
-    car_data_str = data.get("car_data", "").strip()
-    # Process car data if in the new format [Brand] [Model] [Modification]
-    if car_data_str:
-        logger.info(f"🚗 Processing car in new format: {car_data_str}")
-        # Parse car data into bmmt format using the current db session
-        car_info = parse_car_info(car_data_str, db_session=db.session)
-        # Update data with parsed values
-        data["brand"] = car_info["brand"]
-        data["model"] = car_info["model"]
-        data["modification"] = car_info["modification"]
-        data["trim"] = car_info["trim"]
+    # Ensure we have a valid app context for database operations
+    with get_app_context():
+        car_data_str = data.get("car_data", "").strip()
+        # Process car data if in the new format [Brand] [Model] [Modification]
+        if car_data_str:
+            logger.info(f"🚗 Processing car in new format: {car_data_str}")
+            # Parse car data into bmmt format using the current db session
+            car_info = parse_car_info(car_data_str, db_session=db.session)
+            # Update data with parsed values
+            data["brand"] = car_info["brand"]
+            data["model"] = car_info["model"]
+            data["modification"] = car_info["modification"]
+            data["trim"] = car_info["trim"]
 
-    model = data.get("model", "").strip()
-    modification = data.get("modification", "").strip()
-    trim = data.get("trim", "").strip()
-    price = int(data.get("price", 0) or 0)
-    year = int(data.get("year", 0) or 0)
-    mileage = int(data.get("mileage", 0) or 0)
-    engine = data.get("engine", "").strip()
-    car_type_name = data.get("car_type", "").strip()
-    brand_name = data.get("brand", "").strip()
-    description = data.get("description", "").strip()
-    image_file_ids = data.get("image_file_ids", [])
+        model = data.get("model", "").strip()
+        modification = data.get("modification", "").strip()
+        trim = data.get("trim", "").strip()
+        price = int(data.get("price", 0) or 0)
+        year = int(data.get("year", 0) or 0)
+        mileage = int(data.get("mileage", 0) or 0)
+        engine = data.get("engine", "").strip()
+        car_type_name = data.get("car_type", "").strip()
+        brand_name = data.get("brand", "").strip()
+        description = data.get("description", "").strip()
+        image_file_ids = data.get("image_file_ids", [])
 
-    # Validation: block car creation without brand and model
-    if not brand_name or not model:
-        return jsonify({"error": "Нельзя создать автомобиль без бренда и модели."}), 400
+        # Validation: block car creation without brand and model
+        if not brand_name or not model:
+            return jsonify({"error": "Нельзя создать автомобиль без бренда и модели."}), 400
 
-    missing_fields = [field for field in ["model", "brand", "image_file_ids"] if not data.get(field)]
-    if missing_fields:
-        return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
+        missing_fields = [field for field in ["model", "brand", "image_file_ids"] if not data.get(field)]
+        if missing_fields:
+            return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
 
-    # Use explicit db.session references for all database queries to ensure app context is respected
-    synonym = db.session.query(BrandSynonym).filter(BrandSynonym.name.ilike(brand_name)).first()
-    brand = synonym.brand if synonym else None
+        # Use explicit db.session references for all database queries to ensure app context is respected
+        synonym = db.session.query(BrandSynonym).filter(BrandSynonym.name.ilike(brand_name)).first()
+        brand = synonym.brand if synonym else None
 
-    brand_created = False
-    if not brand:
-        # Check if a brand with this slug already exists (case insensitive)
-        slug = brand_name.lower().replace(" ", "-")
-        existing_brand = db.session.query(Brand).filter(Brand.slug == slug).first()
+        brand_created = False
+        if not brand:
+            # Check if a brand with this slug already exists (case insensitive)
+            slug = brand_name.lower().replace(" ", "-")
+            existing_brand = db.session.query(Brand).filter(Brand.slug == slug).first()
 
-        if existing_brand:
-            # Use the existing brand instead of creating a new one
-            brand = existing_brand
-            logger.info(f"✅ Using existing brand: {brand.name} (slug: {brand.slug})")
-        else:
-            # Create a new brand only if it doesn't exist
-            brand = Brand(name=brand_name, slug=slug)
-            db.session.add(brand)
-            db.session.flush()
+            if existing_brand:
+                # Use the existing brand instead of creating a new one
+                brand = existing_brand
+                logger.info(f"✅ Using existing brand: {brand.name} (slug: {brand.slug})")
+            else:
+                # Create a new brand only if it doesn't exist
+                brand = Brand(name=brand_name, slug=slug)
+                db.session.add(brand)
+                db.session.flush()
 
-            synonym = BrandSynonym(name=brand_name.lower(), brand=brand)
-            db.session.add(synonym)
-            db.session.flush()
-            brand_created = True
-            logger.info(f"✅ Created new brand: {brand.name} (slug: {brand.slug})")
+                synonym = BrandSynonym(name=brand_name.lower(), brand=brand)
+                db.session.add(synonym)
+                db.session.flush()
+                brand_created = True
+                logger.info(f"✅ Created new brand: {brand.name} (slug: {brand.slug})")
 
-    car_type = None
-    if car_type_name:
-        car_type = db.session.query(CarType).filter_by(name=car_type_name).first()
-        if not car_type:
-            car_type = CarType(name=car_type_name, slug=car_type_name.lower().replace(" ", "-"))
-            db.session.add(car_type)
-            db.session.flush()
+        car_type = None
+        if car_type_name:
+            car_type = db.session.query(CarType).filter_by(name=car_type_name).first()
+            if not car_type:
+                car_type = CarType(name=car_type_name, slug=car_type_name.lower().replace(" ", "-"))
+                db.session.add(car_type)
+                db.session.flush()
 
-    currency_code = data.get("currency")
-    currency = None
-    if currency_code:
-        currency = db.session.query(Currency).filter_by(code=currency_code).first()
-        if not currency:
-            logger.warning(f"⚠️ Currency with code '{currency_code}' not found. Defaulting to None.")
+        currency_code = data.get("currency")
+        currency = None
+        if currency_code:
+            currency = db.session.query(Currency).filter_by(code=currency_code).first()
+            if not currency:
+                logger.warning(f"⚠️ Currency with code '{currency_code}' not found. Defaulting to None.")
 
-    car = Car(
-        model=model,
-        modification=modification,
-        trim=trim,
-        price=price,
-        year=year,
-        mileage=mileage,
-        engine=engine,
-        brand=brand,
-        car_type=car_type,
-        description=description,
-        currency=currency,
-    )
-    db.session.add(car)
-    db.session.flush()
+        car = Car(
+            model=model,
+            modification=modification,
+            trim=trim,
+            price=price,
+            year=year,
+            mileage=mileage,
+            engine=engine,
+            brand=brand,
+            car_type=car_type,
+            description=description,
+            currency=currency,
+        )
+        db.session.add(car)
+        db.session.flush()
 
-    # If we had new trims identified during parsing, save them to the database
-    if 'car_data' in data:
-        save_new_trims_to_db(db_session=db.session)
+        # If we had new trims identified during parsing, save them to the database
+        if 'car_data' in data:
+            save_new_trims_to_db(db_session=db.session)
 
-    prompt_hint = (
-        "Professional car studio shot, ultra-clean pure white background, only the car visible with ample empty space around it. "
-        f"Car: {car.model}-{car.brand.name}, perfectly isolated with at least 2 meters of empty space on all sides, no other objects or cars visible. "
-        "License plate must clearly and legibly display 'cncars.ru' in proper format. "
-        "Car positioned diagonally in frame: front facing 30 degrees left, rear facing 30 degrees right, with slight perspective as if viewed from eye level. "
-        "The car should be positioned not too close - about 5-7 meters from the virtual camera, showing full body with space around. "
-        "Crisp, ultra-sharp details, 8K quality render, professional three-point studio lighting with soft shadows. "
-        "Absolutely no background elements, no reflections of surroundings, no stray shadows - only clean, pure white backdrop. "
-        "The car should appear as a flawless 3D model with perfect proportions, slightly matte surface to avoid glare. "
-        "Add subtle ambient occlusion shadows under the car for natural grounding effect."
-    )
+        prompt_hint = (
+            "Professional car studio shot, ultra-clean pure white background, only the car visible with ample empty space around it. "
+            f"Car: {car.model}-{car.brand.name}, perfectly isolated with at least 2 meters of empty space on all sides, no other objects or cars visible. "
+            "License plate must clearly and legibly display 'cncars.ru' in proper format. "
+            "Car positioned diagonally in frame: front facing 30 degrees left, rear facing 30 degrees right, with slight perspective as if viewed from eye level. "
+            "The car should be positioned not too close - about 5-7 meters from the virtual camera, showing full body with space around. "
+            "Crisp, ultra-sharp details, 8K quality render, professional three-point studio lighting with soft shadows. "
+            "Absolutely no background elements, no reflections of surroundings, no stray shadows - only clean, pure white backdrop. "
+            "The car should appear as a flawless 3D model with perfect proportions, slightly matte surface to avoid glare. "
+            "Add subtle ambient occlusion shadows under the car for natural grounding effect."
+        )
 
-    real_urls = []
-    main_image_url = None
+        real_urls = []
+        main_image_url = None
 
-    if image_file_ids:
-        try:
-            first_file_id = image_file_ids[0]
-            url = get_telegram_file_url(first_file_id)
-            main_image_url = download_and_reupload(url, car_id=car.id, car_name=car.model, is_main_img=True)
-            if main_image_url:
-                car.image_url = main_image_url
-                db.session.commit()
+        if image_file_ids:
+            try:
+                first_file_id = image_file_ids[0]
+                url = get_telegram_file_url(first_file_id)
+                main_image_url = download_and_reupload(url, car_id=car.id, car_name=car.model, is_main_img=True)
+                if main_image_url:
+                    car.image_url = main_image_url
+                    db.session.commit()
 
-                params = {
-                    'mode': REPLICATE_MODE,
-                    'prompt': prompt_hint,
-                    'image_url': main_image_url,
-                    'car_model': model,
-                    'car_brand': brand,
-                    'car_id': car.id
-                }
+                    params = {
+                        'mode': REPLICATE_MODE,
+                        'prompt': prompt_hint,
+                        'image_url': main_image_url,
+                        'car_model': model,
+                        'car_brand': brand,
+                        'car_id': car.id
+                    }
 
-                # Enqueue the task with our new queuing system
-                task_id = enqueue_image_task(
-                    car_id=car.id,
-                    generator_func=generate_image,  # This is our local function
-                    params=params,
-                    max_retries=3
-                )
-                logger.info(f"🎯 Queued AI image generation as task: {task_id}")
+                    # Enqueue the task with our new queuing system
+                    task_id = enqueue_image_task(
+                        car_id=car.id,
+                        generator_func=generate_image,  # This is our local function
+                        params=params,
+                        max_retries=3
+                    )
+                    logger.info(f"🎯 Queued AI image generation as task: {task_id}")
 
-                for i, file_id in enumerate(image_file_ids[1:], start=1):
-                    try:
-                        url = get_telegram_file_url(file_id)
-                        ref_url = download_and_reupload(
-                            url,
-                            car_id=car.id,
-                            car_name=car.model,
-                            is_main_img=False,
-                            image_index=i
-                        )
-                        if ref_url:
-                            real_urls.append(ref_url)
-                    except Exception as e:
-                        logger.warning(f"⚠️ Ошибка при обработке изображения галереи (индекс {i}): {e}")
-        except Exception as e:
-            logger.warning(f"⚠️ Ошибка при обработке главного изображения: {e}")
+                    for i, file_id in enumerate(image_file_ids[1:], start=1):
+                        try:
+                            url = get_telegram_file_url(file_id)
+                            ref_url = download_and_reupload(
+                                url,
+                                car_id=car.id,
+                                car_name=car.model,
+                                is_main_img=False,
+                                image_index=i
+                            )
+                            if ref_url:
+                                real_urls.append(ref_url)
+                        except Exception as e:
+                            logger.warning(f"⚠️ Ошибка при обработке изображения галереи (индекс {i}): {e}")
+            except Exception as e:
+                logger.warning(f"⚠️ Ошибка при обработке главного изображения: {e}")
 
-    # Add real image URLs to the Car's gallery
-    for i, url in enumerate(real_urls):
-        image = CarImage(car_id=car.id, url=url, position=i)
-        db.session.add(image)
+        # Add real image URLs to the Car's gallery
+        for i, url in enumerate(real_urls):
+            image = CarImage(car_id=car.id, url=url, position=i)
+            db.session.add(image)
 
-    db.session.commit()
+        db.session.commit()
 
-    # Get the admin edit URL for the car
-    admin_car_edit_url = f"/admin/car/edit/?id={car.id}"
+        # Get the admin edit URL for the car
+        admin_car_edit_url = f"/admin/car/edit/?id={car.id}"
 
-    car_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}{url_for('car_page', car_id=car.id)}"
-    admin_car_edit_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}/admin/car/edit/?id={car.id}&url=/admin/car/"
+        car_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}{url_for('car_page', car_id=car.id)}"
+        admin_car_edit_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}/admin/car/edit/?id={car.id}&url=/admin/car/"
 
-    return jsonify({
-        "success": True,
-        "car_id": car.id,
-        "model": car.model,
-        "price": car.price,
-        "year": car.year,
-        "brand": brand.name,
-        "brand_created": brand_created,
-        "main_image": main_image_url,
-        "gallery_images_count": len(real_urls),
-        "prompt_hint": prompt_hint,
-        "car_url": car_url,
-        "admin_edit_url": admin_car_edit_url
-    })
+        return jsonify({
+            "success": True,
+            "car_id": car.id,
+            "model": car.model,
+            "price": car.price,
+            "year": car.year,
+            "brand": brand.name,
+            "brand_created": brand_created,
+            "main_image": main_image_url,
+            "gallery_images_count": len(real_urls),
+            "prompt_hint": prompt_hint,
+            "car_url": car_url,
+            "admin_edit_url": admin_car_edit_url
+        })
 
 
 def async_generate_image(app, prompt, image_url, car_model, brand_name, car_id):
@@ -269,9 +271,13 @@ def async_generate_image(app, prompt, image_url, car_model, brand_name, car_id):
                 if car:
                     car.image_url = ai_image
                     db.session.commit()
-                    logger.info(f"✅ Сгенерировано AI изображение: {ai_image}")
+                    logger.info(f"✅ Successfully updated car with AI image")
+                else:
+                    logger.warning(f"⚠️ Car {car_id} not found when updating AI image")
+            else:
+                logger.warning(f"⚠️ No AI image generated for car {car_id}")
         except Exception as e:
-            logger.exception("⚠️ Не удалось сгенерировать главное изображение")
+            logger.error(f"❌ Error generating AI image for car {car_id}: {e}")
 
 
 def download_and_reupload(url: str, car_id=None, car_name=None, is_main_img=False, image_index=None) -> str:
