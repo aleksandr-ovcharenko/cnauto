@@ -14,12 +14,6 @@ from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
-# Add the parent directory to the path so we can import our models
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-# Import models directly
-from models import Brand, BrandTrim
-
 # Configure logging
 from utils.file_logger import get_module_logger
 logger = get_module_logger(__name__)
@@ -36,6 +30,9 @@ def get_db_session():
     session_factory = sessionmaker(bind=engine)
     Session = scoped_session(session_factory)
     return Session()
+
+# Import models directly
+from backend.models import db, Brand, BrandTrim
 
 # Main trims dictionary
 BRAND_TRIMS = {

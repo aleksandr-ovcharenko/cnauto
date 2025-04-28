@@ -9,13 +9,6 @@ import os
 import re
 from flask import current_app
 
-try:
-    from models import Brand, BrandSynonym, Car, BrandTrim, BrandModification, BrandModel, Country, db
-except ImportError:
-    # For running tests directly without Flask context
-    from models import Brand, BrandSynonym, BrandTrim, BrandModification, BrandModel, Country
-    db = None
-
 # Configure logging
 from utils.file_logger import get_module_logger
 logger = get_module_logger(__name__)
@@ -188,7 +181,7 @@ def get_all_brands_with_synonyms(db_session=None):
     
     try:
         # Try to get brands from the database
-        from models import Brand, BrandSynonym
+        from backend.models import Brand, BrandSynonym
         
         brands = []
         
@@ -229,7 +222,7 @@ def get_brand_models(brand_name, db_session=None):
     
     try:
         # Try to get models from the database
-        from models import Brand, BrandModel
+        from backend.models import Brand, BrandModel
         
         # Find the brand first
         brand = db_session.query(Brand).filter(Brand.name == brand_name).first()
@@ -262,7 +255,7 @@ def get_brand_modifications(brand_name, db_session=None):
         raise ValueError("Database session is required to get brand modifications")
         
     try:
-        from models import Brand, BrandModification
+        from backend.models import Brand, BrandModification
         
         # Get brand
         brand = db_session.query(Brand).filter(Brand.name == brand_name).first()
@@ -829,7 +822,7 @@ def create_or_get_brand(brand_name, db_session=None):
     """
     try:
         if db_session:
-            from models import Brand
+            from backend.models import Brand
             brand = db_session.query(Brand).filter(Brand.name == brand_name).first()
             if not brand:
                 # Create new brand
@@ -871,7 +864,7 @@ def create_or_get_model(brand_name, model_name, db_session=None):
             # Get brand first
             brand = create_or_get_brand(brand_name, db_session)
             
-            from models import BrandModel
+            from backend.models import BrandModel
             model = db_session.query(BrandModel).filter(
                 BrandModel.brand_id == brand.id,
                 BrandModel.name == model_name

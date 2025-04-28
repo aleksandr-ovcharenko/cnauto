@@ -1,13 +1,9 @@
 import csv
 import os
-import sys
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
-# Add the parent directory to the path so we can import from models
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from models import Brand, Country, db
+from backend.models import Brand, Country, db
 
 CSV_FILE = os.path.join(os.path.dirname(__file__), "brands.csv")
 

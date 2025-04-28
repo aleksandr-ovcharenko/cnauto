@@ -11,26 +11,22 @@ from flask_login import LoginManager
 from flask_login import login_user, logout_user, login_required
 from flask_migrate import Migrate
 from flask_wtf import FlaskForm
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, scoped_session, sessionmaker
 from wtforms import StringField, PasswordField, BooleanField
 from wtforms.validators import InputRequired
 
-# Use absolute imports instead of relative imports
-from backend.admin import init_admin
-from backend.app_decorators import admin_required
-from backend.config_dev import DevConfig
-from backend.config_prod import ProdConfig
-from backend.events import setup_deletion_events
-from backend.models import Car, Category, Brand, Country, CarType, User, db, ImageTask
-from backend.utils.file_logger import setup_file_logger, get_module_logger
-from backend.utils.image_queue import start_image_processor, get_car_tasks, task_status, get_task_status
-from backend.utils.log_viewer import get_log_files, get_log_content
-from backend.utils.telegram_import import import_car as import_car_handler, telegram_import
-from backend.seeds.seed_brand_synonyms import seed_brand_synonyms
-from backend.seeds.seed_cars1 import seed_cars
-from backend.seeds.seed_data import seed_types
-from backend.seeds.seed_categories import seed_categories
-from backend.seeds.seed_users import seed_users
+# Change absolute imports to relative imports
+from .admin import init_admin
+from .app_decorators import admin_required
+from .config_dev import DevConfig
+from .config_prod import ProdConfig
+from .events import setup_deletion_events
+from .db import db
+from .models import Car, Category, Brand, Country, CarType, User, ImageTask
+from .utils.file_logger import setup_file_logger
+from .utils.image_queue import start_image_processor
+from .utils.log_viewer import get_log_files, get_log_content
+from .utils.telegram_import import import_car as import_car_handler
 
 # .env
 load_dotenv()
@@ -53,6 +49,8 @@ else:
 
 logger.info(f"📦 DB URI: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
 
+# Init extensions
+db.init_app(app)
 
 # Add a Flask handler to log all requests - with reduced verbosity
 @app.before_request
@@ -70,9 +68,6 @@ def log_response_info(response):
     return response
 
 
-# Init extensions
-db.init_app(app)
-
 # Set migrations directory path correctly - works in both local and remote environments
 migrations_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'migrations'))
 app.config['ALEMBIC_MIGRATION_PATH'] = migrations_dir
@@ -80,6 +75,84 @@ app.config['FLASK_MIGRATE_MIGRATIONS_DIRECTORY'] = migrations_dir
 
 # Initialize migrations with explicit directory path
 migrate = Migrate(app, db, directory=migrations_dir)
+
+# === AUTOMATIC MIGRATION CHECK & UPGRADE ===
+def auto_migrate_and_seed(app, db, migrations_dir):
+    import logging
+    from alembic.migration import MigrationContext
+    from alembic.script import ScriptDirectory
+    from alembic.config import Config
+    from alembic import command
+
+    logger = logging.getLogger()
+    with app.app_context():
+        try:
+            # Connect to DB and get current revision
+            connection = db.engine.connect()
+            context = MigrationContext.configure(connection)
+            current_rev = context.get_current_revision()
+
+            # Prepare Alembic config
+            alembic_ini_path = os.path.join(os.path.dirname(migrations_dir), 'alembic.ini')
+            alembic_cfg = Config(alembic_ini_path)
+            script = ScriptDirectory.from_config(alembic_cfg)
+            head_rev = script.get_heads()[0]
+
+            if not current_rev:
+                logger.warning("⚠️ Database may not be migrated. Running upgrade...")
+                command.upgrade(alembic_cfg, 'head')
+                logger.info("✅ Database migrated to latest revision.")
+            elif current_rev != head_rev:
+                logger.warning(f"⚠️ Database is at version {current_rev} but latest is {head_rev}. Running upgrade...")
+                command.upgrade(alembic_cfg, 'head')
+                logger.info("✅ Database migrated to latest revision.")
+            else:
+                logger.info("✅ Database schema is up to date, no migration needed.")
+            connection.close()
+        except Exception as e:
+            logger.error(f"❌ Error checking/applying migrations: {e}")
+            return
+
+        # === RUN SEEDS ===
+        try:
+            logger.info("🌱 Starting database seed process...")
+            from .seeds.seed_brands import seed_brands
+            from .seeds.seed_brand_synonyms import seed_brand_synonyms
+            from .seeds.brand_models import seed_brand_models
+            from .seeds.brand_trims import seed_brand_trims
+            from .seeds.brand_modifications import seed_brand_modifications
+            from .seeds.seed_categories import seed_categories
+            from .seeds.seed_countries import seed_countries
+            from .seeds.seed_currencies import seed_currencies
+
+            # Prepare a session for scripts that require it
+            session_factory = sessionmaker(bind=db.engine)
+            Session = scoped_session(session_factory)
+
+            logger.info("🌱 Seeding countries...")
+            seed_countries()
+            logger.info("🌱 Seeding brands...")
+            seed_brands()
+            logger.info("🌱 Seeding brand synonyms...")
+            seed_brand_synonyms()
+            logger.info("🌱 Seeding brand models...")
+            seed_brand_models()
+            logger.info("🌱 Seeding brand trims...")
+            seed_brand_trims(Session())
+            logger.info("🌱 Seeding brand modifications...")
+            seed_brand_modifications(Session())
+            logger.info("🌱 Seeding categories...")
+            seed_categories()
+            logger.info("🌱 Seeding currencies...")
+            seed_currencies()
+            logger.info("✅ All database seeds completed successfully!")
+        except Exception as e:
+            logger.error(f"❌ Error during database seeding: {e}")
+
+# Call this BEFORE app.run() or exposing the WSGI app
+import os
+if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug:
+    auto_migrate_and_seed(app, db, migrations_dir)
 
 admin_app = init_admin(app)
 
@@ -485,7 +558,7 @@ def diagnose_telegram():
 @api.route('/diagnose-replicate', methods=['GET'])
 def diagnose_replicate():
     import json
-    from backend.utils.generator_photon import check_replicate_api_token
+    from .utils.generator_photon import check_replicate_api_token
 
     logger = logging.getLogger(__name__)
 
@@ -540,7 +613,7 @@ def list_image_tasks():
     """
     Get a list of all image generation tasks or filter by car ID
     """
-    from backend.utils.image_queue import get_car_tasks, task_status
+    from .utils.image_queue import get_car_tasks, task_status
 
     car_id = request.args.get('car_id')
 
@@ -570,7 +643,7 @@ def get_image_task(task_id):
     """
     Get details for a specific image generation task
     """
-    from backend.utils.image_queue import get_task_status
+    from .utils.image_queue import get_task_status
 
     task = get_task_status(task_id)
 
@@ -661,6 +734,7 @@ import psutil
 import platform
 import datetime
 
+
 # --- Admin Dashboard Stats Endpoints ---
 @app.route('/admin/stats/server')
 @admin_required
@@ -680,6 +754,7 @@ def admin_stats_server():
     }
     return jsonify(stats)
 
+
 @app.route('/admin/stats/app')
 @admin_required
 @login_required
@@ -694,6 +769,7 @@ def admin_stats_app():
         'queue_length': 0,
     }
     return jsonify(stats)
+
 
 @app.route('/admin/stats/health')
 @admin_required
@@ -710,6 +786,7 @@ def admin_stats_health():
     }
     return jsonify(stats)
 
+
 @app.route('/admin/stats/visualizations')
 @admin_required
 @login_required
@@ -720,7 +797,7 @@ def admin_stats_visualizations():
     now = datetime.datetime.now()
     traffic = []
     for i in range(12):
-        hour = (now - datetime.timedelta(hours=11-i)).strftime('%H:00')
+        hour = (now - datetime.timedelta(hours=11 - i)).strftime('%H:00')
         visits = 10 + (i * 7) % 23  # Dummy data, replace with real stats
         traffic.append({'hour': hour, 'visits': visits})
     stats = {
@@ -729,6 +806,7 @@ def admin_stats_visualizations():
         'memory_history': [],
     }
     return jsonify(stats)
+
 
 @app.route('/admin/stats/misc')
 @admin_required
@@ -748,20 +826,5 @@ app.register_blueprint(api, url_prefix='/api')
 if __name__ == '__main__':
     with app.app_context():
         logger.info("🔗 login url: %s", url_for('admin_login'))
-
-    with app.app_context():
-        try:
-            from alembic.config import Config
-            from alembic import command
-            from backend.seeds.seed_brand_synonyms import seed_brand_synonyms
-            from backend.seeds.seed_categories import seed_categories
-
-            # Путь к актуальному alembic.ini
-            alembic_cfg = Config(os.path.join(os.path.dirname(__file__), '..', 'alembic.ini'))
-            command.upgrade(alembic_cfg, 'head')
-            logger.info("✅ Миграции применены")
-            seed_categories()
-        except Exception as e:
-            logger.error("⚠️ Ошибка при миграции: %s", e)
 
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

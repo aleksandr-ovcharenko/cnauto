@@ -8,11 +8,8 @@ import sys
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
-# Add the parent directory to the path so we can import our models
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 # Import models directly
-from models import Brand, BrandTrim
+from backend.models import Brand, BrandTrim
 
 # Create a direct database connection using SQLAlchemy
 def get_db_session():

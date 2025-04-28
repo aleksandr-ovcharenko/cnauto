@@ -1,9 +1,42 @@
 from datetime import datetime
+from enum import Enum
 
 from flask_login import UserMixin
-from flask_sqlalchemy import SQLAlchemy
+from .db import db
 
-db = SQLAlchemy()
+# Engine-related enums
+class EngineType(Enum):
+    """Engine types"""
+    GASOLINE = "gasoline"
+    DIESEL = "diesel"
+    HYBRID = "hybrid"
+    PLUGIN_HYBRID = "plugin_hybrid"
+    ELECTRIC = "electric"
+    LPG = "lpg"
+    CNG = "cng"
+    HYDROGEN = "hydrogen"
+
+
+class DriveType(Enum):
+    """Drive types"""
+    FWD = "front_wheel_drive"
+    RWD = "rear_wheel_drive"
+    AWD = "all_wheel_drive"
+    QUATTRO = "quattro"
+    XDRIVE = "xdrive"
+    E_FOUR = "e_four"
+
+
+class TransmissionType(Enum):
+    """Transmission types"""
+    MANUAL = "manual"
+    AUTOMATIC = "automatic"
+    CVT = "cvt"
+    DCT = "dct"
+    DSG = "dsg"
+    PDK = "pdk"
+    AMT = "amt"
+
 
 user_roles = db.Table(
     'user_roles',

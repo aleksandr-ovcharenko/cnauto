@@ -14,12 +14,6 @@ from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
-# Add the parent directory to the path so we can import our models
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-# Import models directly
-from models import Brand, BrandModification
-
 # Configure logging
 from utils.file_logger import get_module_logger
 logger = get_module_logger(__name__)
@@ -146,6 +140,8 @@ BRAND_MODIFICATIONS = {
         "1.5T", "2.0T", "AWD", "Bestune T77", "Bestune T99"
     ]
 }
+
+from backend.models import Brand, BrandModification
 
 def seed_brand_modifications(session):
     """Seed the BrandModification table"""

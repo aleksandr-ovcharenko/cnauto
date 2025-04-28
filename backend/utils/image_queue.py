@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Dict, Any, List
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models import db, Car, CarImage
+from backend.models import db, Car, CarImage
 from utils.file_logger import get_module_logger
 
 logger = get_module_logger(__name__)

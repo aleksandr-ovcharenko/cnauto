@@ -6,7 +6,7 @@ from sqlalchemy import event
 # Reset the path helper for relative imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from models import Car, CarImage
+from backend.models import Car, CarImage
 from utils.cloudinary_upload import delete_image
 from utils.file_logger import get_module_logger
 

@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models import db, Car, Brand, CarImage, BrandSynonym, Currency, CarType
+from backend.models import db, Car, Brand, CarImage, BrandSynonym, Currency, CarType
 from utils.cloudinary_upload import upload_image
 from utils.generate_comfyui import generate_with_comfyui
 from utils.generator_photon import generate_with_photon

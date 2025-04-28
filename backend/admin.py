@@ -22,8 +22,9 @@ from wtforms.fields.simple import FileField, MultipleFileField
 from wtforms.widgets.core import HiddenInput
 from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
 
-from models import Role, User, CarImage, BrandSynonym, Currency, CarType
-from models import db, Car, Category, Brand, Country
+# Update imports to use relative imports consistently
+from .models import Role, User, CarImage, BrandSynonym, Currency, CarType
+from .models import db, Car, Category, Brand, Country, EngineType, DriveType, TransmissionType
 
 # Папка для изображений автомобилей
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'images', 'cars')

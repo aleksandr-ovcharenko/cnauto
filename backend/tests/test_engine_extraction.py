@@ -9,7 +9,9 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import the engine extraction function directly
-from utils.car_parser import extract_engine_info
+from backend.utils.car_parser import extract_engine_info
+# Update import path since we've moved the enum classes to models.py
+from backend.models import EngineType, DriveType, TransmissionType
 
 class TestEngineExtraction(unittest.TestCase):
     """Test engine information extraction from car text"""

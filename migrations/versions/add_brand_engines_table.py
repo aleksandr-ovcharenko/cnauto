@@ -1,7 +1,7 @@
 """Add car engine table
 
 Revision ID: add_car_engines_table
-Revises: add_brand_trims_table
+Revises: a5c2b3d4e5f6
 Create Date: 2025-04-28 19:05:00.000000
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'add_car_engines_table'
-down_revision = 'add_brand_trims_table'  # Update this to your last migration
+down_revision = 'a5c2b3d4e5f6'  # Correct revision ID of brand_trims migration
 branch_labels = None
 depends_on = None
 

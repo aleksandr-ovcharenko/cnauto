@@ -1,14 +1,8 @@
-import sys
 import os
 import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 from datetime import datetime
-
-# Add the parent directory to the path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from models import Brand, BrandModel
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -19,6 +13,8 @@ DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://cnauto:cnauto@localh
 engine = create_engine(DATABASE_URL)
 session_factory = sessionmaker(bind=engine)
 Session = scoped_session(session_factory)
+
+from backend.models import Brand, BrandModel
 
 # Complete list of brands and models
 BRAND_MODELS = {

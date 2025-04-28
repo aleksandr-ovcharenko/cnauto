@@ -19,7 +19,7 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Import models and utils
-from models import Brand, BrandTrim, BrandModification
+from backend.models import Brand, BrandTrim, BrandModification
 from utils.car_parser import parse_car_info, normalize_car, extract_engine_info
 
 # Configure logging
