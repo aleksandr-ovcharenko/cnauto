@@ -99,14 +99,15 @@ def import_car():
     if missing_fields:
         return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
 
-    synonym = BrandSynonym.query.filter(BrandSynonym.name.ilike(brand_name)).first()
+    # Use explicit db.session references for all database queries to ensure app context is respected
+    synonym = db.session.query(BrandSynonym).filter(BrandSynonym.name.ilike(brand_name)).first()
     brand = synonym.brand if synonym else None
 
     brand_created = False
     if not brand:
         # Check if a brand with this slug already exists (case insensitive)
         slug = brand_name.lower().replace(" ", "-")
-        existing_brand = Brand.query.filter(Brand.slug == slug).first()
+        existing_brand = db.session.query(Brand).filter(Brand.slug == slug).first()
 
         if existing_brand:
             # Use the existing brand instead of creating a new one
@@ -126,7 +127,7 @@ def import_car():
 
     car_type = None
     if car_type_name:
-        car_type = CarType.query.filter_by(name=car_type_name).first()
+        car_type = db.session.query(CarType).filter_by(name=car_type_name).first()
         if not car_type:
             car_type = CarType(name=car_type_name, slug=car_type_name.lower().replace(" ", "-"))
             db.session.add(car_type)
@@ -135,7 +136,7 @@ def import_car():
     currency_code = data.get("currency")
     currency = None
     if currency_code:
-        currency = Currency.query.filter_by(code=currency_code).first()
+        currency = db.session.query(Currency).filter_by(code=currency_code).first()
         if not currency:
             logger.warning(f"⚠️ Currency with code '{currency_code}' not found. Defaulting to None.")
 
@@ -254,7 +255,7 @@ def async_generate_image(app, prompt, image_url, car_model, brand_name, car_id):
     """
     with app.app_context():
         try:
-            brand = Brand.query.filter_by(name=brand_name).first()
+            brand = db.session.query(Brand).filter_by(name=brand_name).first()
             ai_image = generate_image(
                 mode="photon",
                 prompt=prompt,
@@ -264,7 +265,7 @@ def async_generate_image(app, prompt, image_url, car_model, brand_name, car_id):
                 car_id=car_id
             )
             if ai_image:
-                car = Car.query.get(car_id)
+                car = db.session.query(Car).get(car_id)
                 if car:
                     car.image_url = ai_image
                     db.session.commit()
