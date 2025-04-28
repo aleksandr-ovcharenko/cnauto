@@ -111,6 +111,10 @@ def import_car():
             data["model"] = car_info["model"]
             data["modification"] = car_info["modification"]
             data["trim"] = car_info["trim"]
+            
+            # Log the parsed data for debugging
+            logger.info(f"✅ Parsed car data: Brand={car_info['brand']}, Model={car_info['model']}, " 
+                        f"Modification={car_info['modification']}, Trim={car_info['trim']}")
 
         model = data.get("model", "").strip()
         modification = data.get("modification", "").strip()
@@ -175,8 +179,8 @@ def import_car():
 
         car = Car(
             model=model,
-            modification=modification,
-            trim=trim,
+            modification=modification,  # Explicitly set modification from parsed data
+            trim=trim,  # Explicitly set trim from parsed data
             price=price,
             year=year,
             mileage=mileage,

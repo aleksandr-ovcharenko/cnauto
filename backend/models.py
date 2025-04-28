@@ -138,6 +138,9 @@ class Brand(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     synonyms = db.relationship('BrandSynonym', backref='brand', lazy='dynamic')  # используем backref только здесь
+    trims = db.relationship('BrandTrim', backref='brand', lazy='dynamic')
+    modifications = db.relationship('BrandModification', backref='brand', lazy='dynamic')
+    models = db.relationship('BrandModel', backref='brand', lazy='dynamic')
 
     def __str__(self):
         return self.name
@@ -149,6 +152,54 @@ class BrandSynonym(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True, nullable=False)  # "бмв", "BMW", "bmw"
     brand_id = db.Column(db.Integer, db.ForeignKey('brands.id'), nullable=False)
+
+
+class BrandTrim(db.Model):
+    """Model to store brand-specific trim levels"""
+    __tablename__ = 'brand_trims'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), nullable=False)  # "SE", "Sport", "FLAGSHIP", etc.
+    brand_id = db.Column(db.Integer, db.ForeignKey('brands.id'), nullable=False)
+    source = db.Column(db.String(50))  # "user", "api", "auto_detected", etc.
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (
+        db.UniqueConstraint('name', 'brand_id', name='unique_trim_per_brand'),
+    )
+    
+    def __str__(self):
+        return f"{self.name}"
+
+
+class BrandModification(db.Model):
+    """Model to store brand-specific modification types"""
+    __tablename__ = 'brand_modifications'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), nullable=False)
+    brand_id = db.Column(db.Integer, db.ForeignKey('brands.id'), nullable=False)
+    description = db.Column(db.String(200))
+    source = db.Column(db.String(50))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    __table_args__ = (
+        db.UniqueConstraint('name', 'brand_id', name='unique_modification_per_brand'),
+    )
+
+    def __str__(self):
+        return f"{self.name}"
+
+
+class BrandModel(db.Model):
+    __tablename__ = 'brand_models'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    brand_id = db.Column(db.Integer, db.ForeignKey('brands.id'), nullable=False)
+    is_multi_word = db.Column(db.Boolean, default=False)
+    source = db.Column(db.String(50))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    __table_args__ = (
+        db.UniqueConstraint('name', 'brand_id', name='unique_model_per_brand'),
+    )
 
 
 class CarType(db.Model):
@@ -175,14 +226,65 @@ class Country(db.Model):
 class Currency(db.Model):
     __tablename__ = 'currencies'
     id = db.Column(db.Integer, primary_key=True)
-    code = db.Column(db.String(10), unique=True, nullable=False)  # e.g. 'RUB', 'USD'
-    name = db.Column(db.String(50), nullable=False)  # e.g. 'Russian Ruble'
-    symbol = db.Column(db.String(10), nullable=False)  # e.g. '₽', '$'
-    locale = db.Column(db.String(20), nullable=True)  # e.g. 'ru_RU', 'en_US'
+    code = db.Column(db.String(10), unique=True, nullable=False)
+    name = db.Column(db.String(50), nullable=False)
+    symbol = db.Column(db.String(10), nullable=False)
+    locale = db.Column(db.String(20), nullable=True)
     cars = db.relationship('Car', back_populates='currency')
 
     def __str__(self):
-        return f"{self.code} ({self.symbol}, {self.locale})" if self.locale else f"{self.code} ({self.symbol})"
+        return f"{self.code} - {self.name}"
+
+
+class CarEngine(db.Model):
+    """Model to store engine information for cars"""
+    __tablename__ = 'car_engines'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    car_id = db.Column(db.Integer, db.ForeignKey('cars.id'), nullable=False)
+    
+    # Basic engine data
+    displacement = db.Column(db.String(20), nullable=True)  # Объем двигателя или батареи (например, "1.6T" или "77.4 kWh")
+    power_hp = db.Column(db.Integer, nullable=True)        # Мощность в лошадиных силах
+    type = db.Column(db.String(20), nullable=True)         # Тип двигателя (gasoline, diesel, hybrid, electric)
+    drive = db.Column(db.String(20), nullable=True)        # Тип привода (front_wheel_drive, rear_wheel_drive, all_wheel_drive, etc.)
+    transmission = db.Column(db.String(20), nullable=True) # Коробка передач (manual, automatic, cvt, dsg, etc.)
+    
+    # Original text and description
+    engine_text = db.Column(db.String(100), nullable=True)  # Original parsed text
+    description = db.Column(db.String(255), nullable=True)  # Generated or imported description
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship
+    car = db.relationship('Car', backref=db.backref('engine_details', uselist=False))
+    
+    def generate_description(self):
+        """Generate a human-readable engine description"""
+        parts = []
+        if self.displacement:
+            parts.append(str(self.displacement))
+        if self.power_hp:
+            parts.append(f"{self.power_hp} л.с.")
+        if self.drive:
+            # Map drive type to Russian text
+            drive_map = {
+                "front_wheel_drive": "передний привод", 
+                "rear_wheel_drive": "задний привод",
+                "all_wheel_drive": "полный привод",
+                "quattro": "quattro",
+                "xdrive": "xDrive",
+                "e_four": "E-Four"
+            }
+            drive_text = drive_map.get(self.drive, self.drive)
+            parts.append(drive_text)
+        if self.transmission:
+            parts.append(f"КПП: {self.transmission}")
+        
+        return ", ".join(parts) if parts else (self.description or "-")
+    
+    def __str__(self):
+        return self.generate_description()
 
 
 class ImageTask(db.Model):
