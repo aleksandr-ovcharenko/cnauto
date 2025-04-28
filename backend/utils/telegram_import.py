@@ -14,6 +14,7 @@ from utils.generator_photon import generate_with_photon
 from utils.telegram_file import get_telegram_file_url
 from utils.file_logger import get_module_logger
 from utils.image_queue import enqueue_image_task
+from utils.car_parser import parse_car_info, save_new_trims_to_db
 
 # Configure logging using the centralized logger
 logger = get_module_logger(__name__)
@@ -65,6 +66,18 @@ def import_car():
         data = request.get_json()
     except Exception:
         return jsonify({"error": "invalid json"}), 400
+
+    car_data_str = data.get("car_data", "").strip()
+    # Process car data if in the new format [Brand] [Model] [Modification]
+    if car_data_str:
+        logger.info(f"🚗 Processing car in new format: {car_data_str}")
+        # Parse car data into bmmt format using the current db session
+        car_info = parse_car_info(car_data_str, db_session=db.session)
+        # Update data with parsed values
+        data["brand"] = car_info["brand"]
+        data["model"] = car_info["model"]
+        data["modification"] = car_info["modification"]
+        data["trim"] = car_info["trim"]
 
     model = data.get("model", "").strip()
     modification = data.get("modification", "").strip()
@@ -141,6 +154,10 @@ def import_car():
     )
     db.session.add(car)
     db.session.flush()
+
+    # If we had new trims identified during parsing, save them to the database
+    if 'car_data' in data:
+        save_new_trims_to_db(db_session=db.session)
 
     prompt_hint = (
         "Professional car studio shot, ultra-clean pure white background, only the car visible with ample empty space around it. "

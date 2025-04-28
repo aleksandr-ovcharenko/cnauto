@@ -72,8 +72,15 @@ def log_response_info(response):
 
 # Init extensions
 db.init_app(app)
-app.config['MIGRATIONS_DIR'] = os.path.join(os.path.dirname(__file__), '../migrations')
-migrate = Migrate(app, db)
+
+# Set migrations directory path correctly - works in both local and remote environments
+migrations_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'migrations'))
+app.config['ALEMBIC_MIGRATION_PATH'] = migrations_dir
+app.config['FLASK_MIGRATE_MIGRATIONS_DIRECTORY'] = migrations_dir
+
+# Initialize migrations with explicit directory path
+migrate = Migrate(app, db, directory=migrations_dir)
+
 admin_app = init_admin(app)
 
 # Set up Cloudinary deletion event listeners
