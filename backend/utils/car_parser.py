@@ -143,6 +143,7 @@ def get_brand_trims(brand_name, db_session=None):
     if not db_session:
         raise ValueError("Database session is required to get brand trims")
     
+    from backend.models import Brand, BrandTrim
     try:
         # Find the brand
         brand = db_session.query(Brand).filter(Brand.name == brand_name).first()
