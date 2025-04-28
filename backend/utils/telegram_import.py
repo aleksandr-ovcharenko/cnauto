@@ -5,9 +5,11 @@ import tempfile
 
 import requests
 from flask import Blueprint, jsonify, current_app, request, url_for
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, scoped_session
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models import db, Car, Brand, CarImage, BrandSynonym, Currency
+from models import db, Car, Brand, CarImage, BrandSynonym, Currency, CarType
 from utils.cloudinary_upload import upload_image
 from utils.generate_comfyui import generate_with_comfyui
 from utils.generator_photon import generate_with_photon
@@ -24,7 +26,38 @@ telegram_import = Blueprint('telegram_import', __name__)
 
 # Store a reference to the Flask app - will be set when the blueprint is registered
 _app = None
+_db_session = None
 
+def get_db_session():
+    """Get a direct SQLAlchemy session without relying on Flask-SQLAlchemy"""
+    global _db_session, _app
+    
+    if _db_session is not None:
+        return _db_session
+        
+    try:
+        # Try to get the database URL from the app config
+        if _app is not None:
+            db_uri = _app.config.get('SQLALCHEMY_DATABASE_URI')
+        else:
+            try:
+                db_uri = current_app.config.get('SQLALCHEMY_DATABASE_URI')
+            except RuntimeError:
+                # Use environment variable as fallback for Railway
+                db_uri = os.getenv('DATABASE_URL')
+                
+        if not db_uri:
+            logger.error("❌ Database URI not found in app config or environment")
+            raise RuntimeError("Database URI not available")
+            
+        # Create direct SQLAlchemy engine and session
+        engine = create_engine(db_uri)
+        session_factory = sessionmaker(bind=engine)
+        _db_session = scoped_session(session_factory)
+        return _db_session
+    except Exception as e:
+        logger.error(f"❌ Error creating database session: {e}")
+        raise
 
 def get_app_context():
     """Get the app context safely, either from current_app or stored _app reference"""
@@ -41,7 +74,6 @@ def get_app_context():
             logger.error("❌ No Flask app context available and no stored app reference")
             raise RuntimeError("No Flask app context available")
 
-
 @telegram_import.record
 def record_app(state):
     """Store a reference to the Flask app when the blueprint is registered"""
@@ -49,11 +81,8 @@ def record_app(state):
     _app = state.app
     logger.info("✅ Stored Flask app reference for background processing")
 
-
 @telegram_import.route('/api/import_car', methods=['POST'])
 def import_car():
-    from models import CarType
-
     logger.info("🚗 Started importing car via API")
 
     token = request.headers.get("X-API-TOKEN")
@@ -67,14 +96,16 @@ def import_car():
     except Exception:
         return jsonify({"error": "invalid json"}), 400
 
-    # Ensure we have a valid app context for database operations
-    with get_app_context():
+    # Get direct database session without relying on Flask-SQLAlchemy
+    try:
+        session = get_db_session()
+        
         car_data_str = data.get("car_data", "").strip()
         # Process car data if in the new format [Brand] [Model] [Modification]
         if car_data_str:
             logger.info(f"🚗 Processing car in new format: {car_data_str}")
-            # Parse car data into bmmt format using the current db session
-            car_info = parse_car_info(car_data_str, db_session=db.session)
+            # Parse car data into bmmt format using the direct session
+            car_info = parse_car_info(car_data_str, db_session=session)
             # Update data with parsed values
             data["brand"] = car_info["brand"]
             data["model"] = car_info["model"]
@@ -101,15 +132,15 @@ def import_car():
         if missing_fields:
             return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
 
-        # Use explicit db.session references for all database queries to ensure app context is respected
-        synonym = db.session.query(BrandSynonym).filter(BrandSynonym.name.ilike(brand_name)).first()
+        # Use direct session queries to avoid Flask-SQLAlchemy context issues
+        synonym = session.query(BrandSynonym).filter(BrandSynonym.name.ilike(brand_name)).first()
         brand = synonym.brand if synonym else None
 
         brand_created = False
         if not brand:
             # Check if a brand with this slug already exists (case insensitive)
             slug = brand_name.lower().replace(" ", "-")
-            existing_brand = db.session.query(Brand).filter(Brand.slug == slug).first()
+            existing_brand = session.query(Brand).filter(Brand.slug == slug).first()
 
             if existing_brand:
                 # Use the existing brand instead of creating a new one
@@ -118,27 +149,27 @@ def import_car():
             else:
                 # Create a new brand only if it doesn't exist
                 brand = Brand(name=brand_name, slug=slug)
-                db.session.add(brand)
-                db.session.flush()
+                session.add(brand)
+                session.flush()
 
                 synonym = BrandSynonym(name=brand_name.lower(), brand=brand)
-                db.session.add(synonym)
-                db.session.flush()
+                session.add(synonym)
+                session.flush()
                 brand_created = True
                 logger.info(f"✅ Created new brand: {brand.name} (slug: {brand.slug})")
 
         car_type = None
         if car_type_name:
-            car_type = db.session.query(CarType).filter_by(name=car_type_name).first()
+            car_type = session.query(CarType).filter_by(name=car_type_name).first()
             if not car_type:
                 car_type = CarType(name=car_type_name, slug=car_type_name.lower().replace(" ", "-"))
-                db.session.add(car_type)
-                db.session.flush()
+                session.add(car_type)
+                session.flush()
 
         currency_code = data.get("currency")
         currency = None
         if currency_code:
-            currency = db.session.query(Currency).filter_by(code=currency_code).first()
+            currency = session.query(Currency).filter_by(code=currency_code).first()
             if not currency:
                 logger.warning(f"⚠️ Currency with code '{currency_code}' not found. Defaulting to None.")
 
@@ -155,12 +186,12 @@ def import_car():
             description=description,
             currency=currency,
         )
-        db.session.add(car)
-        db.session.flush()
+        session.add(car)
+        session.flush()
 
         # If we had new trims identified during parsing, save them to the database
         if 'car_data' in data:
-            save_new_trims_to_db(db_session=db.session)
+            save_new_trims_to_db(db_session=session)
 
         prompt_hint = (
             "Professional car studio shot, ultra-clean pure white background, only the car visible with ample empty space around it. "
@@ -184,7 +215,7 @@ def import_car():
                 main_image_url = download_and_reupload(url, car_id=car.id, car_name=car.model, is_main_img=True)
                 if main_image_url:
                     car.image_url = main_image_url
-                    db.session.commit()
+                    session.commit()
 
                     params = {
                         'mode': REPLICATE_MODE,
@@ -224,9 +255,9 @@ def import_car():
         # Add real image URLs to the Car's gallery
         for i, url in enumerate(real_urls):
             image = CarImage(car_id=car.id, url=url, position=i)
-            db.session.add(image)
+            session.add(image)
 
-        db.session.commit()
+        session.commit()
 
         # Get the admin edit URL for the car
         admin_car_edit_url = f"/admin/car/edit/?id={car.id}"
@@ -234,7 +265,7 @@ def import_car():
         car_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}{url_for('car_page', car_id=car.id)}"
         admin_car_edit_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}/admin/car/edit/?id={car.id}&url=/admin/car/"
 
-        return jsonify({
+        response_data = {
             "success": True,
             "car_id": car.id,
             "model": car.model,
@@ -247,7 +278,15 @@ def import_car():
             "prompt_hint": prompt_hint,
             "car_url": car_url,
             "admin_edit_url": admin_car_edit_url
-        })
+        }
+        
+        return jsonify(response_data)
+    except Exception as e:
+        logger.error(f"❌ Database error in import_car: {e}", exc_info=True)
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
+    finally:
+        if 'session' in locals():
+            session.close()
 
 
 def async_generate_image(app, prompt, image_url, car_model, brand_name, car_id):
@@ -255,9 +294,12 @@ def async_generate_image(app, prompt, image_url, car_model, brand_name, car_id):
     Legacy function maintained for backward compatibility.
     New code should use the image_queue system instead.
     """
-    with app.app_context():
+    try:
+        # Create a standalone session rather than relying on Flask-SQLAlchemy
+        session = get_db_session()
+        
         try:
-            brand = db.session.query(Brand).filter_by(name=brand_name).first()
+            brand = session.query(Brand).filter_by(name=brand_name).first()
             ai_image = generate_image(
                 mode="photon",
                 prompt=prompt,
@@ -267,10 +309,10 @@ def async_generate_image(app, prompt, image_url, car_model, brand_name, car_id):
                 car_id=car_id
             )
             if ai_image:
-                car = db.session.query(Car).get(car_id)
+                car = session.query(Car).get(car_id)
                 if car:
                     car.image_url = ai_image
-                    db.session.commit()
+                    session.commit()
                     logger.info(f"✅ Successfully updated car with AI image")
                 else:
                     logger.warning(f"⚠️ Car {car_id} not found when updating AI image")
@@ -278,6 +320,9 @@ def async_generate_image(app, prompt, image_url, car_model, brand_name, car_id):
                 logger.warning(f"⚠️ No AI image generated for car {car_id}")
         except Exception as e:
             logger.error(f"❌ Error generating AI image for car {car_id}: {e}")
+    finally:
+        if 'session' in locals():
+            session.close()
 
 
 def download_and_reupload(url: str, car_id=None, car_name=None, is_main_img=False, image_index=None) -> str:
