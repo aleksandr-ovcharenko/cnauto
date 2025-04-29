@@ -20,8 +20,8 @@ from .admin import init_admin
 from .app_decorators import admin_required
 from .config_dev import DevConfig
 from .config_prod import ProdConfig
-from .events import setup_deletion_events
 from .db import db
+from .events import setup_deletion_events
 from .models import Car, Category, Brand, Country, CarType, User, ImageTask
 from .utils.file_logger import setup_file_logger
 from .utils.image_queue import start_image_processor
@@ -52,6 +52,7 @@ logger.info(f"📦 DB URI: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
 # Init extensions
 db.init_app(app)
 
+
 # Add a Flask handler to log all requests - with reduced verbosity
 @app.before_request
 def log_request_info():
@@ -75,6 +76,7 @@ app.config['FLASK_MIGRATE_MIGRATIONS_DIRECTORY'] = migrations_dir
 
 # Initialize migrations with explicit directory path
 migrate = Migrate(app, db, directory=migrations_dir)
+
 
 # === AUTOMATIC MIGRATION CHECK & UPGRADE ===
 def auto_migrate_and_seed(app, db, migrations_dir):
@@ -129,30 +131,32 @@ def auto_migrate_and_seed(app, db, migrations_dir):
             session_factory = sessionmaker(bind=db.engine)
             Session = scoped_session(session_factory)
 
-            # logger.info("🌱 Seeding countries...")
-            # seed_countries()
-            # logger.info("🌱 Seeding brands...")
-            # seed_brands()
-            # logger.info("🌱 Seeding brand synonyms...")
-            # seed_brand_synonyms()
-            # logger.info("🌱 Seeding brand models...")
-            # seed_brand_models()
+            logger.info("🌱 Seeding countries...")
+            seed_countries()
+            logger.info("🌱 Seeding brands...")
+            seed_brands()
+            logger.info("🌱 Seeding brand synonyms...")
+            seed_brand_synonyms()
+            logger.info("🌱 Seeding brand models...")
+            seed_brand_models()
             logger.info("🌱 Seeding brand trims...")
             seed_brand_trims(Session())
-            # logger.info("🌱 Seeding brand modifications...")
-            # seed_brand_modifications(Session())
-            # logger.info("🌱 Seeding categories...")
-            # seed_categories()
-            # logger.info("🌱 Seeding currencies...")
-            # seed_currencies()
+            logger.info("🌱 Seeding brand modifications...")
+            seed_brand_modifications(Session())
+            logger.info("🌱 Seeding categories...")
+            seed_categories()
+            logger.info("🌱 Seeding currencies...")
+            seed_currencies()
             logger.info("✅ All database seeds completed successfully!")
         except Exception as e:
             logger.error(f"❌ Error during database seeding: {e}")
 
+
 # Call this BEFORE app.run() or exposing the WSGI app
 import os
-if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug:
-    auto_migrate_and_seed(app, db, migrations_dir)
+# switching off migration process for now
+# if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug:
+#     auto_migrate_and_seed(app, db, migrations_dir)
 
 admin_app = init_admin(app)
 
