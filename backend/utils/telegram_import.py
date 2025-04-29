@@ -2,6 +2,7 @@ import os
 # Use relative imports
 import sys
 import tempfile
+import threading
 
 import requests
 from flask import Blueprint, jsonify, current_app, request, url_for
@@ -81,41 +82,42 @@ def record_app(state):
     _app = state.app
     logger.info("✅ Stored Flask app reference for background processing")
 
-@telegram_import.route('/api/import_car', methods=['POST'])
-def import_car():
-    logger.info("🚗 Started importing car via API")
-
-    token = request.headers.get("X-API-TOKEN")
-    logger.debug(f"Received token: {token}")
-    logger.debug(f"Expected token: {os.getenv('IMPORT_API_TOKEN')}")
-    if token != os.getenv("IMPORT_API_TOKEN"):
-        return jsonify({"error": "unauthorized, check your token"}), 403
-
+# Helper to send a Telegram message
+def send_telegram_message(chat_id, text, bot_token=None):
+    import requests
+    if not bot_token:
+        bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    if not bot_token:
+        logger.error("❌ TELEGRAM_BOT_TOKEN is not set!")
+        return False
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    payload = {"chat_id": chat_id, "text": text}
     try:
-        data = request.get_json()
-    except Exception:
-        return jsonify({"error": "invalid json"}), 400
+        resp = requests.post(url, json=payload, timeout=10)
+        if resp.status_code == 200:
+            logger.info(f"✅ Sent Telegram message to {chat_id}")
+            return True
+        else:
+            logger.error(f"❌ Failed to send Telegram message: {resp.text}")
+            return False
+    except Exception as e:
+        logger.error(f"❌ Exception in send_telegram_message: {e}")
+        return False
 
-    # Get direct database session without relying on Flask-SQLAlchemy
+# Extracted car import logic for async processing
+def process_car_import_task(data, chat_id):
+    session = None
     try:
         session = get_db_session()
-        
         car_data_str = data.get("car_data", "").strip()
-        # Process car data if in the new format [Brand] [Model] [Modification]
         if car_data_str:
             logger.info(f"🚗 Processing car in new format: {car_data_str}")
-            # Parse car data into bmmt format using the direct session
             car_info = parse_car_info(car_data_str, db_session=session)
-            # Update data with parsed values
             data["brand"] = car_info["brand"]
             data["model"] = car_info["model"]
             data["modification"] = car_info["modification"]
             data["trim"] = car_info["trim"]
-            
-            # Log the parsed data for debugging
-            logger.info(f"✅ Parsed car data: Brand={car_info['brand']}, Model={car_info['model']}, " 
-                        f"Modification={car_info['modification']}, Trim={car_info['trim']}")
-
+            logger.info(f"✅ Parsed car data: Brand={car_info['brand']}, Model={car_info['model']}, Modification={car_info['modification']}, Trim={car_info['trim']}")
         model = data.get("model", "").strip()
         modification = data.get("modification", "").strip()
         trim = data.get("trim", "").strip()
@@ -127,41 +129,28 @@ def import_car():
         brand_name = data.get("brand", "").strip()
         description = data.get("description", "").strip()
         image_file_ids = data.get("image_file_ids", [])
-
-        # Validation: block car creation without brand and model
-        if not brand_name or not model:
-            return jsonify({"error": "Нельзя создать автомобиль без бренда и модели."}), 400
-
         missing_fields = [field for field in ["model", "brand", "image_file_ids"] if not data.get(field)]
         if missing_fields:
-            return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
-
-        # Use direct session queries to avoid Flask-SQLAlchemy context issues
+            send_telegram_message(chat_id, f"❌ Ошибка: отсутствуют обязательные поля: {', '.join(missing_fields)}")
+            return
         synonym = session.query(BrandSynonym).filter(BrandSynonym.name.ilike(brand_name)).first()
         brand = synonym.brand if synonym else None
-
         brand_created = False
         if not brand:
-            # Check if a brand with this slug already exists (case insensitive)
             slug = brand_name.lower().replace(" ", "-")
             existing_brand = session.query(Brand).filter(Brand.slug == slug).first()
-
             if existing_brand:
-                # Use the existing brand instead of creating a new one
                 brand = existing_brand
                 logger.info(f"✅ Using existing brand: {brand.name} (slug: {brand.slug})")
             else:
-                # Create a new brand only if it doesn't exist
                 brand = Brand(name=brand_name, slug=slug)
                 session.add(brand)
                 session.flush()
-
                 synonym = BrandSynonym(name=brand_name.lower(), brand=brand)
                 session.add(synonym)
                 session.flush()
                 brand_created = True
                 logger.info(f"✅ Created new brand: {brand.name} (slug: {brand.slug})")
-
         car_type = None
         if car_type_name:
             car_type = session.query(CarType).filter_by(name=car_type_name).first()
@@ -169,18 +158,16 @@ def import_car():
                 car_type = CarType(name=car_type_name, slug=car_type_name.lower().replace(" ", "-"))
                 session.add(car_type)
                 session.flush()
-
         currency_code = data.get("currency")
         currency = None
         if currency_code:
             currency = session.query(Currency).filter_by(code=currency_code).first()
             if not currency:
                 logger.warning(f"⚠️ Currency with code '{currency_code}' not found. Defaulting to None.")
-
         car = Car(
             model=model,
-            modification=modification,  # Explicitly set modification from parsed data
-            trim=trim,  # Explicitly set trim from parsed data
+            modification=modification,
+            trim=trim,
             price=price,
             year=year,
             mileage=mileage,
@@ -192,11 +179,6 @@ def import_car():
         )
         session.add(car)
         session.flush()
-
-        # If we had new trims identified during parsing, save them to the database
-        if 'car_data' in data:
-            save_new_trims_to_db(db_session=session)
-
         prompt_hint = (
             "Professional car studio shot, ultra-clean pure white background, only the car visible with ample empty space around it. "
             f"Car: {car.model}-{car.brand.name}, perfectly isolated with at least 2 meters of empty space on all sides, no other objects or cars visible. "
@@ -208,10 +190,8 @@ def import_car():
             "The car should appear as a flawless 3D model with perfect proportions, slightly matte surface to avoid glare. "
             "Add subtle ambient occlusion shadows under the car for natural grounding effect."
         )
-
         real_urls = []
         main_image_url = None
-
         if image_file_ids:
             try:
                 first_file_id = image_file_ids[0]
@@ -220,7 +200,6 @@ def import_car():
                 if main_image_url:
                     car.image_url = main_image_url
                     session.commit()
-
                     params = {
                         'mode': REPLICATE_MODE,
                         'prompt': prompt_hint,
@@ -229,16 +208,13 @@ def import_car():
                         'car_brand': brand,
                         'car_id': car.id
                     }
-
-                    # Enqueue the task with our new queuing system
                     task_id = enqueue_image_task(
                         car_id=car.id,
-                        generator_func=generate_image,  # This is our local function
+                        generator_func=generate_image,  
                         params=params,
                         max_retries=3
                     )
                     logger.info(f"🎯 Queued AI image generation as task: {task_id}")
-
                     for i, file_id in enumerate(image_file_ids[1:], start=1):
                         try:
                             url = get_telegram_file_url(file_id)
@@ -255,53 +231,86 @@ def import_car():
                             logger.warning(f"⚠️ Ошибка при обработке изображения галереи (индекс {i}): {e}")
             except Exception as e:
                 logger.warning(f"⚠️ Ошибка при обработке главного изображения: {e}")
-
-        # Add real image URLs to the Car's gallery
         for i, url in enumerate(real_urls):
             image = CarImage(car_id=car.id, url=url, position=i)
             session.add(image)
-
         session.commit()
-
-        # Get the admin edit URL for the car
-        admin_car_edit_url = f"/admin/car/edit/?id={car.id}"
-
-        car_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}{url_for('car_page', car_id=car.id)}"
-        admin_car_edit_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}/admin/car/edit/?id={car.id}&url=/admin/car/"
-
-        response_data = {
-            "success": True,
-            "car_id": car.id,
-            "model": car.model,
-            "price": car.price,
-            "year": car.year,
-            "brand": brand.name,
-            "brand_created": brand_created,
-            "main_image": main_image_url,
-            "gallery_images_count": len(real_urls),
-            "prompt_hint": prompt_hint,
-            "car_url": car_url,
-            "admin_edit_url": admin_car_edit_url
-        }
         
-        return jsonify(response_data)
+        # Compose detailed message
+        details = [
+            "✅ Автомобиль успешно добавлен!",
+            "",
+            "Распознано:",
+            f"• Бренд: {brand_name or 'не указано'}",
+            f"• Модель: {model or 'не указано'}",
+            f"• Модификация: {modification or 'не указано'}" if modification else None,
+            f"• Комплектация: {trim or 'не указано'}" if trim else None,
+            f"• Год: {year or 'не указано'}" if year else None,
+            f"• Пробег: {mileage} км" if mileage is not None else None,
+            f"• Двигатель: {engine or 'не указано'}" if engine else None,
+            f"• Тип: {car_type_name or 'не указано'}" if car_type_name else None,
+            f"• Цена: {price:,} {currency_code or ''}" if price else None,
+            ""
+        ]
+        if description:
+            details.append(f"Описание: {description}")
+            details.append("")
+        if main_image_url:
+            details.append("Главное изображение:")
+            details.append(main_image_url)
+        if real_urls:
+            details.append(f"Галерея ({len(real_urls)} фото):")
+            for url in real_urls:
+                details.append(url)
+        # If new trims were added
+        new_trims = []
+        if 'car_data' in data:
+            new_trims = save_new_trims_to_db(db_session=session) or []
+        if new_trims:
+            details.append("")
+            details.append("Новые комплектации/модификации, добавленные в базу: " + ", ".join(str(t) for t in new_trims))
+        # Add links if possible
+        car_url = None
+        admin_car_edit_url = None
+        try:
+            car_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}{url_for('car_page', car_id=car.id)}"
+            admin_car_edit_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}/admin/car/edit/?id={car.id}&url=/admin/car/"
+        except Exception:
+            pass
+        if car_url:
+            details.append("")
+            details.append(f"Ссылка на авто: {car_url}")
+        if admin_car_edit_url:
+            details.append(f"Ссылка для админа: {admin_car_edit_url}")
+        msg = "\n".join([d for d in details if d])
+        send_telegram_message(chat_id, msg)
     except Exception as e:
-        logger.error(f"❌ Database error in import_car: {e}", exc_info=True)
-        return jsonify({"error": f"Database error: {str(e)}"}), 500
+        logger.error(f"❌ Ошибка при импорте автомобиля: {e}")
+        if chat_id:
+            send_telegram_message(chat_id, f"❌ Ошибка при импорте автомобиля: {e}")
     finally:
-        if 'session' in locals():
+        if session:
             session.close()
 
+@telegram_import.route('/api/import_car', methods=['POST'])
+def import_car():
+    logger.info("🚗 Started importing car via API [ASYNC]")
+    token = request.headers.get("X-API-TOKEN")
+    if token != os.getenv("IMPORT_API_TOKEN"):
+        return jsonify({"error": "unauthorized, check your token"}), 403
+    try:
+        data = request.get_json()
+    except Exception:
+        return jsonify({"error": "invalid json"}), 400
+    chat_id = data.get("chat_id")
+    if not chat_id:
+        return jsonify({"error": "chat_id required in payload"}), 400
+    threading.Thread(target=process_car_import_task, args=(data, chat_id), daemon=True).start()
+    return jsonify({"status": "received", "message": "Работаем над вашей заявкой..."})
 
 def async_generate_image(app, prompt, image_url, car_model, brand_name, car_id):
-    """
-    Legacy function maintained for backward compatibility.
-    New code should use the image_queue system instead.
-    """
     try:
-        # Create a standalone session rather than relying on Flask-SQLAlchemy
         session = get_db_session()
-        
         try:
             brand = session.query(Brand).filter_by(name=brand_name).first()
             ai_image = generate_image(
@@ -328,19 +337,15 @@ def async_generate_image(app, prompt, image_url, car_model, brand_name, car_id):
         if 'session' in locals():
             session.close()
 
-
 def download_and_reupload(url: str, car_id=None, car_name=None, is_main_img=False, image_index=None) -> str:
     try:
         logger.info(f"⬇️ Скачиваем изображение {image_index} с {url}")
         response = requests.get(url)
         response.raise_for_status()
-
         file_ext = os.path.splitext(url.split('?')[0])[1] or '.jpg'
-
         with tempfile.NamedTemporaryFile(suffix=file_ext, delete=False) as tmp:
             tmp.write(response.content)
             tmp_path = tmp.name
-
         logger.info(f"☁️ Загружаем изображение {image_index} в Cloudinary...")
         uploaded_url = upload_image(
             tmp_path,
@@ -349,31 +354,24 @@ def download_and_reupload(url: str, car_id=None, car_name=None, is_main_img=Fals
             is_main=is_main_img,
             index=image_index
         )
-
         try:
             os.unlink(tmp_path)
         except Exception as e:
             logger.warning(f"⚠️ Не удалось удалить временный файл: {e}")
-
         return uploaded_url
     except Exception as e:
         logger.error(f"❌ Ошибка при обработке изображения {image_index}: {e}")
         return None
 
-
 def generate_image(mode: str = None, prompt: str = "", image_url: str = "", car_model: str = "", car_brand=None,
                    car_id=None) -> str:
-    """Generate an AI image using the specified mode and parameters"""
     mode = (mode or REPLICATE_MODE).lower().strip()
     logger.info(f"🚀 Генерация изображение [mode={mode}]")
-
-    # Use app context to ensure current_app is available in background threads
     with get_app_context():
         ref_url = download_and_reupload(image_url, car_id=car_id, car_name=car_model, is_main_img=True)
         if not ref_url:
             logger.warning("⚠️ Прерывание: не удалось загрузить изображение в Cloudinary")
             return None
-
         if mode == "photon":
             return generate_with_photon(prompt, ref_url, car_model, car_brand, car_id)
         elif mode == "comfy":
