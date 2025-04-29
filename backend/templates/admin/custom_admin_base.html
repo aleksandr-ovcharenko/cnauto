@@ -3,8 +3,10 @@
 {% block head_css %}
 {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
-<link rel="icon" type="image/png" href="{{ url_for('static', filename='images/site/admin/favicon.png') }}" sizes="32x32" />
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='images/site/admin/favicon-32x32.png') }}" sizes="32x32" />
 <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/site/admin/favicon.ico') }}" />
+<link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/site/admin/apple-touch-icon.png') }}" />
+<link rel="manifest" href="{{ url_for('static', filename='images/site/admin/site.webmanifest') }}" />
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <style>
   .dashboard-title {
