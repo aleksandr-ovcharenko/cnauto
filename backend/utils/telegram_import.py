@@ -258,10 +258,16 @@ def process_car_import_task(data, chat_id):
         if main_image_url:
             details.append("Главное изображение:")
             details.append(main_image_url)
+        # Improved gallery output
+        max_gallery_preview = 2
         if real_urls:
-            details.append(f"Галерея ({len(real_urls)} фото):")
-            for url in real_urls:
+            details.append(f"Галерея: {len(real_urls)} фото" + (f" (первые {max_gallery_preview}):" if len(real_urls) > max_gallery_preview else ":"))
+            for url in real_urls[:max_gallery_preview]:
                 details.append(url)
+            if len(real_urls) > max_gallery_preview:
+                details.append(f"и еще {len(real_urls) - max_gallery_preview} фото — см. все на сайте:")
+                if car_url:
+                    details.append(car_url)
         # If new trims were added
         new_trims = []
         if 'car_data' in data:
@@ -277,11 +283,12 @@ def process_car_import_task(data, chat_id):
             admin_car_edit_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}/admin/car/edit/?id={car.id}&url=/admin/car/"
         except Exception:
             pass
+        # Place links at the end, clearly labeled
         if car_url:
             details.append("")
-            details.append(f"Ссылка на авто: {car_url}")
+            details.append(f"Ссылка на авто на сайте:\n{car_url}")
         if admin_car_edit_url:
-            details.append(f"Ссылка для админа: {admin_car_edit_url}")
+            details.append(f"Ссылка для администрирования:\n{admin_car_edit_url}")
         msg = "\n".join([d for d in details if d])
         send_telegram_message(chat_id, msg)
     except Exception as e:
