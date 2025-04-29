@@ -683,7 +683,17 @@ def parse_car_info(car_data, db_session):
             return result
         
         # Get modification text after model
-        modification_text = car_data[model_end_index:].strip()
+        mod_text_start = None
+        if found_model:
+            # Try to match model in remaining_text and get its end position
+            model_pattern = r'\b' + re.escape(found_model) + r'\b'
+            match = re.search(model_pattern, remaining_text, re.IGNORECASE)
+            if match:
+                mod_text_start = match.end()
+        if mod_text_start is not None:
+            modification_text = remaining_text[mod_text_start:].strip()
+        else:
+            modification_text = car_data[model_end_index:].strip()
         if not modification_text:
             return result
         
@@ -719,14 +729,15 @@ def normalize_car(brand, model, modification_text, db_session):
         "trim": "Standard"
     }
     
+    # Remove anything in parentheses (e.g., (версия Ruiyi))
+    mod_text = re.sub(r'\([^)]*\)', '', modification_text).strip()
+
     # Get all known trims for this brand
     brand_trims = get_brand_trims(brand, db_session)
     sorted_trims = sorted(brand_trims, key=len, reverse=True)
 
     # Find trim first - prioritize multi-word trims
     trim = None
-    mod_text = modification_text.strip()
-
     # Try to match multi-word trims first (using exact match with boundaries)
     for trim_candidate in sorted_trims:
         if ' ' in trim_candidate:
@@ -764,6 +775,15 @@ def normalize_car(brand, model, modification_text, db_session):
     # If still no trim found, use "Standard"
     if not trim:
         trim = "Standard"
+
+    # After extracting trim, normalize modification (e.g., '2.0TSI' -> '2.0 TSI')
+    def normalize_mod(mod):
+        # Insert space between number and letters (e.g., 2.0TSI -> 2.0 TSI)
+        mod = re.sub(r'(\d\.\d)([A-Za-z])', r'\1 \2', mod)
+        mod = re.sub(r'(\d)([A-Za-z])', r'\1 \2', mod)
+        mod = re.sub(r'([A-Za-z])([0-9])', r'\1 \2', mod)
+        return mod.strip()
+    mod_text = normalize_mod(mod_text)
 
     # Everything else is considered the modification (clean up extra spaces)
     mod_text = re.sub(r'\s+', ' ', mod_text).strip()

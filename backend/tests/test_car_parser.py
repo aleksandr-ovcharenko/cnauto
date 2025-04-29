@@ -164,7 +164,11 @@ TEST_CASES = [
     {
         "input": "MINI Countryman Cooper S ALL4 Iconic",
         "expected": {"brand": "MINI", "model": "Countryman", "modification": "Cooper S ALL4", "trim": "Iconic"}
-    }
+    },
+    {
+        "input": "Volkswagen Touareg 2.0TSI R-Line (версия Ruiyi)",
+        "expected": {"brand": "Volkswagen", "model": "Touareg", "modification": "2.0 TSI", "trim": "R-Line"}
+    },
 ]
 
 # Additional test cases that are more challenging
@@ -268,6 +272,30 @@ class TestCarParser(unittest.TestCase):
                             f"Failed on {test['input']}: power_hp mismatch. Got {engine_info['power_hp']}, expected {test['expected']['power_hp']}")
             self.assertEqual(engine_info["transmission"], test["expected"]["transmission"], 
                             f"Failed on {test['input']}: transmission mismatch. Got {engine_info['transmission']}, expected {test['expected']['transmission']}")
+
+class TestVolkswagenTouaregParsing(unittest.TestCase):
+    def setUp(self):
+        self.db_session = get_db_session()
+        # Ensure trims exist for the test
+        brand = self.db_session.query(Brand).filter(Brand.name == "Volkswagen").first()
+        if not brand:
+            brand = Brand(name="Volkswagen", slug="volkswagen")
+            self.db_session.add(brand)
+            self.db_session.commit()
+        trim = self.db_session.query(BrandTrim).filter(BrandTrim.brand_id == brand.id, BrandTrim.name == "R-Line").first()
+        if not trim:
+            trim = BrandTrim(brand_id=brand.id, name="R-Line")
+            self.db_session.add(trim)
+            self.db_session.commit()
+    def tearDown(self):
+        self.db_session.close()
+    def test_vw_touareg_rline_ruyi(self):
+        input_str = "Volkswagen Touareg 2.0TSI R-Line (версия Ruiyi)"
+        parsed = parse_car_info(input_str, self.db_session)
+        self.assertEqual(parsed["brand"], "Volkswagen")
+        self.assertEqual(parsed["model"], "Touareg")
+        self.assertEqual(parsed["modification"], "2.0 TSI")
+        self.assertEqual(parsed["trim"], "R-Line")
 
 def test_data_summary():
     """Print a summary of test data to verify parsing"""
