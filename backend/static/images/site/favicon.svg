@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <rect width="48" height="48" fill="#fff"/>
+  <!-- Minimal car silhouette -->
+  <path d="M10 28 Q12 22 24 22 Q36 22 38 28 Q39 28 39 30 Q39 32 37 32 Q35 32 35 30 Q35 29 34 28 Q32 26 24 26 Q16 26 14 28 Q13 29 13 30 Q13 32 11 32 Q9 32 9 30 Q9 28 10 28 Z" fill="#090909"/>
+  <!-- CN letters -->
+  <text x="11" y="40" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#000">CN</text>
+</svg>
