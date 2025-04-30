@@ -9,7 +9,7 @@ from functools import partial
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 import requests
-from flask import Blueprint, jsonify, current_app, request, url_for
+from flask import Blueprint, jsonify, current_app, request
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
@@ -306,12 +306,23 @@ def process_car_import_task(app, data, chat_id):
         car_url = None
         admin_car_edit_url = None
         
-        # Try to generate URLs
+        # Build URLs directly without relying on url_for
         try:
-            car_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}{url_for('car_page', car_id=car.id)}"
-            admin_car_edit_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}/admin/car/edit/?id={car.id}&url=/admin/car/"
-        except Exception:
-            pass
+            # Get server name from environment or use default
+            server_name = os.getenv('SERVER_NAME')
+            # If SERVER_NAME is not set, check if we have RAILWAY_PUBLIC_DOMAIN
+            if not server_name:
+                server_name = os.getenv('RAILWAY_PUBLIC_DOMAIN')
+            # If still no domain, use default
+            if not server_name:
+                server_name = "cncars.ru"
+                
+            # Build the URLs directly
+            car_url = f"https://{server_name}/car/{car.id}"
+            admin_car_edit_url = f"https://{server_name}/admin/car/edit/?id={car.id}&url=/admin/car/"
+            logger.info(f"✅ Generated car URLs using server: {server_name}")
+        except Exception as e:
+            logger.error(f"❌ Error generating car URLs: {e}")
             
         # Improved gallery output
         max_gallery_preview = 2
