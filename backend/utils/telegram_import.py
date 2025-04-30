@@ -245,7 +245,7 @@ def process_car_import_task(app, data, chat_id):
                         'prompt': prompt_hint,
                         'image_url': main_image_url,
                         'car_model': model,
-                        'car_brand': brand,
+                        'car_brand': brand.name if brand else "Unknown",  
                         'car_id': car.id,
                         'app': app
                     }
