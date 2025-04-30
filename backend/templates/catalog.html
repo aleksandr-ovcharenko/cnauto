@@ -8,64 +8,76 @@
     <button type="button" id="toggleSidebar" class="sidebar-toggle" aria-label="Скрыть фильтры" title="Скрыть фильтры" tabindex="0" style="z-index: 1; pointer-events: auto;"><span class="arrow">◀</span></button>
     <!-- Фильтры -->
     <aside class="filters-sidebar">
-        <form method="get">
+        <form method="get" id="filtersForm">
             <a href="{{ url_for('catalog') }}" class="btn btn-reset" style="margin-bottom: 1rem;">Сбросить всё</a>
             <!-- Фильтр по бренду (hide if only one) -->
             {% if brands|length > 1 %}
             <div class="filter-group">
-                <h4 class="filter-group-title">Бренд
+                <h4 class="filter-group-title">
+                  Бренд
                   <a href="#" class="apply-facet-link" id="applyBrand" style="display:none; font-size:0.95em; margin-left:8px;">Применить</a>
+                  <span class="filter-arrow"></span>
                 </h4>
-                <input type="text" class="facet-search-input" id="brandSearch" placeholder="Введите бренд..." autocomplete="off">
-                <div class="facet-suggestions" id="brandSuggestions"></div>
-                <div class="facet-items" id="brandFacet">
-                    {% for brand in brands %}
-                    <label class="facet-item {% if loop.index > 8 %}hidden{% endif %}">
-                        <input type="radio" name="brand" value="{{ brand.slug }}" {% if request.args.get('brand') == brand.slug %}checked{% endif %}>
-                        <span>{{ brand.name }}</span>
-                    </label>
-                    {% endfor %}
+                <div class="filter-group-content">
+                    <input type="text" class="facet-search-input" id="brandSearch" placeholder="Введите бренд..." autocomplete="off">
+                    <div class="facet-suggestions" id="brandSuggestions"></div>
+                    <div class="facet-items" id="brandFacet">
+                        {% for brand in brands %}
+                        <label class="facet-item {% if loop.index > 8 %}hidden{% endif %}">
+                            <input type="radio" name="brand" value="{{ brand.slug }}" {% if request.args.get('brand') == brand.slug %}checked{% endif %}>
+                            <span>{{ brand.name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    {% if brands|length > 8 %}
+                    <button type="button"
+                            class="facet-toggle"
+                            data-target="brandFacet"
+                            data-expanded="false">Показать ещё</button>
+                    <a href="#" class="facet-hide-link" data-target="brandFacet" style="display:none;">Скрыть</a>
+                    {% endif %}
                 </div>
-                {% if brands|length > 8 %}
-                <button type="button"
-                        class="facet-toggle"
-                        data-target="brandFacet"
-                        data-expanded="false">Показать ещё</button>
-                <a href="#" class="facet-hide-link" data-target="brandFacet" style="display:none;">Скрыть</a>
-                {% endif %}
             </div>
             {% endif %}
             <!-- Фильтр по стране (hide if only one) -->
             {% if countries|length > 1 %}
             <div class="filter-group">
-                <h4 class="filter-group-title">Страна
+                <h4 class="filter-group-title">
+                  Страна
                   <a href="#" class="apply-facet-link" id="applyCountry" style="display:none; font-size:0.95em; margin-left:8px;">Применить</a>
+                  <span class="filter-arrow"></span>
                 </h4>
-                <input type="text" class="facet-search-input" id="countrySearch" placeholder="Введите страну..." autocomplete="off">
-                <div class="facet-suggestions" id="countrySuggestions"></div>
-                <div class="facet-items" id="countryFacet">
-                    {% for country in countries %}
-                    <label class="facet-item">
-                        <input type="radio" name="country" value="{{ country.name }}" {% if request.args.get('country') == country.name %}checked{% endif %}>
-                        <span>{{ country.name }}</span>
-                    </label>
-                    {% endfor %}
+                <div class="filter-group-content">
+                    <input type="text" class="facet-search-input" id="countrySearch" placeholder="Введите страну..." autocomplete="off">
+                    <div class="facet-suggestions" id="countrySuggestions"></div>
+                    <div class="facet-items" id="countryFacet">
+                        {% for country in countries %}
+                        <label class="facet-item">
+                            <input type="radio" name="country" value="{{ country.name }}" {% if request.args.get('country') == country.name %}checked{% endif %}>
+                            <span>{{ country.name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
             {% endif %}
             <!-- Фильтр по типу (hide if only one) -->
             {% if car_types|length > 1 %}
             <div class="filter-group">
-                <h4 class="filter-group-title">Тип
+                <h4 class="filter-group-title">
+                  Тип
                   <a href="#" class="apply-facet-link" id="applyType" style="display:none; font-size:0.95em; margin-left:8px;">Применить</a>
+                  <span class="filter-arrow"></span>
                 </h4>
-                <div class="facet-items" id="typeFacet">
-                    {% for car_type in car_types %}
-                    <label class="facet-item">
-                        <input type="checkbox" name="type" value="{{ car_type.slug }}" {% if car_type.slug in request.args.getlist('type') %}checked{% endif %}>
-                        <span>{{ car_type.name }}</span>
-                    </label>
-                    {% endfor %}
+                <div class="filter-group-content">
+                    <div class="facet-items" id="typeFacet">
+                        {% for car_type in car_types %}
+                        <label class="facet-item">
+                            <input type="checkbox" name="type" value="{{ car_type.slug }}" {% if car_type.slug in request.args.getlist('type') %}checked{% endif %}>
+                            <span>{{ car_type.name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
             {% endif %}
@@ -315,6 +327,58 @@
 </script>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.filter-group-title').forEach(header => {
+        header.addEventListener('click', function(event) {
+            console.log('Filter group title clicked', event);
+            const content = this.nextElementSibling;
+            console.log('Content class list before toggle:', content.classList);
+            content.classList.toggle('show');
+            const arrow = this.querySelector('.filter-arrow');
+            if (arrow) {
+                console.log('Arrow class list before toggle:', arrow.classList);
+                arrow.classList.toggle('rotated');
+                console.log('Arrow class list after toggle:', arrow.classList);
+            }
+        });
+    });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Collapsible filters for <1320px
+    function handleFiltersCollapsible() {
+        console.log('handleFiltersCollapsible called. Screen width:', window.innerWidth);
+        const filtersSidebar = document.querySelector('.filters-sidebar');
+        const filtersForm = document.getElementById('filtersForm');
+        const header = document.getElementById('filtersCollapsibleHeader');
+        const arrow = document.getElementById('filtersCollapsibleArrow');
+        if (window.innerWidth < 1320) {
+            console.log('Setting header and form for mobile view');
+            if (header) header.classList.remove('hidden');
+            if (filtersSidebar) {
+                filtersSidebar.classList.add('open');  
+                console.log('Added open class to filters-sidebar');
+            }
+        } else {
+            console.log('Setting header and form for desktop view');
+            if (header) header.classList.add('hidden');
+            if (filtersSidebar) {
+                filtersSidebar.classList.remove('open');  
+                console.log('Removed open class from filters-sidebar');
+            }
+        }
+        if (arrow) {
+            arrow.style.transform = filtersSidebar && filtersSidebar.classList.contains('open') ? 'rotate(180deg)' : '';
+        }
+    }
+    handleFiltersCollapsible();
+    window.addEventListener('resize', handleFiltersCollapsible);
+});
+</script>
+
+<script>
 // Car card gallery: show image based on mouse position over dots area, limited to maxDots
 function setupCarCardGalleries() {
     const maxDots = 8;
@@ -385,4 +449,25 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.filter-group-header').forEach(header => {
+        header.addEventListener('click', function() {
+            const content = this.nextElementSibling; // Assuming .filter-group-content is the immediate next sibling
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+            } else {
+                content.style.display = 'none';
+            }
+            // Toggle arrow or indicator if present
+            const arrow = this.querySelector('.filter-arrow');
+            if (arrow) {
+                arrow.classList.toggle('rotated');
+            }
+        });
+    });
+});
+</script>
+
 {% endblock %}

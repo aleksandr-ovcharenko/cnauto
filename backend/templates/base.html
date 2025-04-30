@@ -17,6 +17,11 @@
     <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/site/apple-touch-icon.png') }}" />
     <link rel="manifest" href="{{ url_for('static', filename='images/site/site.webmanifest') }}" />
 
+    <!-- Inter font for modern look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+
     <!-- Подключаем модульные CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
@@ -43,30 +48,54 @@
     .header.shrink .logo-img {
         height: 50px !important;
     }
-    </style>
-    <style>
     /* Mobile menu CSS */
     .mobile-menu {
         position: fixed; top: 0; left: 0;
-        width: 100%; height: 100%;
+        width: 100vw; height: 100vh;
         background: #fff; overflow-y: auto;
         z-index: 1000;
         transform: translateX(-100%);
         transition: transform 0.3s ease;
+        display: flex; flex-direction: column;
+        padding: 0;
     }
     .mobile-menu.open { transform: translateX(0); }
-    .mobile-menu-toggle { display: none; background: none; border: none; cursor: pointer; }
+    .mobile-menu-toggle {
+        display: none; background: none; border: none; cursor: pointer; padding: 12px;
+        z-index: 1100;
+    }
+    .mobile-menu-toggle .burger {
+        width: 28px; height: 3px; background: #333; margin: 6px 0; border-radius: 2px; transition: all 0.3s;
+        display: block;
+    }
     @media (max-width: 768px) {
         .nav, .header-actions { display: none !important; }
         .mobile-menu-toggle { display: inline-block; }
+        .mobile-menu { display: flex !important; }
     }
     @media (min-width: 769px) {
         .mobile-menu { display: none !important; }
     }
+    .mobile-menu-header {
+        display: flex; justify-content: flex-end; align-items: center; padding: 1.5rem 1rem 0 1rem;
+    }
+    .mobile-menu-close {
+        background: none; border: none; font-size: 2rem; color: #333; cursor: pointer; padding: 0 8px;
+    }
+    .mobile-nav {
+        display: flex; flex-direction: column; align-items: center; gap: 1.5rem; margin-top: 2rem;
+    }
+    .mobile-nav-link {
+        font-size: 1.2rem; color: #222; text-decoration: none; font-weight: 600;
+    }
+    .mobile-nav-link:active, .mobile-nav-link:focus { color: #007bff; }
+    .mobile-nav-button {
+        margin-top: 1.5rem;
+    }
     </style>
     {% endblock %}
 </head>
-<body>
+<body class="min-h-screen bg-white text-black font-sans">
 <!-- Хедер -->
 <header class="header">
     <div class="container">
@@ -74,33 +103,28 @@
             <a href="/" class="logo">
                 <img src="{{ url_for('static', filename='images/site/main_logo.webp') }}" alt="CN-Auto" class="logo-img" style="height: 100px; width: auto;">
             </a>
-
             <nav class="nav">
                 <a href="/catalog" class="nav-link">Каталог</a>
                 <a href="/about" class="nav-link">О компании</a>
                 <a href="/delivery" class="nav-link">Доставка</a>
                 <a href="/contacts" class="nav-link">Контакты</a>
             </nav>
-
             <div class="header-actions">
                 <a href="tel:+78001234567" class="phone">8 800 123-45-67</a>
                 <button class="btn btn-small">Заказать звонок</button>
             </div>
-
             <!-- Мобильное меню -->
-            <button class="mobile-menu-toggle">
-                <span></span>
-                <span></span>
-                <span></span>
+            <button class="mobile-menu-toggle" aria-label="Открыть меню" aria-controls="mobile-menu" aria-expanded="false">
+                <span class="burger"></span>
+                <span class="burger"></span>
+                <span class="burger"></span>
             </button>
         </div>
     </div>
 </header>
-
-<!-- Мобильное меню -->
-<div class="mobile-menu">
+<div class="mobile-menu" id="mobile-menu" tabindex="-1" aria-modal="true" role="dialog">
     <div class="mobile-menu-header">
-        <button class="mobile-menu-close"></button>
+        <button class="mobile-menu-close" aria-label="Закрыть меню">&times;</button>
     </div>
     <nav class="mobile-nav">
         <a href="/catalog" class="mobile-nav-link">Каталог</a>
@@ -111,11 +135,9 @@
         <button class="btn btn-full mobile-nav-button">Заказать звонок</button>
     </nav>
 </div>
-
 <main class="main-content">
     {% block content %}{% endblock %}
 </main>
-
 <footer class="footer">
     <div class="container">
         <div class="footer__grid">
@@ -135,20 +157,13 @@
                 <p>Сб-Вс: 10:00-18:00</p>
             </div>
         </div>
-
         <div class="footer-bottom">
             <p>&copy; 2025 CN-Auto. Все права защищены</p>
             <div class="social-links">
                 <a href="#" aria-label="Telegram">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
                         <g clip-path="url(#clip0_128_3289)">
-                            <path d="M19.4105 6.93076C19.3267 7.30883 19.2403 7.68653 19.1595 8.06498C18.5431 10.9485 17.9274 13.8322 17.3123 16.716C17.2665 16.9313 17.2248 17.1474 17.1691 17.3601C16.9613 18.1494 16.3844 18.1035 15.9368 17.7826C15.0153 17.1219 14.1055 16.4454 13.1907 15.7753C13.0547 15.6757 12.9145 15.581 12.7837 15.4746C12.7085 15.4141 12.6642 15.4217 12.5958 15.4863C12.0659 15.9974 11.5322 16.5036 11.0008 17.0129C10.8426 17.1632 10.6626 17.2575 10.4224 17.2485C10.4363 17.0418 10.4491 16.8423 10.4634 16.6427C10.5254 15.7689 10.5863 14.8948 10.6543 14.021C10.6635 13.9453 10.6987 13.8752 10.7539 13.8225C12.7432 12.0311 14.734 10.2425 16.726 8.45659C16.7505 8.43441 16.7832 8.41675 16.7974 8.38969C16.8294 8.32806 16.8519 8.26154 16.8786 8.1969C16.8099 8.17923 16.7351 8.13451 16.6742 8.14879C16.561 8.17601 16.453 8.22145 16.3544 8.28333C13.8755 9.83096 11.3981 11.3811 8.92215 12.9337C8.88313 12.961 8.83802 12.9782 8.79078 12.984C8.74354 12.9897 8.69561 12.9838 8.65118 12.9668C7.61542 12.641 6.57778 12.3223 5.54315 11.9946C5.40511 11.9513 5.27483 11.8863 5.15718 11.8021C4.96927 11.665 4.9441 11.4673 5.11284 11.3091C5.25397 11.1734 5.4188 11.0649 5.59915 10.9889C6.6304 10.5811 7.66616 10.1887 8.70305 9.79225C11.9366 8.5543 15.1703 7.3171 18.4041 6.08066C18.5082 6.03891 18.6178 6.01258 18.7295 6.00248C19.0678 5.9773 19.2914 6.14417 19.3801 6.47376C19.3887 6.50495 19.4004 6.5354 19.4105 6.56621V6.93076Z" fill="#ffffff"/>
-                        </g>
-                        <defs>
-                            <clipPath id="clip0_128_3289">
-                                <rect width="24" height="24" fill="white"/>
-                            </clipPath>
-                        </defs>
+                            <path d="M19.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.1-.472-.148-.672.149-.198.297-.767.967-.939 1.164-.173.198-.346.223-.643.074-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.346.446-.519.149-.173.198-.297.297-.495.099-.198.05-.371-.025-.519-.075-.148-.672-1.611-.922-2.204-.242-.575-.487-.497-.672-.506-.173-.007-.371-.009-.57-.009-.198 0-.519.074-.791.371-.273.297-1.041 1.016-1.041 2.479 0 1.462 1.065 2.881 1.213 3.08.149.198 2.095 3.2 5.076 4.487.709.306 1.262.489 1.693.626.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.346M12.006 2.0C6.477 2 1.953 4.229 1.953 8.076c0 3.497 2.746 6.091 6.034 6.091.327 0 .646-.02.962-.059v2.18c-.287.001-.576.01-.858.01-1.742 0-2.379-1.324-3.37-2.293l-1.415 1.547c1.98 2.355 3.648 2.296 5.29 2.296 2.193 0 3.533-1.159 3.533-2.994v-5.243H16.63V8.424H14V6h-1.994V8.424H11.28v2.38h1.722v5.482c0 1.04.285 1.426 1.095 1.426.317 0 .706-.034 1.075-.104v-2.158c.273-.07 1.622-.66 1.853-.733.23-.073.395-.112.568-.115.23 0 .44.017.642.023v2.154c-.199.012-.796.099-1.333.21-.408.094-.755.205-1.087.205-1.635 0-2.982-1.334-2.982-2.968v-5.243H12.006z"/>
                     </svg>
                 </a>
                 <a href="#" aria-label="VK">
@@ -165,7 +180,6 @@
         </div>
     </div>
 </footer>
-
 <!-- Скрипты -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script src="{{ url_for('static', filename='scripts.js') }}" defer></script>
@@ -227,15 +241,36 @@
 </script>
 <script>
 // Mobile menu toggle
-document.addEventListener('DOMContentLoaded', function() {
-    const toggle = document.querySelector('.mobile-menu-toggle');
-    const menu = document.querySelector('.mobile-menu');
-    const closeBtn = document.querySelector('.mobile-menu-close');
-    if(toggle && menu && closeBtn) {
-        toggle.addEventListener('click', () => menu.classList.add('open'));
-        closeBtn.addEventListener('click', () => menu.classList.remove('open'));
-    }
-});
+const toggle = document.querySelector('.mobile-menu-toggle');
+const menu = document.querySelector('.mobile-menu');
+const closeBtn = document.querySelector('.mobile-menu-close');
+if(toggle && menu && closeBtn) {
+    toggle.addEventListener('click', () => {
+        menu.classList.add('open');
+        toggle.setAttribute('aria-expanded', 'true');
+        menu.focus();
+    });
+    closeBtn.addEventListener('click', () => {
+        menu.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.focus();
+    });
+    // Close menu on ESC
+    menu.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            menu.classList.remove('open');
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.focus();
+        }
+    });
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (menu.classList.contains('open') && !menu.contains(e.target) && !toggle.contains(e.target)) {
+            menu.classList.remove('open');
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+    });
+}
 </script>
 {% endblock %}
 </body>

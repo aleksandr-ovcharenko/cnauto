@@ -14,6 +14,7 @@ from flask_wtf import FlaskForm
 from sqlalchemy.orm import joinedload, scoped_session, sessionmaker
 from wtforms import StringField, PasswordField, BooleanField
 from wtforms.validators import InputRequired
+from flask_cors import CORS
 
 # Change absolute imports to relative imports
 from .admin import init_admin
@@ -52,6 +53,8 @@ logger.info(f"📦 DB URI: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
 # Init extensions
 db.init_app(app)
 
+# Add CORS support
+CORS(app)  # Allow cross-origin requests, can be configured further if needed
 
 # Add a Flask handler to log all requests - with reduced verbosity
 @app.before_request
@@ -497,6 +500,16 @@ def api_docs():
 
 api = Blueprint('api', __name__)
 
+def get_cars():
+    cars = Car.query.all()
+    return jsonify([{
+        'id': car.id,
+        'model': car.model,
+        'brand': car.brand.name if car.brand else None,
+        'price': car.price
+    } for car in cars])  # Simple serialization; expand as needed
+
+api.add_url_rule('/cars', 'get_cars', view_func=get_cars, methods=['GET'])
 
 @api.route('/import_car', methods=['POST'])
 def import_car():

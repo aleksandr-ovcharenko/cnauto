@@ -1,4 +1,4 @@
-fetch("https://cn-auto-backend.onrender.com/api/cars")
+fetch("http://localhost:5000/api/cars")
     .then(response => response.json())
     .then(data => console.log(data));
 
@@ -59,7 +59,7 @@ new Swiper('.swiper-catalog', {
     }
 });
 
-fetch("https://cn-auto-backend.onrender.com/api/cars")
+fetch("http://localhost:5000/api/cars")
     .then(res => res.json())
     .then(data => {
         console.log(data);
