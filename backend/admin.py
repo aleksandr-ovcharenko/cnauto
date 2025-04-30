@@ -24,7 +24,7 @@ from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
 
 # Update imports to use relative imports consistently
 from .models import Role, User, CarImage, BrandSynonym, Currency, CarType
-from .models import db, Car, Category, Brand, Country, EngineType, DriveType, TransmissionType
+from .models import db, Car, Category, Brand, Country
 
 # Папка для изображений автомобилей
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'images', 'cars')
@@ -147,7 +147,10 @@ class CarImageAdmin(SecureModelView):
     def on_model_change(self, form, model, is_created):
         file = form.file_upload.data
         if file:
-            from utils.cloudinary_upload import upload_image
+            try:
+                from backend.utils.cloudinary_upload import upload_image
+            except ImportError:
+                from utils.cloudinary_upload import upload_image
             uploaded_url = upload_image(file, car_id=model.car_id, car_name=model.car.model)
             if uploaded_url:
                 model.url = uploaded_url
@@ -158,7 +161,8 @@ class CarAdmin(SecureModelView):
     list_template = 'admin/model/list.html'
 
     column_list = ['image_preview', 'brand_preview', 'model', 'modification', 'trim', 'price', 'currency', 'car_type']
-    column_labels = {'image_preview': 'Фото', 'brand_preview': 'Бренд', 'currency': 'Валюта', 'modification': 'Модификация', 'trim': 'Комплектация'}
+    column_labels = {'image_preview': 'Фото', 'brand_preview': 'Бренд', 'currency': 'Валюта',
+                     'modification': 'Модификация', 'trim': 'Комплектация'}
 
     column_searchable_list = ['model', 'modification', 'trim']
     column_filters = ['price', 'car_type', 'in_stock', 'modification', 'trim']
@@ -192,7 +196,10 @@ class CarAdmin(SecureModelView):
         return '—'
 
     def _price_formatter(view, context, model, name):
-        from app import format_currency_filter
+        try:
+            from backend import format_currency_filter
+        except ImportError:
+            from app import format_currency_filter
 
         # Use the same format_currency_filter we created for the templates
         # This ensures consistent formatting across admin and frontend
@@ -219,7 +226,10 @@ class CarAdmin(SecureModelView):
     def on_model_change(self, form, model, is_created):
         logger = logging.getLogger(__name__)
         logger.info(f"🧾 Обработка формы: {model.brand.name} {model.model} (ID: {model.id})")
-        from utils.cloudinary_upload import upload_image
+        try:
+            from backend.utils.cloudinary_upload import upload_image
+        except ImportError:
+            from utils.cloudinary_upload import upload_image
 
         # Block car creation without brand and model
         if is_created:
@@ -373,8 +383,14 @@ class CarAdmin(SecureModelView):
     def generate_from_gallery(self, id):
         """Generate a new image from a gallery image using AI."""
         import logging
-        from utils.file_logger import get_module_logger
-        from models import ImageTask
+        try:
+            from backend.utils.file_logger import get_module_logger
+        except ImportError:
+            from utils.file_logger import get_module_logger
+        try:
+            from backend.models import ImageTask
+        except ImportError:
+            from models import ImageTask
         logger = get_module_logger(__name__)
 
         # Get the gallery image by ID
@@ -396,17 +412,32 @@ class CarAdmin(SecureModelView):
 
         try:
             # Get the prompt from the image or car information
-            prompt_hint = f"{car.brand.name if car.brand else ''} {car.model}"
-            logger.info(f"🔤 Using prompt hint: '{prompt_hint}'")
+            prompt_hint = (
+                "Professional car studio shot, ultra-clean pure white background, only the car visible with ample empty space around it. "
+                f"Car: {car.model} {car.brand.name if car.brand else ''}, perfectly isolated with at least 2 meters of empty space on all sides, no other objects or cars visible. "
+                "License plate must clearly and legibly display 'cncars.ru' in proper format. "
+                "Car positioned diagonally in frame: front facing 30 degrees left, rear facing 30 degrees right, with slight perspective as if viewed from eye level. "
+                "The car should be positioned not too close - about 5-7 meters from the virtual camera, showing full body with space around. "
+                "Crisp, ultra-sharp details, 8K quality render, professional three-point studio lighting with soft shadows. "
+                "Absolutely no background elements, no reflections of surroundings, no stray shadows - only clean, pure white backdrop. "
+                "The car should appear as a flawless 3D model with perfect proportions, slightly matte surface to avoid glare. "
+                "Add subtle ambient occlusion shadows under the car for natural grounding effect."
+            )
+            logger.info(f"🔤 Using detailed prompt: '{prompt_hint}'")
 
             # Call the image generation function
-            from utils.generator_photon import generate_with_photon
+            try:
+                from backend.utils.generator_photon import generate_with_photon
+            except ImportError:
+                from utils.generator_photon import generate_with_photon
             logger.info(f"🚀 Calling Photon generator with image URL: {image.url}")
 
             # Image lookup and generation process
             new_image_url = generate_with_photon(
+                prompt=prompt_hint,
                 image_url=image.url,
-                prompt_hint=prompt_hint,
+                car_model=car.model,
+                car_brand=car.brand.name if car.brand else "Unknown",
                 car_id=car.id
             )
 
@@ -422,6 +453,10 @@ class CarAdmin(SecureModelView):
                 )
                 db.session.add(new_image)
                 db.session.flush()  # Get the new ID without committing
+
+                # Set as main image
+                car.image_url = new_image_url
+                logger.info(f"✅ Set new image as the main image for car ID={car.id}")
 
                 # Update the task with the result
                 image_task.status = 'completed'
@@ -460,7 +495,10 @@ class CarAdmin(SecureModelView):
     @expose('/edit_gallery/<int:id>', methods=['POST'])
     def edit_gallery(self, id):
         import logging
-        from utils.file_logger import get_module_logger
+        try:
+            from backend.utils.file_logger import get_module_logger
+        except ImportError:
+            from utils.file_logger import get_module_logger
         logger = get_module_logger(__name__)
         car = Car.query.get_or_404(id)
         ids_in_order = request.form.get('order', '').split(',')
@@ -505,8 +543,10 @@ class CarAdmin(SecureModelView):
     @expose('/upload_gallery/<int:id>', methods=['POST'])
     def upload_gallery(self, id):
         car = Car.query.get_or_404(id)
-        from utils.cloudinary_upload import upload_image
-
+        try:
+            from backend.utils.cloudinary_upload import upload_image
+        except ImportError:
+            from utils.cloudinary_upload import upload_image
         files = request.files.getlist('new_images')
         for i, file in enumerate(files):
             if file and file.filename:

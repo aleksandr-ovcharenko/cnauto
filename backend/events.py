@@ -1,14 +1,27 @@
 import os
 import sys
 
+# Add parent directory to path for consistent imports
+# This ensures the module can be run directly or imported
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from sqlalchemy import event
 
-# Reset the path helper for relative imports
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Use try-except for imports to support both module and direct script execution
+try:
+    from backend.models import Car, CarImage
+except ImportError:
+    from models import Car, CarImage
 
-from backend.models import Car, CarImage
-from utils.cloudinary_upload import delete_image
-from utils.file_logger import get_module_logger
+try:
+    from backend.utils.cloudinary_upload import delete_image
+except ImportError:
+    from utils.cloudinary_upload import delete_image
+
+try:
+    from backend.utils.file_logger import get_module_logger
+except ImportError:
+    from utils.file_logger import get_module_logger
 
 # Use the centralized logger
 logger = get_module_logger(__name__)
@@ -51,4 +64,4 @@ def setup_deletion_events():
         # Delete the entire car folder to catch any missed images
         delete_image(car_id=target.id, car_name=target.model)
 
-    logger.info("✅ Cloudinary deletion event listeners configured")
+    logger.info(" Cloudinary deletion event listeners configured")

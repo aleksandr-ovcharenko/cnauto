@@ -2,7 +2,14 @@ from datetime import datetime
 from enum import Enum
 
 from flask_login import UserMixin
-from .db import db
+
+# Support both relative imports (when running as part of package)
+# and absolute imports (when running scripts directly)
+try:
+    from .db import db  # Try relative import first
+except ImportError:
+    from backend.db import db  # Fall back to absolute import
+
 
 # Engine-related enums
 class EngineType(Enum):
@@ -190,17 +197,17 @@ class BrandSynonym(db.Model):
 class BrandTrim(db.Model):
     """Model to store brand-specific trim levels"""
     __tablename__ = 'brand_trims'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)  # "SE", "Sport", "FLAGSHIP", etc.
     brand_id = db.Column(db.Integer, db.ForeignKey('brands.id'), nullable=False)
     source = db.Column(db.String(50))  # "user", "api", "auto_detected", etc.
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     __table_args__ = (
         db.UniqueConstraint('name', 'brand_id', name='unique_trim_per_brand'),
     )
-    
+
     def __str__(self):
         return f"{self.name}"
 
@@ -272,26 +279,28 @@ class Currency(db.Model):
 class CarEngine(db.Model):
     """Model to store engine information for cars"""
     __tablename__ = 'car_engines'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     car_id = db.Column(db.Integer, db.ForeignKey('cars.id'), nullable=False)
-    
+
     # Basic engine data
-    displacement = db.Column(db.String(20), nullable=True)  # Объем двигателя или батареи (например, "1.6T" или "77.4 kWh")
-    power_hp = db.Column(db.Integer, nullable=True)        # Мощность в лошадиных силах
-    type = db.Column(db.String(20), nullable=True)         # Тип двигателя (gasoline, diesel, hybrid, electric)
-    drive = db.Column(db.String(20), nullable=True)        # Тип привода (front_wheel_drive, rear_wheel_drive, all_wheel_drive, etc.)
-    transmission = db.Column(db.String(20), nullable=True) # Коробка передач (manual, automatic, cvt, dsg, etc.)
-    
+    displacement = db.Column(db.String(20),
+                             nullable=True)  # Объем двигателя или батареи (например, "1.6T" или "77.4 kWh")
+    power_hp = db.Column(db.Integer, nullable=True)  # Мощность в лошадиных силах
+    type = db.Column(db.String(20), nullable=True)  # Тип двигателя (gasoline, diesel, hybrid, electric)
+    drive = db.Column(db.String(20),
+                      nullable=True)  # Тип привода (front_wheel_drive, rear_wheel_drive, all_wheel_drive, etc.)
+    transmission = db.Column(db.String(20), nullable=True)  # Коробка передач (manual, automatic, cvt, dsg, etc.)
+
     # Original text and description
     engine_text = db.Column(db.String(100), nullable=True)  # Original parsed text
     description = db.Column(db.String(255), nullable=True)  # Generated or imported description
-    
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     # Relationship
     car = db.relationship('Car', backref=db.backref('engine_details', uselist=False))
-    
+
     def generate_description(self):
         """Generate a human-readable engine description"""
         parts = []
@@ -302,7 +311,7 @@ class CarEngine(db.Model):
         if self.drive:
             # Map drive type to Russian text
             drive_map = {
-                "front_wheel_drive": "передний привод", 
+                "front_wheel_drive": "передний привод",
                 "rear_wheel_drive": "задний привод",
                 "all_wheel_drive": "полный привод",
                 "quattro": "quattro",
@@ -313,9 +322,9 @@ class CarEngine(db.Model):
             parts.append(drive_text)
         if self.transmission:
             parts.append(f"КПП: {self.transmission}")
-        
+
         return ", ".join(parts) if parts else (self.description or "-")
-    
+
     def __str__(self):
         return self.generate_description()
 

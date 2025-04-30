@@ -1,23 +1,57 @@
 import os
-# Use relative imports
 import sys
 import tempfile
 import threading
+
+# Add parent directory to path for consistent imports
+# This ensures the module can be run directly or imported
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 import requests
 from flask import Blueprint, jsonify, current_app, request, url_for
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from backend.models import db, Car, Brand, CarImage, BrandSynonym, Currency, CarType
-from utils.cloudinary_upload import upload_image
-from utils.generate_comfyui import generate_with_comfyui
-from utils.generator_photon import generate_with_photon
-from utils.telegram_file import get_telegram_file_url
-from utils.file_logger import get_module_logger
-from utils.image_queue import enqueue_image_task
-from utils.car_parser import parse_car_info, save_new_trims_to_db
+# Use try-except pattern for imports to support both package and direct imports
+try:
+    from backend.models import db, Car, Brand, CarImage, BrandSynonym, Currency, CarType
+except ImportError:
+    from models import db, Car, Brand, CarImage, BrandSynonym, Currency, CarType
+
+try:
+    from backend.utils.cloudinary_upload import upload_image
+except ImportError:
+    from utils.cloudinary_upload import upload_image
+
+try:
+    from backend.utils.generate_comfyui import generate_with_comfyui
+except ImportError:
+    from utils.generate_comfyui import generate_with_comfyui
+
+try:
+    from backend.utils.generator_photon import generate_with_photon
+except ImportError:
+    from utils.generator_photon import generate_with_photon
+
+try:
+    from backend.utils.telegram_file import get_telegram_file_url
+except ImportError:
+    from utils.telegram_file import get_telegram_file_url
+
+try:
+    from backend.utils.file_logger import get_module_logger
+except ImportError:
+    from utils.file_logger import get_module_logger
+
+try:
+    from backend.utils.image_queue import enqueue_image_task
+except ImportError:
+    from utils.image_queue import enqueue_image_task
+
+try:
+    from backend.utils.car_parser import parse_car_info, save_new_trims_to_db
+except ImportError:
+    from utils.car_parser import parse_car_info, save_new_trims_to_db
 
 # Configure logging using the centralized logger
 logger = get_module_logger(__name__)
@@ -29,13 +63,14 @@ telegram_import = Blueprint('telegram_import', __name__)
 _app = None
 _db_session = None
 
+
 def get_db_session():
     """Get a direct SQLAlchemy session without relying on Flask-SQLAlchemy"""
     global _db_session, _app
-    
+
     if _db_session is not None:
         return _db_session
-        
+
     try:
         # Try to get the database URL from the app config
         if _app is not None:
@@ -46,11 +81,11 @@ def get_db_session():
             except RuntimeError:
                 # Use environment variable as fallback for Railway
                 db_uri = os.getenv('DATABASE_URL')
-                
+
         if not db_uri:
             logger.error("❌ Database URI not found in app config or environment")
             raise RuntimeError("Database URI not available")
-            
+
         # Create direct SQLAlchemy engine and session
         engine = create_engine(db_uri)
         session_factory = sessionmaker(bind=engine)
@@ -59,6 +94,7 @@ def get_db_session():
     except Exception as e:
         logger.error(f"❌ Error creating database session: {e}")
         raise
+
 
 def get_app_context():
     """Get the app context safely, either from current_app or stored _app reference"""
@@ -75,12 +111,14 @@ def get_app_context():
             logger.error("❌ No Flask app context available and no stored app reference")
             raise RuntimeError("No Flask app context available")
 
+
 @telegram_import.record
 def record_app(state):
     """Store a reference to the Flask app when the blueprint is registered"""
     global _app
     _app = state.app
     logger.info("✅ Stored Flask app reference for background processing")
+
 
 # Helper to send a Telegram message
 def send_telegram_message(chat_id, text, bot_token=None):
@@ -104,6 +142,7 @@ def send_telegram_message(chat_id, text, bot_token=None):
         logger.error(f"❌ Exception in send_telegram_message: {e}")
         return False
 
+
 # Extracted car import logic for async processing
 def process_car_import_task(data, chat_id):
     session = None
@@ -117,7 +156,8 @@ def process_car_import_task(data, chat_id):
             data["model"] = car_info["model"]
             data["modification"] = car_info["modification"]
             data["trim"] = car_info["trim"]
-            logger.info(f"✅ Parsed car data: Brand={car_info['brand']}, Model={car_info['model']}, Modification={car_info['modification']}, Trim={car_info['trim']}")
+            logger.info(
+                f"✅ Parsed car data: Brand={car_info['brand']}, Model={car_info['model']}, Modification={car_info['modification']}, Trim={car_info['trim']}")
         model = data.get("model", "").strip()
         modification = data.get("modification", "").strip()
         trim = data.get("trim", "").strip()
@@ -210,7 +250,7 @@ def process_car_import_task(data, chat_id):
                     }
                     task_id = enqueue_image_task(
                         car_id=car.id,
-                        generator_func=generate_image,  
+                        generator_func=generate_image,
                         params=params,
                         max_retries=3
                     )
@@ -235,7 +275,7 @@ def process_car_import_task(data, chat_id):
             image = CarImage(car_id=car.id, url=url, position=i)
             session.add(image)
         session.commit()
-        
+
         # Compose detailed message
         details = [
             "✅ Автомобиль успешно добавлен!",
@@ -261,7 +301,8 @@ def process_car_import_task(data, chat_id):
         # Improved gallery output
         max_gallery_preview = 2
         if real_urls:
-            details.append(f"Галерея: {len(real_urls)} фото" + (f" (первые {max_gallery_preview}):" if len(real_urls) > max_gallery_preview else ":"))
+            details.append(f"Галерея: {len(real_urls)} фото" + (
+                f" (первые {max_gallery_preview}):" if len(real_urls) > max_gallery_preview else ":"))
             for url in real_urls[:max_gallery_preview]:
                 details.append(url)
             if len(real_urls) > max_gallery_preview:
@@ -274,7 +315,8 @@ def process_car_import_task(data, chat_id):
             new_trims = save_new_trims_to_db(db_session=session) or []
         if new_trims:
             details.append("")
-            details.append("Новые комплектации/модификации, добавленные в базу: " + ", ".join(str(t) for t in new_trims))
+            details.append(
+                "Новые комплектации/модификации, добавленные в базу: " + ", ".join(str(t) for t in new_trims))
         # Add links if possible
         car_url = None
         admin_car_edit_url = None
@@ -299,6 +341,7 @@ def process_car_import_task(data, chat_id):
         if session:
             session.close()
 
+
 @telegram_import.route('/api/import_car', methods=['POST'])
 def import_car():
     logger.info("🚗 Started importing car via API [ASYNC]")
@@ -315,34 +358,6 @@ def import_car():
     threading.Thread(target=process_car_import_task, args=(data, chat_id), daemon=True).start()
     return jsonify({"status": "received", "message": "Работаем над вашей заявкой..."})
 
-def async_generate_image(app, prompt, image_url, car_model, brand_name, car_id):
-    try:
-        session = get_db_session()
-        try:
-            brand = session.query(Brand).filter_by(name=brand_name).first()
-            ai_image = generate_image(
-                mode="photon",
-                prompt=prompt,
-                image_url=image_url,
-                car_model=car_model,
-                car_brand=brand,
-                car_id=car_id
-            )
-            if ai_image:
-                car = session.query(Car).get(car_id)
-                if car:
-                    car.image_url = ai_image
-                    session.commit()
-                    logger.info(f"✅ Successfully updated car with AI image")
-                else:
-                    logger.warning(f"⚠️ Car {car_id} not found when updating AI image")
-            else:
-                logger.warning(f"⚠️ No AI image generated for car {car_id}")
-        except Exception as e:
-            logger.error(f"❌ Error generating AI image for car {car_id}: {e}")
-    finally:
-        if 'session' in locals():
-            session.close()
 
 def download_and_reupload(url: str, car_id=None, car_name=None, is_main_img=False, image_index=None) -> str:
     try:
@@ -369,6 +384,7 @@ def download_and_reupload(url: str, car_id=None, car_name=None, is_main_img=Fals
     except Exception as e:
         logger.error(f"❌ Ошибка при обработке изображения {image_index}: {e}")
         return None
+
 
 def generate_image(mode: str = None, prompt: str = "", image_url: str = "", car_model: str = "", car_brand=None,
                    car_id=None) -> str:

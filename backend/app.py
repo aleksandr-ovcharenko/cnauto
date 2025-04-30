@@ -7,6 +7,7 @@ from flask import Blueprint
 from flask import Flask
 from flask import Response
 from flask import render_template, redirect, url_for, flash, request, jsonify
+from flask_cors import CORS
 from flask_login import LoginManager
 from flask_login import login_user, logout_user, login_required
 from flask_migrate import Migrate
@@ -14,7 +15,6 @@ from flask_wtf import FlaskForm
 from sqlalchemy.orm import joinedload, scoped_session, sessionmaker
 from wtforms import StringField, PasswordField, BooleanField
 from wtforms.validators import InputRequired
-from flask_cors import CORS
 
 # Change absolute imports to relative imports
 from .admin import init_admin
@@ -55,6 +55,7 @@ db.init_app(app)
 
 # Add CORS support
 CORS(app)  # Allow cross-origin requests, can be configured further if needed
+
 
 # Add a Flask handler to log all requests - with reduced verbosity
 @app.before_request
@@ -157,6 +158,7 @@ def auto_migrate_and_seed(app, db, migrations_dir):
 
 # Call this BEFORE app.run() or exposing the WSGI app
 import os
+
 # switching off migration process for now
 # if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug:
 #     auto_migrate_and_seed(app, db, migrations_dir)
@@ -290,62 +292,13 @@ def thumb_url_filter(url, width=400):
 
 
 @app.template_filter('format_currency')
-def format_currency_filter(price, currency_obj=None):
-    """Format a price based on currency object or with defaults"""
-    if not price:
-        return "-"
-
-    # Currency-specific locale mapping
-    currency_locale_map = {
-        'RUB': 'ru-RU',
-        'USD': 'en-US',
-        'EUR': 'de-DE',
-        'GBP': 'en-GB',
-        'CNY': 'zh-CN',
-        'JPY': 'ja-JP'
-    }
-
-    if currency_obj:
-        currency = currency_obj.code if currency_obj and currency_obj.code else 'RUB'
-        # Use currency-specific locale if no explicit locale is set
-        if currency_obj and currency_obj.locale:
-            locale = currency_obj.locale.replace('_', '-')
-        else:
-            # Try to get locale from the currency code
-            locale = currency_locale_map.get(currency, 'ru-RU')
-        symbol = currency_obj.symbol if currency_obj and currency_obj.symbol else '₽'
-    else:
-        # Default to Russian locale and currency
-        locale = 'ru-RU'
-        currency = 'RUB'
-        symbol = '₽'
-
-    # Special case for Russian Rubles
-    if currency == 'RUB':
-        # Format with space as thousands separator and no decimal places
-        try:
-            # Try to convert to integer first to remove decimal part for whole numbers
-            clean_price = float(price)
-            formatted_price = f"{int(clean_price):,}".replace(',', ' ')
-            return f"{formatted_price} {symbol}"
-        except Exception as e:
-            logger.error(f"Error formatting RUB price: {e}")
-            # Fallback if any error occurs
-            return f"{price} {symbol}"
-
-    # Format with Babel for other currencies
-    try:
-        from babel.numbers import format_currency
-        return format_currency(price, currency, locale=locale)
-    except Exception as e:
-        # Fallback to simpler formatting
-        try:
-            import locale as loc
-            loc.setlocale(loc.LC_ALL, locale.replace('-', '_'))
-            return loc.currency(price, symbol=symbol, grouping=True)
-        except:
-            # Last resort
-            return f"{price:,.2f} {symbol}"
+def format_currency_filter_wrapper(price, currency_obj=None):
+    """
+    Wrapper for the format_currency_filter function imported from the backend package.
+    This wrapper allows the function to be used as a template filter.
+    """
+    from backend import format_currency_filter
+    return format_currency_filter(price, currency_obj)
 
 
 @app.route("/catalog")
@@ -500,6 +453,7 @@ def api_docs():
 
 api = Blueprint('api', __name__)
 
+
 def get_cars():
     cars = Car.query.all()
     return jsonify([{
@@ -509,7 +463,9 @@ def get_cars():
         'price': car.price
     } for car in cars])  # Simple serialization; expand as needed
 
+
 api.add_url_rule('/cars', 'get_cars', view_func=get_cars, methods=['GET'])
+
 
 @api.route('/import_car', methods=['POST'])
 def import_car():

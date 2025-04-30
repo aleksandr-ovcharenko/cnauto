@@ -4,8 +4,9 @@ import platform
 import sys
 from datetime import datetime
 
-# Reset the path helper for relative imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add parent directory to path for consistent imports
+# This ensures the module can be run directly or imported
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 
 def setup_file_logger():
@@ -78,9 +79,11 @@ def setup_file_logger():
     for name, logger_obj in logging.root.manager.loggerDict.items():
         if isinstance(logger_obj, logging.Logger):
             if hasattr(logger_obj, 'propagate') and not logger_obj.propagate:
-                root_logger.warning(f"⚠️ Logger '{name}' has propagate=False: logs may not reach the root logger and file!")
+                root_logger.warning(
+                    f"⚠️ Logger '{name}' has propagate=False: logs may not reach the root logger and file!")
             if hasattr(logger_obj, 'handlers') and logger_obj.handlers:
-                root_logger.warning(f"⚠️ Logger '{name}' has its own handlers: {logger_obj.handlers}. This may cause logs to bypass the root logger!")
+                root_logger.warning(
+                    f"⚠️ Logger '{name}' has its own handlers: {logger_obj.handlers}. This may cause logs to bypass the root logger!")
 
     # Testing flag to verify logging configuration
     os.environ["LOGGING_INITIALIZED"] = "1"
