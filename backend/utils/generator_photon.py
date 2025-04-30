@@ -47,7 +47,20 @@ def check_replicate_api_token():
         return False
 
 
-def generate_with_photon(prompt: str, image_url: str, car_model: str, car_brand, car_id=None) -> str:
+def generate_with_photon(prompt: str, image_url: str, car_model: str, car_brand: str, car_id=None) -> str:
+    """
+    Generate an image using the Replicate Photon API
+    
+    Args:
+        prompt: Text prompt for image generation
+        image_url: URL of the reference image 
+        car_model: Car model name
+        car_brand: Brand name (as string, not a Brand object)
+        car_id: Optional car ID for reference
+        
+    Returns:
+        URL of the generated image uploaded to Cloudinary, or None if failed
+    """
     try:
         # Check if the API token is set
         if not os.getenv("REPLICATE_API_TOKEN"):
