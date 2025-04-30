@@ -236,7 +236,7 @@ def process_car_import_task(app, data, chat_id):
             try:
                 first_file_id = image_file_ids[0]
                 url = get_telegram_file_url(first_file_id)
-                main_image_url = download_and_reupload(url, car_id=car.id, car_name=car.model, is_main_img=True, app=app)
+                main_image_url = download_and_reupload(url, car_id=car.id, car_name=car.model, car_brand=car.brand.name, is_main_img=True, app=app)
                 if main_image_url:
                     car.image_url = main_image_url
                     session.commit()
@@ -263,6 +263,7 @@ def process_car_import_task(app, data, chat_id):
                                 url,
                                 car_id=car.id,
                                 car_name=car.model,
+                                car_brand=car.brand.name,
                                 is_main_img=False,
                                 image_index=i,
                                 app=app
@@ -366,7 +367,7 @@ def import_car():
     threading.Thread(target=partial(process_car_import_task, app), args=(data, chat_id), daemon=True).start()
     return jsonify({"status": "received", "message": "Работаем над вашей заявкой..."})
 
-def download_and_reupload(url: str, car_id=None, car_name=None, is_main_img=False, image_index=None, app=None) -> str:
+def download_and_reupload(url: str, car_id=None, car_name=None, car_brand=None, is_main_img=False, image_index=None, app=None) -> str:
     try:
         logger.info(f"⬇️ Скачиваем изображение {image_index} с {url}")
         response = requests.get(url)
@@ -384,6 +385,7 @@ def download_and_reupload(url: str, car_id=None, car_name=None, is_main_img=Fals
                 tmp_path,
                 car_id=car_id,
                 car_name=car_name,
+                car_brand=car_brand,
                 is_main=is_main_img,
                 index=image_index
             )

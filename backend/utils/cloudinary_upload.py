@@ -9,7 +9,7 @@ from utils.file_logger import get_module_logger
 logger = get_module_logger(__name__)
 
 
-def upload_image(file, car_id=None, car_name=None, is_main=False, index=None):
+def upload_image(file, car_id=None, car_name=None, car_brand=None, is_main=False, index=None):
     try:
         # Get base folder from app config or use default
         try:
@@ -19,9 +19,12 @@ def upload_image(file, car_id=None, car_name=None, is_main=False, index=None):
             logger.warning("⚠️ No Flask application context - using default Cloudinary folder")
             base_folder = "cn-auto/misc"
 
-        base_name = f"{car_name or 'car'}_{'main' if is_main else f'gallery_{index}'}".lower().replace(" ", "_")
-        # Путь: <окружение>/cars/<id>/
-        car_folder = f"{base_folder}/cars/{car_id or 'unknown'}-{car_name or 'unknown'}"
+        base_name = f"{car_name or 'car'}-{'main' if is_main else f'gallery_{index}'}".lower().replace(" ", "-")
+        # Путь: <окружение>/cars/<id>-<brand>-<model>/
+        folder_name = car_name or 'unknown'
+        if car_brand:
+            folder_name = f"{car_brand}-{folder_name}"
+        car_folder = f"{base_folder}/cars/{car_id or 'unknown'}-{folder_name}".replace(" ", "-")
         logger.info(f"📂 Загрузка в Cloudinary → Папка: {car_folder} | Файл: {base_name}")
 
         try:
@@ -44,7 +47,7 @@ def upload_image(file, car_id=None, car_name=None, is_main=False, index=None):
         return None
 
 
-def delete_image(url=None, public_id=None, folder=None, car_id=None, car_name=None):
+def delete_image(url=None, public_id=None, folder=None, car_id=None, car_name=None, car_brand=None):
     """
     Delete an image from Cloudinary
     
@@ -129,7 +132,10 @@ def delete_image(url=None, public_id=None, folder=None, car_id=None, car_name=No
                 logger.warning("⚠️ No Flask application context - using default Cloudinary folder")
                 base_folder = "cn-auto/misc"
 
-            car_folder = f"{base_folder}/cars/{car_id} - {car_name}"
+            folder_name = car_name or 'unknown'
+            if car_brand:
+                folder_name = f"{car_brand}-{folder_name}"
+            car_folder = f"{base_folder}/cars/{car_id or 'unknown'}-{folder_name}"
             logger.info(f"Deleting car folder from Cloudinary: {car_folder}")
 
             try:
