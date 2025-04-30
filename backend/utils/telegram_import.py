@@ -298,6 +298,18 @@ def process_car_import_task(data, chat_id):
         if main_image_url:
             details.append("Главное изображение:")
             details.append(main_image_url)
+        
+        # Initialize URL variables early
+        car_url = None
+        admin_car_edit_url = None
+        
+        # Try to generate URLs
+        try:
+            car_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}{url_for('car_page', car_id=car.id)}"
+            admin_car_edit_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}/admin/car/edit/?id={car.id}&url=/admin/car/"
+        except Exception:
+            pass
+            
         # Improved gallery output
         max_gallery_preview = 2
         if real_urls:
@@ -317,14 +329,7 @@ def process_car_import_task(data, chat_id):
             details.append("")
             details.append(
                 "Новые комплектации/модификации, добавленные в базу: " + ", ".join(str(t) for t in new_trims))
-        # Add links if possible
-        car_url = None
-        admin_car_edit_url = None
-        try:
-            car_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}{url_for('car_page', car_id=car.id)}"
-            admin_car_edit_url = f"http://{os.getenv('SERVER_NAME', 'localhost:5000')}/admin/car/edit/?id={car.id}&url=/admin/car/"
-        except Exception:
-            pass
+            
         # Place links at the end, clearly labeled
         if car_url:
             details.append("")
