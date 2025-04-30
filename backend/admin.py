@@ -418,9 +418,9 @@ class CarAdmin(SecureModelView):
             # Get the prompt from the image or car information
             prompt_hint = (
                 "Professional car studio shot, ultra-clean pure white background, only the car visible with ample empty space around it. "
-                f"Car: {car.model} {car.brand.name if car.brand else ''}, perfectly isolated with at least 2 meters of empty space on all sides, no other objects or cars visible. "
+                f"Car: {car.brand.name if car.brand else 'Unknown'} {car.model}, perfectly isolated with at least 2 meters of empty space on all sides, no other objects or cars visible. "
                 "License plate must clearly and legibly display 'cncars.ru' in proper format. "
-                "Car positioned diagonally in frame: front facing 30 degrees left, rear facing 30 degrees right, with slight perspective as if viewed from eye level. "
+                f"Car positioned diagonally in frame: front facing 30 degrees left, rear facing 30 degrees right, with slight perspective as if viewed from eye level. "
                 "The car should be positioned not too close - about 5-7 meters from the virtual camera, showing full body with space around. "
                 "Crisp, ultra-sharp details, 8K quality render, professional three-point studio lighting with soft shadows. "
                 "Absolutely no background elements, no reflections of surroundings, no stray shadows - only clean, pure white backdrop. "
@@ -482,12 +482,12 @@ class CarAdmin(SecureModelView):
                         db.session.commit()
                         logger.info(f"🔄 Forced update of car.image_url: {car.image_url}")
                         
-                    return redirect(url_for('admin.car_edit_view', id=car.id))
+                    return redirect(url_for('car.edit_view', id=car.id))
                 except Exception as db_error:
                     logger.error(f"❌ Database error saving gallery image: {str(db_error)}")
                     db.session.rollback()
                     flash(f"Сохранено, но произошла ошибка при сохранении изображения: {str(db_error)[:100]}", "error")
-                    return redirect(url_for('admin.car_edit_view', id=car.id))
+                    return redirect(url_for('car.edit_view', id=car.id))
             else:
                 # Log failure but the URL was generated successfully in Replicate
                 # This is likely a validation error in our code
@@ -496,8 +496,37 @@ class CarAdmin(SecureModelView):
                 # Check logs for generated URL to try to recover it
                 try:
                     import re
-                    with open("/home/aleks/dev/cnauto-site/backend/logs/app_20250430.log", "r") as f:
-                        log_content = f.read()
+                    import os
+                    from flask import current_app
+                    
+                    # Try several possible log file locations
+                    log_paths = [
+                        # Try app log path from config if available
+                        current_app.config.get('LOG_FILE_PATH'),
+                        # Try common deployment locations
+                        "/app/backend/logs/app.log",
+                        "/app/logs/app.log",
+                        # Try with date if available
+                        f"/app/backend/logs/app_{datetime.now().strftime('%Y%m%d')}.log",
+                        # Try development path as last resort
+                        "/home/aleks/dev/cnauto-site/backend/logs/app.log",
+                        f"/home/aleks/dev/cnauto-site/backend/logs/app_{datetime.now().strftime('%Y%m%d')}.log",
+                    ]
+                    
+                    # Filter out None values
+                    log_paths = [path for path in log_paths if path]
+                    
+                    log_content = ""
+                    for log_path in log_paths:
+                        if os.path.exists(log_path):
+                            logger.info(f"📁 Found log file at: {log_path}")
+                            with open(log_path, "r") as f:
+                                log_content = f.read()
+                                break
+                    
+                    if not log_content:
+                        logger.warning("⚠️ Could not find any log files to extract URLs from")
+                    else:
                         match = re.search(f"Downloading generated image from: (https?://.*?)\\n", log_content)
                         if match:
                             generator_output_url = match.group(1)
@@ -513,7 +542,7 @@ class CarAdmin(SecureModelView):
                             db.session.commit()
                             
                             flash("Изображение было сгенерировано, но произошла ошибка при загрузке. Мы сохранили ссылку для повторной попытки.", "warning")
-                            return redirect(url_for('admin.car_edit_view', id=car.id))
+                            return redirect(url_for('car.edit_view', id=car.id))
                 except Exception as log_error:
                     logger.error(f"❌ Failed to extract URL from logs: {str(log_error)}")
                 
@@ -525,7 +554,7 @@ class CarAdmin(SecureModelView):
                 logger.error(f"❌ Не удалось сгенерировать изображение для {car.model}. Проверьте логи для деталей.")
                 flash(f"Не удалось сгенерировать изображение для {car.model}. Проверьте логи для деталей.", "error")
                 logger.warning(f"⚠️ AI image generation failed for car {car.id} - no image returned")
-                return redirect(url_for('admin.car_edit_view', id=car.id))
+                return redirect(url_for('car.edit_view', id=car.id))
         except Exception as e:
             # Update the task with the error
             image_task.status = 'failed'
@@ -538,7 +567,7 @@ class CarAdmin(SecureModelView):
             logging.getLogger(__name__).error(f"❌ Ошибка при генерации изображения: {e}")
 
         logger.info(f"🔙 Redirecting user to car edit view for car ID={car.id}")
-        return redirect(url_for('.edit_view', id=car.id))
+        return redirect(url_for('car.edit_view', id=car.id))
 
     @expose('/edit_gallery/<int:id>', methods=['POST'])
     def edit_gallery(self, id):
@@ -586,7 +615,7 @@ class CarAdmin(SecureModelView):
         logger.info(f"✅ Галерея обновлена для car_id={id}, обработано {len(updated_ids)} изображений")
         flash("✅ Галерея обновлена", "success")
         logging.getLogger(__name__).info("✅ Галерея обновлена")
-        return redirect(url_for('.edit_view', id=car.id))
+        return redirect(url_for('car.edit_view', id=car.id))
 
     @expose('/upload_gallery/<int:id>', methods=['POST'])
     def upload_gallery(self, id):
@@ -606,7 +635,7 @@ class CarAdmin(SecureModelView):
         db.session.commit()
         flash("✅ Новые изображения загружены", "success")
         logging.getLogger(__name__).info("✅ Новые изображения загружены")
-        return redirect(url_for('.edit_view', id=car.id))
+        return redirect(url_for('car.edit_view', id=car.id))
 
     @expose('/car-image/delete/<int:id>', methods=['POST'])
     def delete_image(self, id):

@@ -221,9 +221,9 @@ def process_car_import_task(app, data, chat_id):
         session.flush()
         prompt_hint = (
             "Professional car studio shot, ultra-clean pure white background, only the car visible with ample empty space around it. "
-            f"Car: {car.model}-{car.brand.name}, perfectly isolated with at least 2 meters of empty space on all sides, no other objects or cars visible. "
+            f"Car: {car.brand.name if car.brand else 'Unknown'} {car.model}, perfectly isolated with at least 2 meters of empty space on all sides, no other objects or cars visible. "
             "License plate must clearly and legibly display 'cncars.ru' in proper format. "
-            "Car positioned diagonally in frame: front facing 30 degrees left, rear facing 30 degrees right, with slight perspective as if viewed from eye level. "
+            f"Car positioned diagonally in frame: front facing 30 degrees left, rear facing 30 degrees right, with slight perspective as if viewed from eye level. "
             "The car should be positioned not too close - about 5-7 meters from the virtual camera, showing full body with space around. "
             "Crisp, ultra-sharp details, 8K quality render, professional three-point studio lighting with soft shadows. "
             "Absolutely no background elements, no reflections of surroundings, no stray shadows - only clean, pure white backdrop. "
