@@ -89,6 +89,7 @@ def auto_migrate_and_seed(app, db, migrations_dir):
     from alembic.script import ScriptDirectory
     from alembic.config import Config
     from alembic import command
+    from sqlalchemy import inspect
 
     logger = logging.getLogger()
     with app.app_context():
@@ -114,6 +115,18 @@ def auto_migrate_and_seed(app, db, migrations_dir):
                 logger.info("✅ Database migrated to latest revision.")
             else:
                 logger.info("✅ Database schema is up to date, no migration needed.")
+            
+            # Additionally check for the image_tasks table specifically
+            inspector = inspect(db.engine)
+            if 'image_tasks' not in inspector.get_table_names():
+                logger.warning("⚠️ image_tasks table not found in database, creating it...")
+                try:
+                    from backend.models import ImageTask
+                    ImageTask.__table__.create(db.engine)
+                    logger.info("✅ Successfully created image_tasks table")
+                except Exception as e:
+                    logger.error(f"❌ Error creating image_tasks table: {e}")
+            
             connection.close()
         except Exception as e:
             logger.error(f"❌ Error checking/applying migrations: {e}")
@@ -160,8 +173,8 @@ def auto_migrate_and_seed(app, db, migrations_dir):
 import os
 
 # switching off migration process for now
-# if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug:
-#     auto_migrate_and_seed(app, db, migrations_dir)
+if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug:
+    auto_migrate_and_seed(app, db, migrations_dir)
 
 admin_app = init_admin(app)
 
