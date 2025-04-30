@@ -1,16 +1,18 @@
 import os
 import queue
-# Use relative imports
 import sys
-import os
 import threading
 import time
 from datetime import datetime
 from typing import Dict, Any, List
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from backend.models import db, Car, CarImage
-from utils.file_logger import get_module_logger
+try:
+    from backend.models import db, Car, CarImage
+except ImportError:
+    from models import db, Car, CarImage
+
+from backend.utils.file_logger import get_module_logger
 
 logger = get_module_logger(__name__)
 
@@ -29,6 +31,7 @@ generated_cache = {}
 generated_cache_lock = threading.Lock()
 CACHE_EXPIRY_SECONDS = 60 * 30  # Cache generated images for 30 minutes
 
+
 # Clean old entries from the cache periodically
 def clean_generated_cache():
     current_time = time.time()
@@ -37,10 +40,11 @@ def clean_generated_cache():
         for task_id, data in generated_cache.items():
             if current_time - data["timestamp"] > CACHE_EXPIRY_SECONDS:
                 to_remove.append(task_id)
-        
+
         for task_id in to_remove:
             del generated_cache[task_id]
             logger.debug(f"Removed expired cache entry for task {task_id}")
+
 
 def add_to_generated_cache(task_id, output_url):
     """Cache a successfully generated image for later upload attempts"""
@@ -51,6 +55,7 @@ def add_to_generated_cache(task_id, output_url):
         }
         logger.info(f"✅ Cached generated image URL for task {task_id}")
 
+
 def get_from_generated_cache(task_id):
     """Retrieve a cached generated image if available"""
     clean_generated_cache()  # Clean expired entries
@@ -58,6 +63,7 @@ def get_from_generated_cache(task_id):
         if task_id in generated_cache:
             return generated_cache[task_id]["output_url"]
     return None
+
 
 class ImageTask:
     """Represents an image generation task"""
@@ -150,7 +156,7 @@ def process_image_task(task: ImageTask, app) -> None:
     try:
         # Check if we already have a generated image for this task (to avoid redundant generation)
         cached_output_url = get_from_generated_cache(task.task_id)
-        
+
         # Run the generator function with app context
         with app.app_context():
             # Get car to verify it still exists
@@ -159,18 +165,18 @@ def process_image_task(task: ImageTask, app) -> None:
                 logger.warning(f"⚠️ Car {task.car_id} not found, abandoning task {task.task_id}")
                 update_task_status(task.task_id, 'failed', error='Car not found')
                 return
-                
+
             # If we have a cached generated image, skip generation and try upload directly
             result = None
             if cached_output_url:
                 logger.info(f"💾 Using cached generated image for task {task.task_id}")
-                
+
                 # Try to download and upload the cached image
                 try:
                     import tempfile
                     import requests
                     from utils.cloudinary_upload import upload_image
-                    
+
                     logger.info(f"⬇️ Downloading cached image from: {cached_output_url}")
                     with tempfile.NamedTemporaryFile(suffix=".jpg") as temp_jpg:
                         with tempfile.NamedTemporaryFile(suffix=".webp") as temp_webp:
@@ -178,7 +184,7 @@ def process_image_task(task: ImageTask, app) -> None:
                             response = requests.get(cached_output_url)
                             temp_jpg.write(response.content)
                             temp_jpg.flush()
-                            
+
                             # Convert to WebP using the same function as in generator_photon
                             try:
                                 from utils.generator_photon import convert_to_webp
@@ -187,7 +193,7 @@ def process_image_task(task: ImageTask, app) -> None:
                                 # Fallback if conversion function not available
                                 import shutil
                                 shutil.copy(temp_jpg.name, temp_webp.name)
-                            
+
                             # Upload to Cloudinary
                             result = upload_image(
                                 temp_webp.name,
@@ -200,16 +206,16 @@ def process_image_task(task: ImageTask, app) -> None:
                 except Exception as e:
                     logger.error(f"❌ Failed to process cached image: {str(e)}")
                     # We'll fall back to normal generation below if result is None
-            
+
             # If no cached image or cached processing failed, run normal generation
             if not result:
                 # Separate generation result from upload result
                 generator_output_url = None
-                
+
                 try:
                     # Run the generator function which should return the uploaded URL
                     result = task.generator_func(**task.params)
-                    
+
                     # If we got None back but no exception, it might be just a Cloudinary upload failure
                     if not result and 'generator_photon' in str(task.generator_func):
                         # Try to extract the output URL from the logs - this is a hacky fallback
@@ -225,20 +231,20 @@ def process_image_task(task: ImageTask, app) -> None:
                                     add_to_generated_cache(task.task_id, generator_output_url)
                 except Exception as e:
                     logger.error(f"❌ Generator function error: {str(e)}")
-                    
+
             if result:
                 # Update the car with the generated image
                 car.image_url = result
                 logger.info(f"🔄 Updating car {car.id} image_url to: {result}")
-                
+
                 try:
                     # Explicitly refresh the car object to avoid stale data
                     db.session.refresh(car)
-                    
+
                     # Set the image and verify the change
                     car.image_url = result
                     db.session.add(car)
-                    
+
                     # Also create a gallery image
                     gallery_image = CarImage(
                         car_id=task.car_id,
@@ -248,10 +254,10 @@ def process_image_task(task: ImageTask, app) -> None:
                         position=999  # High position to put it at the end
                     )
                     db.session.add(gallery_image)
-                    
+
                     # Commit changes
                     db.session.commit()
-                    
+
                     # Verify the car has the new image URL
                     db.session.refresh(car)
                     if car.image_url != result:
@@ -266,7 +272,7 @@ def process_image_task(task: ImageTask, app) -> None:
                         logger.info(f"🔨 Forced update of car.image_url using direct SQL")
                     else:
                         logger.info(f"✅ Verified car.image_url was updated to: {car.image_url}")
-                
+
                 except Exception as e:
                     logger.error(f"❌ Database error updating car image: {str(e)}")
                     logger.exception("Traceback:")
@@ -275,13 +281,13 @@ def process_image_task(task: ImageTask, app) -> None:
                         from flask import current_app
                         from sqlalchemy import create_engine
                         from sqlalchemy.orm import Session
-                        
+
                         # Create a fresh engine and session
                         engine = create_engine(current_app.config['SQLALCHEMY_DATABASE_URI'])
                         with Session(engine) as emergency_session:
                             # Update car directly
-                            from models import Car
-                            emergency_car = emergency_session.query(Car).get(car.id)
+                            from backend.models import Car as CarModel
+                            emergency_car = emergency_session.query(CarModel).get(car.id)
                             if emergency_car:
                                 emergency_car.image_url = result
                                 emergency_session.commit()
@@ -312,7 +318,7 @@ def process_image_task(task: ImageTask, app) -> None:
     except Exception as e:
         logger.error(f"❌ Unexpected error processing task {task.task_id}: {str(e)}")
         logger.exception("Traceback:")
-        
+
         # Retry if within retry limit
         if task.retries < task.max_retries:
             task.retries += 1
