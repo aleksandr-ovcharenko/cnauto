@@ -416,7 +416,14 @@ def generate_image(mode: str = None, prompt: str = "", image_url: str = "", car_
     mode = (mode or REPLICATE_MODE).lower().strip()
     logger.info(f"🚀 Генерация изображение [mode={mode}]")
     with get_app_context(app=app):
-        ref_url = download_and_reupload(image_url, car_id=car_id, car_name=car_model, is_main_img=True, app=app)
+        ref_url = download_and_reupload(
+            image_url, 
+            car_id=car_id, 
+            car_name=car_model, 
+            car_brand=car_brand,  
+            is_main_img=True, 
+            app=app
+        )
         if not ref_url:
             logger.warning("⚠️ Прерывание: не удалось загрузить изображение в Cloudinary")
             return None
