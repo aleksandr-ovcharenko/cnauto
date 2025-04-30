@@ -363,7 +363,6 @@ def import_car():
     threading.Thread(target=process_car_import_task, args=(data, chat_id), daemon=True).start()
     return jsonify({"status": "received", "message": "Работаем над вашей заявкой..."})
 
-
 def download_and_reupload(url: str, car_id=None, car_name=None, is_main_img=False, image_index=None) -> str:
     try:
         logger.info(f"⬇️ Скачиваем изображение {image_index} с {url}")
@@ -373,14 +372,19 @@ def download_and_reupload(url: str, car_id=None, car_name=None, is_main_img=Fals
         with tempfile.NamedTemporaryFile(suffix=file_ext, delete=False) as tmp:
             tmp.write(response.content)
             tmp_path = tmp.name
+        
         logger.info(f"☁️ Загружаем изображение {image_index} в Cloudinary...")
-        uploaded_url = upload_image(
-            tmp_path,
-            car_id=car_id,
-            car_name=car_name,
-            is_main=is_main_img,
-            index=image_index
-        )
+        
+        # Use Flask application context to ensure correct Cloudinary folder is used
+        with get_app_context():
+            uploaded_url = upload_image(
+                tmp_path,
+                car_id=car_id,
+                car_name=car_name,
+                is_main=is_main_img,
+                index=image_index
+            )
+            
         try:
             os.unlink(tmp_path)
         except Exception as e:
