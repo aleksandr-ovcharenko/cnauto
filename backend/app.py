@@ -329,6 +329,9 @@ def catalog():
     if type_slugs:
         query = query.join(Car.car_type).filter(CarType.slug.in_(type_slugs))
 
+    # Sort cars by ID in descending order (newest first)
+    query = query.order_by(Car.id.desc())
+
     cars = query.all()
     brands = Brand.query.order_by(Brand.name).all()
     countries = Country.query.order_by(Country.name).all()

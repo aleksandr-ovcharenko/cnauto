@@ -1,6 +1,7 @@
 import os
 import sys
 import tempfile
+import json
 
 import requests
 
@@ -67,6 +68,27 @@ def generate_with_photon(prompt: str, image_url: str, car_model: str, car_brand:
             logger.error("❌ REPLICATE_API_TOKEN environment variable is not set")
             return None
 
+        # Validate image URL before sending to Replicate
+        try:
+            if not image_url or not image_url.startswith(('http://', 'https://')):
+                logger.error(f"❌ Invalid image URL format: {image_url}")
+                return None
+                
+            # Check if image is accessible
+            head_response = requests.head(image_url, timeout=5)
+            if head_response.status_code != 200:
+                logger.error(f"❌ Cannot access image URL (status {head_response.status_code}): {image_url}")
+                return None
+                
+            # Check content type
+            content_type = head_response.headers.get('Content-Type', '')
+            if not content_type.startswith('image/'):
+                logger.warning(f"⚠️ URL may not be an image (Content-Type: {content_type}): {image_url}")
+                # Continue anyway as some URLs may be mislabeled
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to validate image URL: {str(e)}")
+            # Continue anyway as image might still be valid
+
         logger.info("⚙️ Generating with Luma Photon...")
         input_params = {
             "prompt": prompt,
@@ -76,25 +98,41 @@ def generate_with_photon(prompt: str, image_url: str, car_model: str, car_brand:
             "style_reference_weight": REPLICATE_PHOTON_DEFAULTS["style_reference_weight"]
         }
 
-        logger.info("📡 Sending request to Replicate...")
-        output = replicate.run(REPLICATE_PHOTON_MODEL, input=input_params)
-        logger.info("✅ Image received from Replicate")
+        logger.info(f"📡 Sending request to Replicate...")
+        logger.debug(f"📝 Input parameters: {json.dumps(input_params, indent=2)}")
+        
+        try:
+            output = replicate.run(REPLICATE_PHOTON_MODEL, input=input_params)
+            
+            if not output:
+                logger.error("❌ No output received from Replicate")
+                return None
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"❌ Network error calling Replicate API: {str(e)}")
+            return None
+        except json.JSONDecodeError as e:
+            logger.error(f"❌ Invalid JSON response from Replicate: {str(e)}")
+            return None
+        except Exception as e:
+            logger.error(f"❌ Error generating image with Photon: {str(e)}")
+            logger.exception("Traceback:")
+            return None
+
+        output_url = output[0] if isinstance(output, list) and output else output
+        if not output_url or not isinstance(output_url, str):
+            logger.error(f"❌ Invalid output from Replicate: {output}")
+            return None
+            
+        logger.info(f"📥 Downloading generated image from: {output_url}")
 
     except Exception as e:
-        logger.error(f"❌ Error generating image with Photon: {str(e)}")
+        logger.error(f"❌ Error processing Photon generated image: {str(e)}")
         logger.exception("Traceback:")
         return None
 
     try:
         # Download the generated image
-        if not output:
-            logger.error("❌ No output received from Replicate")
-            return None
-
-        output_url = output[0] if isinstance(output, list) and output else output
-        logger.info(f"📥 Downloading generated image from: {output_url}")
-
-        # Upload to Cloudinary
         with tempfile.NamedTemporaryFile(suffix=".jpg") as temp_jpg:
             with tempfile.NamedTemporaryFile(suffix=".webp") as temp_webp:
                 # Download the image

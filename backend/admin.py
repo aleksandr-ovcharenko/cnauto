@@ -173,6 +173,9 @@ class CarAdmin(SecureModelView):
     can_delete = True
     can_create = True
     can_edit = True
+    
+    # Sort by ID in descending order (newest first)
+    column_default_sort = ('id', True)  # (column, descending)
 
     action_disallowed_list = []
     column_display_actions = True
