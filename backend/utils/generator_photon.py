@@ -120,10 +120,19 @@ def generate_with_photon(prompt: str, image_url: str, car_model: str, car_brand:
             return None
 
         output_url = output[0] if isinstance(output, list) and output else output
-        if not output_url or not isinstance(output_url, str):
+        
+        # Debug the output format to understand what we're getting
+        logger.debug(f"📋 Output type: {type(output)}, value: {output}")
+        logger.debug(f"📋 Output URL type: {type(output_url)}, value: {output_url}")
+        
+        # Simpler validation - just make sure we have a string that starts with http
+        if not output_url or not isinstance(output_url, str) or not output_url.startswith('http'):
             logger.error(f"❌ Invalid output from Replicate: {output}")
             return None
             
+        # Log successful receipt of image URL
+        logger.info(f"✅ Successfully received image URL from Replicate: {output_url}")
+
         logger.info(f"📥 Downloading generated image from: {output_url}")
 
     except Exception as e:
