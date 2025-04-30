@@ -125,14 +125,22 @@ def generate_with_photon(prompt: str, image_url: str, car_model: str, car_brand:
         logger.debug(f"📋 Output type: {type(output)}, value: {output}")
         logger.debug(f"📋 Output URL type: {type(output_url)}, value: {output_url}")
         
-        # Relaxed validation - just check that we have a string
+        # Relaxed validation - just check that we have some value
         if not output_url:
             logger.error(f"❌ Missing output from Replicate")
             return None
             
-        # For string validation, just ensure it's a string and looks like a URL
+        # Special handling for replicate.helpers.FileOutput or similar objects
+        # Convert them to string if they have a string representation with a URL
+        if hasattr(output_url, '__str__'):
+            output_url_str = str(output_url)
+            if output_url_str.startswith('http'):
+                logger.info(f"✳️ Converting FileOutput object to string URL: {output_url_str}")
+                output_url = output_url_str
+        
+        # Now that we've handled potential FileOutput objects, validate as string
         if not isinstance(output_url, str):
-            logger.error(f"❌ Output from Replicate is not a string: {type(output_url)}")
+            logger.error(f"❌ Output from Replicate is not a string and couldn't be converted: {type(output_url)}")
             return None
             
         # Very basic URL validation - just make sure it starts with http and has some length
