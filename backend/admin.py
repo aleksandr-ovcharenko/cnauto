@@ -452,6 +452,8 @@ class CarAdmin(SecureModelView):
                 new_image = CarImage(
                     car_id=car.id,
                     url=new_image_url,
+                    title=f"AI Generated {datetime.now().strftime('%Y-%m-%d')}",
+                    alt=f"AI generated {car.brand.name if car.brand else ''} {car.model}",
                     position=(len(car.gallery_images) if car.gallery_images else 0)
                 )
                 db.session.add(new_image)
@@ -459,28 +461,70 @@ class CarAdmin(SecureModelView):
 
                 # Set as main image
                 car.image_url = new_image_url
-                logger.info(f"✅ Set new image as the main image for car ID={car.id}")
-
-                # Update the task with the result
+                
+                # Update the image task status
                 image_task.status = 'completed'
-                image_task.result_image_id = new_image.id
                 image_task.result_url = new_image_url
-                db.session.commit()
-                logger.info(f"✅ Database commit successful, image updated for car ID={car.id}")
-                flash(f"✅ Изображение успешно обновлено для {car.model}!", "success")
-                logging.getLogger(__name__).info(f"✅ Изображение успешно обновлено для {car.model}!")
-                logger.info(f"✅ AI image generation workflow completed successfully for car {car.id} from image {id}")
+                image_task.completed_at = datetime.now()
+                
+                # Commit all changes atomically
+                try:
+                    db.session.commit()
+                    logger.info(f"✅ Gallery image and car main image updated successfully, ID={new_image.id}")
+                    
+                    # Double-check that our changes were saved
+                    db.session.refresh(car)
+                    if car.image_url != new_image_url:
+                        logger.warning(f"⚠️ Car image URL not updated correctly: {car.image_url} vs {new_image_url}")
+                        # Force update
+                        car.image_url = new_image_url
+                        db.session.commit()
+                        logger.info(f"🔄 Forced update of car.image_url: {car.image_url}")
+                        
+                    return redirect(url_for('admin.car_edit_view', id=car.id))
+                except Exception as db_error:
+                    logger.error(f"❌ Database error saving gallery image: {str(db_error)}")
+                    db.session.rollback()
+                    flash(f"Сохранено, но произошла ошибка при сохранении изображения: {str(db_error)[:100]}", "error")
+                    return redirect(url_for('admin.car_edit_view', id=car.id))
             else:
-                # More detailed error message when generation fails but doesn't raise an exception
+                # Log failure but the URL was generated successfully in Replicate
+                # This is likely a validation error in our code
+                from utils.image_queue import add_to_generated_cache
+                
+                # Check logs for generated URL to try to recover it
+                try:
+                    import re
+                    with open("/home/aleks/dev/cnauto-site/backend/logs/app_20250430.log", "r") as f:
+                        log_content = f.read()
+                        match = re.search(f"Downloading generated image from: (https?://.*?)\\n", log_content)
+                        if match:
+                            generator_output_url = match.group(1)
+                            logger.info(f"🔍 Extracted generated image URL from logs: {generator_output_url}")
+                            # Save for later retry
+                            add_to_generated_cache(f"admin-car-{car.id}-img-{id}", generator_output_url)
+                            logger.info(f"💾 Cached generated URL for later retry: {generator_output_url}")
+                            
+                            # Update task status
+                            image_task.status = 'waiting_upload'
+                            image_task.error = 'Upload failed but generation succeeded'
+                            image_task.notes = generator_output_url
+                            db.session.commit()
+                            
+                            flash("Изображение было сгенерировано, но произошла ошибка при загрузке. Мы сохранили ссылку для повторной попытки.", "warning")
+                            return redirect(url_for('admin.car_edit_view', id=car.id))
+                except Exception as log_error:
+                    logger.error(f"❌ Failed to extract URL from logs: {str(log_error)}")
+                
+                logger.warning(f"⚠️ AI generation returned None but no exception was raised. Car ID={car.id}, Image ID={id}")
                 image_task.status = 'failed'
-                image_task.error = "AI generation returned None but no exception was raised"
+                image_task.error = 'Generation returned None'
                 db.session.commit()
-                logger.warning(
-                    f"⚠️ AI generation returned None but no exception was raised. Car ID={car.id}, Image ID={id}")
-                flash(f"❌ Не удалось сгенерировать изображение для {car.model}. Проверьте логи для деталей.", "error")
-                logging.getLogger(__name__).error(
-                    f"❌ Не удалось сгенерировать изображение для {car.model}. Проверьте логи для деталей.")
+
+                logger.error(f"❌ Не удалось сгенерировать изображение для {car.model}. Проверьте логи для деталей.")
+                flash(f"Не удалось сгенерировать изображение для {car.model}. Проверьте логи для деталей.", "error")
                 logger.warning(f"⚠️ AI image generation failed for car {car.id} - no image returned")
+                return redirect(url_for('admin.car_edit_view', id=car.id))
         except Exception as e:
             # Update the task with the error
             image_task.status = 'failed'

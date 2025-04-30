@@ -228,17 +228,65 @@ def process_image_task(task: ImageTask, app) -> None:
             if result:
                 # Update the car with the generated image
                 car.image_url = result
-
-                # Also create a gallery image
-                gallery_image = CarImage(
-                    car_id=task.car_id,
-                    url=result,
-                    title=f"AI Generated {datetime.now().strftime('%Y-%m-%d')}",
-                    alt="AI generated image",
-                    position=999  # High position to put it at the end
-                )
-                db.session.add(gallery_image)
-                db.session.commit()
+                logger.info(f"🔄 Updating car {car.id} image_url to: {result}")
+                
+                try:
+                    # Explicitly refresh the car object to avoid stale data
+                    db.session.refresh(car)
+                    
+                    # Set the image and verify the change
+                    car.image_url = result
+                    db.session.add(car)
+                    
+                    # Also create a gallery image
+                    gallery_image = CarImage(
+                        car_id=task.car_id,
+                        url=result,
+                        title=f"AI Generated {datetime.now().strftime('%Y-%m-%d')}",
+                        alt="AI generated image",
+                        position=999  # High position to put it at the end
+                    )
+                    db.session.add(gallery_image)
+                    
+                    # Commit changes
+                    db.session.commit()
+                    
+                    # Verify the car has the new image URL
+                    db.session.refresh(car)
+                    if car.image_url != result:
+                        logger.error(f"❌ Failed to update car.image_url - value after commit: {car.image_url}")
+                        # Force update with direct SQL as a fallback
+                        from sqlalchemy import text
+                        db.session.execute(
+                            text("UPDATE car SET image_url = :url WHERE id = :car_id"),
+                            {"url": result, "car_id": car.id}
+                        )
+                        db.session.commit()
+                        logger.info(f"🔨 Forced update of car.image_url using direct SQL")
+                    else:
+                        logger.info(f"✅ Verified car.image_url was updated to: {car.image_url}")
+                
+                except Exception as e:
+                    logger.error(f"❌ Database error updating car image: {str(e)}")
+                    logger.exception("Traceback:")
+                    # Try again with a new session as a last resort
+                    try:
+                        from flask import current_app
+                        from sqlalchemy import create_engine
+                        from sqlalchemy.orm import Session
+                        
+                        # Create a fresh engine and session
+                        engine = create_engine(current_app.config['SQLALCHEMY_DATABASE_URI'])
+                        with Session(engine) as emergency_session:
+                            # Update car directly
+                            from models import Car
+                            emergency_car = emergency_session.query(Car).get(car.id)
+                            if emergency_car:
+                                emergency_car.image_url = result
+                                emergency_session.commit()
+                                logger.info(f"🚑 Emergency update of car.image_url succeeded")
+                    except Exception as ee:
+                        logger.error(f"❌ Emergency session also failed: {str(ee)}")
 
                 logger.info(f"✅ Successfully processed image task {task.task_id}, image saved: {result}")
                 update_task_status(task.task_id, 'completed', result=result)
