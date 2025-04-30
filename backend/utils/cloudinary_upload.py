@@ -21,7 +21,7 @@ def upload_image(file, car_id=None, car_name=None, is_main=False, index=None):
 
         base_name = f"{car_name or 'car'}_{'main' if is_main else f'gallery_{index}'}".lower().replace(" ", "_")
         # Путь: <окружение>/cars/<id>/
-        car_folder = f"{base_folder}/cars/{car_id or 'unknown'} - {car_name or 'unknown'}"
+        car_folder = f"{base_folder}/cars/{car_id or 'unknown'}-{car_name or 'unknown'}"
         logger.info(f"📂 Загрузка в Cloudinary → Папка: {car_folder} | Файл: {base_name}")
 
         try:

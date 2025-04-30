@@ -2,6 +2,7 @@ import os
 import sys
 import tempfile
 import threading
+from functools import partial
 
 # Add parent directory to path for consistent imports
 # This ensures the module can be run directly or imported
@@ -64,17 +65,17 @@ _app = None
 _db_session = None
 
 
-def get_db_session():
+def get_db_session(app=None):
     """Get a direct SQLAlchemy session without relying on Flask-SQLAlchemy"""
-    global _db_session, _app
+    global _db_session
 
     if _db_session is not None:
         return _db_session
 
     try:
         # Try to get the database URL from the app config
-        if _app is not None:
-            db_uri = _app.config.get('SQLALCHEMY_DATABASE_URI')
+        if app is not None:
+            db_uri = app.config.get('SQLALCHEMY_DATABASE_URI')
         else:
             try:
                 db_uri = current_app.config.get('SQLALCHEMY_DATABASE_URI')
@@ -96,16 +97,15 @@ def get_db_session():
         raise
 
 
-def get_app_context():
+def get_app_context(app=None):
     """Get the app context safely, either from current_app or stored _app reference"""
-    global _app
     try:
         # Try to use current_app first (in request context)
         return current_app.app_context()
     except RuntimeError:
         # If no request context, use stored app reference
-        if _app is not None:
-            return _app.app_context()
+        if app is not None:
+            return app.app_context()
         else:
             # This should only happen during testing or if not properly initialized
             logger.error("❌ No Flask app context available and no stored app reference")
@@ -144,10 +144,10 @@ def send_telegram_message(chat_id, text, bot_token=None):
 
 
 # Extracted car import logic for async processing
-def process_car_import_task(data, chat_id):
+def process_car_import_task(app, data, chat_id):
     session = None
     try:
-        session = get_db_session()
+        session = get_db_session(app=app)
         car_data_str = data.get("car_data", "").strip()
         if car_data_str:
             logger.info(f"🚗 Processing car in new format: {car_data_str}")
@@ -236,7 +236,7 @@ def process_car_import_task(data, chat_id):
             try:
                 first_file_id = image_file_ids[0]
                 url = get_telegram_file_url(first_file_id)
-                main_image_url = download_and_reupload(url, car_id=car.id, car_name=car.model, is_main_img=True)
+                main_image_url = download_and_reupload(url, car_id=car.id, car_name=car.model, is_main_img=True, app=app)
                 if main_image_url:
                     car.image_url = main_image_url
                     session.commit()
@@ -246,7 +246,8 @@ def process_car_import_task(data, chat_id):
                         'image_url': main_image_url,
                         'car_model': model,
                         'car_brand': brand,
-                        'car_id': car.id
+                        'car_id': car.id,
+                        'app': app
                     }
                     task_id = enqueue_image_task(
                         car_id=car.id,
@@ -263,7 +264,8 @@ def process_car_import_task(data, chat_id):
                                 car_id=car.id,
                                 car_name=car.model,
                                 is_main_img=False,
-                                image_index=i
+                                image_index=i,
+                                app=app
                             )
                             if ref_url:
                                 real_urls.append(ref_url)
@@ -360,10 +362,11 @@ def import_car():
     chat_id = data.get("chat_id")
     if not chat_id:
         return jsonify({"error": "chat_id required in payload"}), 400
-    threading.Thread(target=process_car_import_task, args=(data, chat_id), daemon=True).start()
+    app = current_app._get_current_object()
+    threading.Thread(target=partial(process_car_import_task, app), args=(data, chat_id), daemon=True).start()
     return jsonify({"status": "received", "message": "Работаем над вашей заявкой..."})
 
-def download_and_reupload(url: str, car_id=None, car_name=None, is_main_img=False, image_index=None) -> str:
+def download_and_reupload(url: str, car_id=None, car_name=None, is_main_img=False, image_index=None, app=None) -> str:
     try:
         logger.info(f"⬇️ Скачиваем изображение {image_index} с {url}")
         response = requests.get(url)
@@ -376,7 +379,7 @@ def download_and_reupload(url: str, car_id=None, car_name=None, is_main_img=Fals
         logger.info(f"☁️ Загружаем изображение {image_index} в Cloudinary...")
         
         # Use Flask application context to ensure correct Cloudinary folder is used
-        with get_app_context():
+        with get_app_context(app=app):
             uploaded_url = upload_image(
                 tmp_path,
                 car_id=car_id,
@@ -396,11 +399,11 @@ def download_and_reupload(url: str, car_id=None, car_name=None, is_main_img=Fals
 
 
 def generate_image(mode: str = None, prompt: str = "", image_url: str = "", car_model: str = "", car_brand=None,
-                   car_id=None) -> str:
+                   car_id=None, app=None) -> str:
     mode = (mode or REPLICATE_MODE).lower().strip()
     logger.info(f"🚀 Генерация изображение [mode={mode}]")
-    with get_app_context():
-        ref_url = download_and_reupload(image_url, car_id=car_id, car_name=car_model, is_main_img=True)
+    with get_app_context(app=app):
+        ref_url = download_and_reupload(image_url, car_id=car_id, car_name=car_model, is_main_img=True, app=app)
         if not ref_url:
             logger.warning("⚠️ Прерывание: не удалось загрузить изображение в Cloudinary")
             return None
