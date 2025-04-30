@@ -151,7 +151,7 @@ class CarImageAdmin(SecureModelView):
                 from backend.utils.cloudinary_upload import upload_image
             except ImportError:
                 from utils.cloudinary_upload import upload_image
-            uploaded_url = upload_image(file, car_id=model.car_id, car_name=model.car.model)
+            uploaded_url = upload_image(file, car_id=model.car_id, car_name=model.car.model, car_brand=model.car.brand.name if model.car.brand else None)
             if uploaded_url:
                 model.url = uploaded_url
 
@@ -240,7 +240,7 @@ class CarAdmin(SecureModelView):
         image_file = form.image_upload.data
         if image_file and image_file.filename:
             logger.info(f"📎 Загрузка главного изображения: {image_file.filename}")
-            uploaded_url = upload_image(image_file, car_id=model.id, car_name=model.model, is_main=True)
+            uploaded_url = upload_image(image_file, car_id=model.id, car_name=model.model, car_brand=model.brand.name if model.brand else None, is_main=True)
             if uploaded_url:
                 model.image_url = uploaded_url
                 logger.info(f"✅ Главная картинка загружена: {uploaded_url}")
@@ -255,7 +255,7 @@ class CarAdmin(SecureModelView):
             for i, file in enumerate(gallery_files):
                 if file and file.filename:
                     logger.info(f"📷 Галерея {i + 1}: {file.filename}")
-                    uploaded_url = upload_image(file, car_id=model.id, car_name=model.model, is_main=False, index=i + 1)
+                    uploaded_url = upload_image(file, car_id=model.id, car_name=model.model, car_brand=model.brand.name if model.brand else None, is_main=False, index=i + 1)
                     if uploaded_url:
                         saved_images.append(uploaded_url)
                         logger.info(f"✅ Загружено: {uploaded_url}")
@@ -550,7 +550,7 @@ class CarAdmin(SecureModelView):
         files = request.files.getlist('new_images')
         for i, file in enumerate(files):
             if file and file.filename:
-                url = upload_image(file, car_id=car.id, car_name=car.model, is_main=False, index=i)
+                url = upload_image(file, car_id=car.id, car_name=car.model, car_brand=car.brand.name if car.brand else None, is_main=False, index=i)
                 if url:
                     image = CarImage(car_id=car.id, url=url, position=len(car.gallery_images) + i)
                     db.session.add(image)

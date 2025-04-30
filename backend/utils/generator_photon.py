@@ -97,6 +97,7 @@ def generate_with_photon(prompt: str, image_url: str, car_model: str, car_brand,
                     temp_webp.name,
                     car_id=car_id,
                     car_name=car_model,
+                    car_brand=car_brand,
                     is_main=True,
                     index="ai"
                 )
