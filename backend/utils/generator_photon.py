@@ -96,8 +96,8 @@ def generate_with_photon(prompt: str, image_url: str, car_model: str, car_brand,
                 cloudinary_url = upload_image(
                     temp_webp.name,
                     car_id=car_id,
-                    car_name=f"{car_brand} {car_model} AI",
-                    is_main=False,
+                    car_name=car_model,
+                    is_main=True,
                     index="ai"
                 )
                 logger.info(f"☁️ Uploaded AI-generated image to Cloudinary: {cloudinary_url}")

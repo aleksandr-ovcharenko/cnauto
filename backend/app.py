@@ -173,8 +173,8 @@ def auto_migrate_and_seed(app, db, migrations_dir):
 import os
 
 # switching off migration process for now
-if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug:
-    auto_migrate_and_seed(app, db, migrations_dir)
+# if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug:
+#     auto_migrate_and_seed(app, db, migrations_dir)
 
 admin_app = init_admin(app)
 
