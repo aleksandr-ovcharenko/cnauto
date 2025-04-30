@@ -50,6 +50,10 @@ else:
 
 logger.info(f"📦 DB URI: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
 
+# Add Python built-ins to Jinja environment
+app.jinja_env.globals['min'] = min
+app.jinja_env.globals['max'] = max
+
 # Init extensions
 db.init_app(app)
 
@@ -315,11 +319,28 @@ def format_currency_filter_wrapper(price, currency_obj=None):
 
 
 @app.route("/catalog")
+@app.route("/catalog/")
 def catalog():
     brand = request.args.get("brand")
     country_name = request.args.get("country")
     type_slugs = request.args.getlist('type')
-
+    
+    # Get page number from query parameter, default to page 1
+    try:
+        page = int(request.args.get('page', 1))
+        if page < 1:
+            # If page is less than 1, redirect to page 1
+            args = request.args.copy()
+            args['page'] = 1
+            return redirect(url_for('catalog', **args))
+    except ValueError:
+        # If page is not a valid integer, redirect to page 1
+        args = request.args.copy()
+        args['page'] = 1
+        return redirect(url_for('catalog', **args))
+        
+    per_page = 10  # Number of cars per page
+    
     query = Car.query.options(joinedload(Car.currency))
 
     if brand:
@@ -331,18 +352,43 @@ def catalog():
 
     # Sort cars by ID in descending order (newest first)
     query = query.order_by(Car.id.desc())
-
-    cars = query.all()
+    
+    # Get total count before pagination for validation
+    total_count = query.count()
+    total_pages = (total_count + per_page - 1) // per_page  # Ceiling division
+    
+    # If requested page exceeds max pages, redirect to last page
+    if page > total_pages > 0:
+        args = request.args.copy()
+        args['page'] = total_pages
+        return redirect(url_for('catalog', **args))
+    
+    # Implement pagination
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    cars = pagination.items
+    
     brands = Brand.query.order_by(Brand.name).all()
     countries = Country.query.order_by(Country.name).all()
     car_types = CarType.query.order_by(CarType.name).all()
 
     query_args = request.args.to_dict(flat=False)
+    # Remove page from args when building reset URL
     reset_type_args = query_args.copy()
     reset_type_args.pop('type', None)
     reset_type_url = url_for('catalog', **reset_type_args)
-
-    return render_template("catalog.html", cars=cars, brands=brands, countries=countries, car_types=car_types,
+    
+    # Create base URL for pagination (preserving all filters)
+    pagination_args = query_args.copy()
+    if 'page' in pagination_args:
+        pagination_args.pop('page')
+    
+    return render_template("catalog.html", 
+                           cars=cars, 
+                           brands=brands, 
+                           countries=countries, 
+                           car_types=car_types,
+                           pagination=pagination,
+                           pagination_args=pagination_args,
                            reset_type_url=reset_type_url)
 
 
@@ -811,6 +857,10 @@ def admin_stats_misc():
 
 
 app.register_blueprint(api, url_prefix='/api')
+
+# Register filters
+app.jinja_env.filters['format_currency'] = format_currency_filter_wrapper
+app.jinja_env.filters['thumb_url'] = thumb_url_filter
 
 if __name__ == '__main__':
     with app.app_context():

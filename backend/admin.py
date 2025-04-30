@@ -627,7 +627,7 @@ class CarAdmin(SecureModelView):
         files = request.files.getlist('new_images')
         for i, file in enumerate(files):
             if file and file.filename:
-                url = upload_image(file, car_id=car.id, car_name=car.model, car_brand=car.brand.name if car.brand else None, is_main=False, index=i)
+                url = upload_image(file, car_id=car.id, car_name=car.model, car_brand=car.brand.name if car.brand else None, is_main=False, index=i + 1)
                 if url:
                     image = CarImage(car_id=car.id, url=url, position=len(car.gallery_images) + i)
                     db.session.add(image)
@@ -702,7 +702,8 @@ class BrandAdmin(SecureModelView):
 
     # Fixed implementation of inline_models that avoids the tuple error
     # Each item must be a proper model class or a dict with configuration
-    inline_models = [BrandSynonym]  # This is a list with one class, not a tuple
+    # Remove inline models since we'll manage them in our custom view
+    #inline_models = [BrandSynonym]  # This is a list with one class, not a tuple
 
     form_columns = ['name', 'slug', 'logo', 'country']
     column_searchable_list = ['name', 'slug']
@@ -710,6 +711,9 @@ class BrandAdmin(SecureModelView):
 
     can_export = True
     page_size = 30
+    
+    # Use our custom template for editing
+    edit_template = 'admin/brand_edit.html'
 
     def _logo_preview(view, context, model, name):
         if model.logo:
@@ -739,6 +743,55 @@ class BrandAdmin(SecureModelView):
             'allow_blank': True
         }
     }
+    
+    @expose('/edit/', methods=['GET', 'POST'])
+    @expose('/edit/<int:id>', methods=['GET', 'POST'])
+    def edit_view(self, id=None):
+        # Use the standard edit_view but with our enhanced template
+        return super().edit_view(id)
+    
+    @expose('/add_synonym/<int:id>', methods=['POST'])
+    def add_synonym(self, id):
+        """Add a synonym to a brand"""
+        brand = db.session.query(Brand).get_or_404(id)
+        name = request.form.get('name', '').strip()
+        
+        if not name:
+            flash('Название синонима не может быть пустым', 'error')
+            return redirect(url_for('.edit_view', id=id))
+        
+        # Check if this synonym already exists
+        existing = db.session.query(BrandSynonym).filter_by(name=name).first()
+        if existing:
+            flash(f'Синоним "{name}" уже существует для бренда {existing.brand.name}', 'error')
+            return redirect(url_for('.edit_view', id=id))
+        
+        # Create the new synonym
+        synonym = BrandSynonym(name=name, brand_id=id)
+        db.session.add(synonym)
+        
+        try:
+            db.session.commit()
+            flash(f'Синоним "{name}" успешно добавлен', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Ошибка при добавлении синонима: {str(e)}', 'error')
+        
+        return redirect(url_for('.edit_view', id=id))
+    
+    @expose('/delete_synonym/<int:id>', methods=['POST'])
+    def delete_synonym(self, id):
+        """Delete a brand synonym"""
+        synonym = db.session.query(BrandSynonym).get_or_404(id)
+        brand_id = synonym.brand_id
+        
+        try:
+            db.session.delete(synonym)
+            db.session.commit()
+            return {'success': True, 'message': 'Синоним удален'}
+        except Exception as e:
+            db.session.rollback()
+            return {'success': False, 'message': str(e)}, 500
 
 
 class CarTypeAdmin(SecureModelView):

@@ -1,0 +1,200 @@
+{% extends 'admin/model/edit.html' %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .card {
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+        padding: 12px 20px;
+    }
+    .card-title {
+        font-size: 18px;
+        font-weight: 500;
+        margin: 0;
+    }
+    .list-group-item {
+        border-left: none;
+        border-right: none;
+        padding: 12px 20px;
+    }
+    .list-group-item:first-child {
+        border-top: none;
+    }
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+    .synonym-item {
+        transition: background-color 0.2s ease;
+    }
+    .synonym-item:hover {
+        background-color: #f8f9fa;
+    }
+    .synonym-name {
+        font-weight: 500;
+    }
+    .delete-synonym {
+        opacity: 0.7;
+        transition: opacity 0.2s ease;
+    }
+    .delete-synonym:hover {
+        opacity: 1;
+    }
+    #addSynonymBtn {
+        padding: 3px 10px;
+        font-size: 12px;
+    }
+    .card-tools {
+        position: absolute;
+        right: 1rem;
+        top: 0.75rem;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        {% if model %}
+                            Редактирование бренда: {{ model.name }}
+                        {% else %}
+                            Создание нового бренда
+                        {% endif %}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% call lib.form_tag(form) %}
+                        {{ lib.render_form_fields(form, form_opts=form_opts) }}
+                        {{ lib.render_form_buttons(return_url, extra()) }}
+                    {% endcall %}
+                </div>
+            </div>
+        </div>
+
+        {% if model %}
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Синонимы бренда</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-sm btn-primary" id="addSynonymBtn">Добавить синоним</button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="synonymsList" class="list-group">
+                        {% for synonym in model.synonyms %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center synonym-item">
+                            <span class="synonym-name">{{ synonym.name }}</span>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-sm btn-outline-danger delete-synonym" data-id="{{ synonym.id }}">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="list-group-item text-center text-muted">
+                            Нет синонимов
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            {% if model.logo %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h3 class="card-title">Логотип</h3>
+                </div>
+                <div class="card-body text-center">
+                    <img src="{{ url_for('static', filename='images/brands/' + model.logo) }}" alt="{{ model.name }}" class="img-fluid" style="max-height: 150px;">
+                </div>
+            </div>
+            {% endif %}
+
+            {% if model.country %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h3 class="card-title">Страна производитель</h3>
+                </div>
+                <div class="card-body">
+                    <h4>{{ model.country.name }}</h4>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Synonym Modal -->
+<div class="modal fade" id="addSynonymModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Добавить синоним для бренда</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="addSynonymForm" action="{{ url_for('brand.add_synonym', id=model.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="synonymName">Название синонима</label>
+                        <input type="text" class="form-control" id="synonymName" name="name" required>
+                        <small class="form-text text-muted">
+                            Добавьте альтернативные названия бренда, например: "БМВ" для "BMW" или "Мерседес" для "Mercedes-Benz"
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block tail %}
+{{ super() }}
+<script>
+    $(document).ready(function() {
+        // Open the add synonym modal
+        $('#addSynonymBtn').click(function() {
+            $('#addSynonymModal').modal('show');
+        });
+        
+        // Handle delete synonym
+        $('.delete-synonym').click(function() {
+            const synonymId = $(this).data('id');
+            const item = $(this).closest('.synonym-item');
+            
+            if (confirm('Вы уверены, что хотите удалить этот синоним?')) {
+                $.ajax({
+                    url: "{{ url_for('brand.delete_synonym', id=0) }}".replace('0', synonymId),
+                    type: 'POST',
+                    success: function(result) {
+                        item.fadeOut(300, function() { $(this).remove(); });
+                        if ($('#synonymsList .synonym-item').length === 1) {
+                            $('#synonymsList').html('<div class="list-group-item text-center text-muted">Нет синонимов</div>');
+                        }
+                    },
+                    error: function(xhr) {
+                        alert('Ошибка при удалении синонима: ' + xhr.responseText);
+                    }
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

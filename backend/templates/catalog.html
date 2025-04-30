@@ -3,6 +3,98 @@
 {% block title %}Каталог автомобилей | CN Auto{% endblock %}
 
 {% block content %}
+<!-- Inline styles for pagination -->
+<style>
+    /* Simplified Pagination Styles with Orange Colors */
+    .pagination-container {
+        margin: 1.5rem 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .pagination-link, 
+    .pagination-arrow {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2rem;
+        height: 2rem;
+        padding: 0 0.5rem;
+        color: #555;
+        font-weight: 400;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+    
+    .pagination-link:hover,
+    .pagination-arrow:hover {
+        color: #FF6B00;
+        text-decoration: none;
+    }
+    
+    .pagination-link.active {
+        background: #FF6B00;
+        color: white;
+        border-radius: 50%;
+    }
+    
+    .pagination-ellipsis {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #777;
+        padding: 0 0.25rem;
+    }
+    
+    .pagination-arrow.disabled {
+        color: #ccc;
+        pointer-events: none;
+    }
+
+    .pagination-info {
+        font-size: 0.9rem;
+        color: #777;
+        margin-top: 0.5rem;
+    }
+    
+    .no-results {
+        text-align: center;
+        padding: 3rem 0;
+    }
+    
+    .no-results h2 {
+        margin-bottom: 1rem;
+        color: #FF6B00;
+    }
+    
+    @media (max-width: 768px) {
+        .pagination {
+            gap: 0.2rem;
+        }
+        
+        .pagination-link, 
+        .pagination-arrow {
+            min-width: 1.75rem;
+            height: 1.75rem;
+            padding: 0 0.4rem;
+            font-size: 0.85rem;
+        }
+        
+        .pagination-info {
+            font-size: 0.8rem;
+        }
+    }
+</style>
+
 <div class="catalog-layout">
     <!-- Sidebar Toggle Button (centered vertically, always visible) -->
     <button type="button" id="toggleSidebar" class="sidebar-toggle" aria-label="Скрыть фильтры" title="Скрыть фильтры" tabindex="0" style="z-index: 1; pointer-events: auto;"><span class="arrow">◀</span></button>
@@ -130,6 +222,44 @@
           {% endif %}
         </div>
         {% endif %}
+        {% if pagination and pagination.pages > 1 %}
+        <div class="pagination-container">
+            <div class="pagination">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('catalog', page=pagination.prev_num, **pagination_args) }}" class="pagination-arrow">
+                    ←
+                </a>
+                {% else %}
+                <span class="pagination-arrow disabled">←</span>
+                {% endif %}
+                
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+                    {% if page_num %}
+                        {% if page_num == pagination.page %}
+                        <span class="pagination-link active">{{ page_num }}</span>
+                        {% else %}
+                        <a href="{{ url_for('catalog', page=page_num, **pagination_args) }}" class="pagination-link">
+                            {{ page_num }}
+                        </a>
+                        {% endif %}
+                    {% else %}
+                    <span class="pagination-ellipsis">...</span>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <a href="{{ url_for('catalog', page=pagination.next_num, **pagination_args) }}" class="pagination-arrow">
+                    →
+                </a>
+                {% else %}
+                <span class="pagination-arrow disabled">→</span>
+                {% endif %}
+            </div>
+            <div class="pagination-info">
+                Показано {{ (pagination.page-1) * pagination.per_page + 1 }}-{{ min(pagination.page * pagination.per_page, pagination.total) }} из {{ pagination.total }} автомобилей
+            </div>
+        </div>
+        {% endif %}
         <div class="cars-grid">
             {% for car in cars %}
             <div class="car-card horizontal-card">
@@ -219,6 +349,50 @@
             </div>
             {% endfor %}
         </div>
+        {% if pagination and pagination.pages > 1 %}
+        <div class="pagination-container">
+            <div class="pagination">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('catalog', page=pagination.prev_num, **pagination_args) }}" class="pagination-arrow">
+                    ←
+                </a>
+                {% else %}
+                <span class="pagination-arrow disabled">←</span>
+                {% endif %}
+                
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+                    {% if page_num %}
+                        {% if page_num == pagination.page %}
+                        <span class="pagination-link active">{{ page_num }}</span>
+                        {% else %}
+                        <a href="{{ url_for('catalog', page=page_num, **pagination_args) }}" class="pagination-link">
+                            {{ page_num }}
+                        </a>
+                        {% endif %}
+                    {% else %}
+                    <span class="pagination-ellipsis">...</span>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <a href="{{ url_for('catalog', page=pagination.next_num, **pagination_args) }}" class="pagination-arrow">
+                    →
+                </a>
+                {% else %}
+                <span class="pagination-arrow disabled">→</span>
+                {% endif %}
+            </div>
+            <div class="pagination-info">
+                Показано {{ (pagination.page-1) * pagination.per_page + 1 }}-{{ min(pagination.page * pagination.per_page, pagination.total) }} из {{ pagination.total }} автомобилей
+            </div>
+        </div>
+        {% endif %}
+        {% if cars|length == 0 %}
+        <div class="no-results">
+            <h2>Ничего не найдено</h2>
+            <p>Попробуйте изменить фильтры или поиск.</p>
+        </div>
+        {% endif %}
     </main>
 </div>
 <div class="quick-view-modal" id="quickViewModal">
