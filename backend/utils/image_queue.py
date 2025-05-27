@@ -98,10 +98,39 @@ class ImageTask:
         }
 
 
-def enqueue_image_task(car_id: int, generator_func: callable, params: Dict[str, Any], max_retries: int = 3) -> str:
+def enqueue_image_task(car_id: int, generator_func: callable, params: Dict[str, Any], 
+                     max_retries: int = 3, source: str = 'ai_generation', 
+                     source_image_id: int = None, prompt: str = None, 
+                     source_url: str = None, app=None) -> str:
     """Add an image generation task to the queue"""
     task_id = f"img_task_{car_id}_{int(time.time())}"
 
+    from flask import current_app
+    from .models import db, ImageTask as ImageTaskModel
+    
+    if app is None:
+        app = current_app._get_current_object()
+    
+    # Create database record
+    with app.app_context():
+        try:
+            db_task = ImageTaskModel(
+                task_id=task_id,
+                car_id=car_id,
+                source=source,
+                status='pending',
+                source_image_id=source_image_id,
+                prompt=prompt,
+                source_url=source_url
+            )
+            db.session.add(db_task)
+            db.session.commit()
+            logger.info(f"Created database record for task {task_id}")
+        except Exception as e:
+            logger.error(f"Failed to create task record in database: {str(e)}")
+            db.session.rollback()
+    
+    # Create and enqueue the task
     task = ImageTask(
         task_id=task_id,
         car_id=car_id,
@@ -109,29 +138,67 @@ def enqueue_image_task(car_id: int, generator_func: callable, params: Dict[str, 
         params=params,
         max_retries=max_retries
     )
-
-    # Add to queue
     image_queue.put(task)
-
-    # Record initial status
-    with status_lock:
-        task_status[task_id] = task.to_dict()
-
-    logger.info(f"✅ Added image task to queue: {task_id} for car_id={car_id}")
+    
+    # Initialize task status
+    update_task_status(task_id, 'pending', app=app)
+    
     return task_id
 
 
-def update_task_status(task_id: str, status: str, result: Any = None, error: str = None) -> None:
-    """Update the status of a task"""
+def update_task_status(task_id: str, status: str, result: Any = None, error: str = None, app=None):
+    """
+    Update the status of a task in both memory and database
+    
+    Args:
+        task_id: Unique task identifier
+        status: New status (pending, processing, completed, failed)
+        result: Optional result data
+        error: Optional error message
+        app: Flask app context (optional, will use current_app if None)
+    """
+    from flask import current_app
+    from .models import db, ImageTask
+    
+    if app is None:
+        app = current_app._get_current_object()
+    
+    # Update in-memory status
     with status_lock:
-        if task_id in task_status:
-            task_status[task_id].update({
-                'status': status,
-                'last_update': datetime.now().isoformat(),
-                'result': result,
-                'error': error
-            })
-            logger.debug(f"Task {task_id} status updated to {status}")
+        if task_id not in task_status:
+            task_status[task_id] = {}
+            
+        task_status[task_id].update({
+            'status': status,
+            'last_update': datetime.now().isoformat()
+        })
+        
+        if result is not None:
+            task_status[task_id]['result'] = result
+            
+        if error is not None:
+            task_status[task_id]['error'] = error
+    
+    # Update database
+    with app.app_context():
+        try:
+            task = ImageTask.query.filter_by(task_id=task_id).first()
+            if task:
+                task.status = status
+                task.error = error
+                
+                if status == 'completed' and result:
+                    if isinstance(result, dict):
+                        task.result_url = result.get('url')
+                    elif isinstance(result, str):
+                        task.result_url = result
+                        
+                task.updated_at = datetime.utcnow()
+                db.session.commit()
+                logger.debug(f"Updated task {task_id} in database with status: {status}")
+        except Exception as e:
+            logger.error(f"Failed to update task {task_id} in database: {str(e)}")
+            db.session.rollback()
 
 
 def get_task_status(task_id: str) -> Dict[str, Any]:
@@ -146,12 +213,23 @@ def get_car_tasks(car_id: int) -> List[Dict[str, Any]]:
         return [task for task in task_status.values() if task.get('car_id') == car_id]
 
 
-def process_image_task(task: ImageTask, app) -> None:
+def process_image_task(task: ImageTask, app):
     """Process a single image generation task"""
-    logger.info(f"🔄 Processing image task {task.task_id} for car_id={task.car_id}")
-
-    # Update status to processing
-    update_task_status(task.task_id, 'processing')
+    from backend.utils.file_logger import get_module_logger
+    from .models import db, ImageTask as ImageTaskModel
+    
+    logger = get_module_logger(__name__)
+    
+    # Update task status to processing
+    update_task_status(task.task_id, 'processing', app=app)
+    
+    # Get the database record for this task
+    with app.app_context():
+        db_task = ImageTaskModel.query.filter_by(task_id=task.task_id).first()
+        if not db_task:
+            logger.error(f"No database record found for task {task.task_id}")
+            update_task_status(task.task_id, 'failed', error='No database record found', app=app)
+            return
 
     try:
         # Check if we already have a generated image for this task (to avoid redundant generation)
@@ -163,7 +241,7 @@ def process_image_task(task: ImageTask, app) -> None:
             car = Car.query.get(task.car_id)
             if not car:
                 logger.warning(f"⚠️ Car {task.car_id} not found, abandoning task {task.task_id}")
-                update_task_status(task.task_id, 'failed', error='Car not found')
+                update_task_status(task.task_id, 'failed', error='Car not found', app=app)
                 return
 
             # If we have a cached generated image, skip generation and try upload directly

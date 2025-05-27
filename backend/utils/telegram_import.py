@@ -236,7 +236,8 @@ def process_car_import_task(app, data, chat_id):
             try:
                 first_file_id = image_file_ids[0]
                 url = get_telegram_file_url(first_file_id)
-                main_image_url = download_and_reupload(url, car_id=car.id, car_name=car.model, car_brand=car.brand.name, is_main_img=True, app=app)
+                brand_name = car.brand.name if car.brand else "Неизвестно"
+                main_image_url = download_and_reupload(url, car_id=car.id, car_name=car.model, car_brand=brand_name, is_main_img=True, app=app)
                 if main_image_url:
                     car.image_url = main_image_url
                     session.commit()
@@ -245,7 +246,7 @@ def process_car_import_task(app, data, chat_id):
                         'prompt': prompt_hint,
                         'image_url': main_image_url,
                         'car_model': model,
-                        'car_brand': brand.name if brand else "Unknown",  
+                        'car_brand': brand_name,  
                         'car_id': car.id,
                         'app': app
                     }
@@ -263,7 +264,7 @@ def process_car_import_task(app, data, chat_id):
                                 url,
                                 car_id=car.id,
                                 car_name=car.model,
-                                car_brand=car.brand.name,
+                                car_brand=brand_name,
                                 is_main_img=False,
                                 image_index=i,
                                 app=app

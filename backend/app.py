@@ -4,19 +4,27 @@ import os
 import requests
 from dotenv import load_dotenv
 from flask import Blueprint
-from flask import Flask
-from flask import Response
-from flask import render_template, redirect, url_for, flash, request, jsonify
-from flask_cors import CORS
-from flask_login import LoginManager
-from flask_login import login_user, logout_user, login_required
-from flask_migrate import Migrate
 from flask_wtf import FlaskForm
-from sqlalchemy.orm import joinedload, scoped_session, sessionmaker
 from wtforms import StringField, PasswordField, BooleanField
 from wtforms.validators import InputRequired
-
-# Change absolute imports to relative imports
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory, current_app
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+from functools import wraps
+import os
+import logging
+from logging.handlers import RotatingFileHandler
+import time
+from datetime import datetime, timedelta
+import re
+import json
+import uuid
+from dotenv import load_dotenv
+import os
+from flask_cors import CORS
 from .admin import init_admin
 from .app_decorators import admin_required
 from .config_dev import DevConfig
@@ -54,8 +62,9 @@ logger.info(f"📦 DB URI: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
 app.jinja_env.globals['min'] = min
 app.jinja_env.globals['max'] = max
 
-# Init extensions
+# Initialize database and migrations
 db.init_app(app)
+migrate = Migrate(app, db, directory=os.path.join(os.path.dirname(__file__), 'migrations'))
 
 # Add CORS support
 CORS(app)  # Allow cross-origin requests, can be configured further if needed
@@ -81,9 +90,6 @@ def log_response_info(response):
 migrations_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'migrations'))
 app.config['ALEMBIC_MIGRATION_PATH'] = migrations_dir
 app.config['FLASK_MIGRATE_MIGRATIONS_DIRECTORY'] = migrations_dir
-
-# Initialize migrations with explicit directory path
-migrate = Migrate(app, db, directory=migrations_dir)
 
 
 # === AUTOMATIC MIGRATION CHECK & UPGRADE ===
@@ -646,30 +652,60 @@ def diagnose_replicate():
 @login_required
 def list_image_tasks():
     """
-    Get a list of all image generation tasks or filter by car ID
+    Get a paginated list of image generation tasks with filtering options
+    
+    Query parameters:
+    - car_id: Filter by car ID
+    - status: Filter by status (pending, processing, completed, failed)
+    - source: Filter by source (ai_generation, upload, telegram, etc.)
+    - page: Page number for pagination (default: 1)
+    - per_page: Number of items per page (default: 20, max: 100)
     """
-    from .utils.image_queue import get_car_tasks, task_status
-
-    car_id = request.args.get('car_id')
-
-    if car_id:
-        try:
-            car_id = int(car_id)
-            tasks = get_car_tasks(car_id)
-            return jsonify({
-                'car_id': car_id,
-                'tasks': tasks
-            })
-        except ValueError:
-            return jsonify({'error': 'Invalid car_id parameter'}), 400
-    else:
-        # Return all tasks (limited to most recent 50)
-        all_tasks = list(task_status.values())
-        all_tasks.sort(key=lambda x: x.get('last_update', ''), reverse=True)
+    from .models import ImageTask, db
+    from sqlalchemy import desc
+    
+    try:
+        # Build query with filters
+        query = ImageTask.query
+        
+        # Apply filters
+        car_id = request.args.get('car_id')
+        if car_id:
+            query = query.filter_by(car_id=int(car_id))
+            
+        status = request.args.get('status')
+        if status in ['pending', 'processing', 'completed', 'failed']:
+            query = query.filter_by(status=status)
+            
+        source = request.args.get('source')
+        if source:
+            query = query.filter_by(source=source)
+        
+        # Pagination
+        page = request.args.get('page', 1, type=int)
+        per_page = min(request.args.get('per_page', 20, type=int), 100)
+        
+        # Execute query with pagination
+        pagination = query.order_by(desc(ImageTask.created_at)).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        # Prepare response
+        tasks = [task.to_dict() for task in pagination.items]
+        
         return jsonify({
-            'tasks': all_tasks[:50],
-            'total_count': len(all_tasks)
+            'tasks': tasks,
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total_pages': pagination.pages,
+                'total_items': pagination.total
+            }
         })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching image tasks: {str(e)}")
+        return jsonify({'error': 'Failed to fetch image tasks'}), 500
 
 
 @api.route('/image-tasks/<task_id>', methods=['GET'])
@@ -677,15 +713,28 @@ def list_image_tasks():
 def get_image_task(task_id):
     """
     Get details for a specific image generation task
+    
+    Returns:
+        200: Task details
+        404: If task not found
     """
-    from .utils.image_queue import get_task_status
-
-    task = get_task_status(task_id)
-
-    if task['status'] == 'unknown':
-        return jsonify({'error': 'Task not found'}), 404
-
-    return jsonify(task)
+    from .models import ImageTask
+    
+    try:
+        task = ImageTask.query.filter_by(task_id=task_id).first()
+        if not task:
+            # Check in-memory status as fallback
+            from .utils.image_queue import get_task_status
+            mem_task = get_task_status(task_id)
+            if mem_task.get('status') == 'unknown':
+                return jsonify({'error': 'Task not found'}), 404
+            return jsonify(mem_task)
+            
+        return jsonify(task.to_dict())
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching task {task_id}: {str(e)}")
+        return jsonify({'error': 'Failed to fetch task details'}), 500
 
 
 @api.route('/image-tasks', methods=['GET'])
@@ -747,8 +796,64 @@ def image_tasks_api():
 @login_required
 @admin_required
 def image_tasks_view():
-    """Web interface for viewing image task history"""
-    return render_template('image_tasks.html')
+    """
+    Web interface for viewing image task history
+    
+    Query parameters:
+    - status: Filter by status (pending, processing, completed, failed)
+    - source: Filter by source
+    - car_id: Filter by car ID
+    """
+    from .models import ImageTask, db
+    from sqlalchemy import desc
+    
+    try:
+        # Get filter parameters
+        status = request.args.get('status')
+        source = request.args.get('source')
+        car_id = request.args.get('car_id')
+        
+        # Build query
+        query = ImageTask.query
+        
+        if status in ['pending', 'processing', 'completed', 'failed']:
+            query = query.filter_by(status=status)
+        if source:
+            query = query.filter_by(source=source)
+        if car_id and car_id.isdigit():
+            query = query.filter_by(car_id=int(car_id))
+        
+        # Get paginated results
+        page = request.args.get('page', 1, type=int)
+        per_page = 20  # Items per page
+        
+        tasks = query.order_by(desc(ImageTask.created_at))\
+                    .paginate(page=page, per_page=per_page, error_out=False)
+        
+        # Get filter options for the UI
+        statuses = db.session.query(
+            ImageTask.status.distinct().label('status')
+        ).all()
+        
+        sources = db.session.query(
+            ImageTask.source.distinct().label('source')
+        ).filter(ImageTask.source.isnot(None)).all()
+        
+        return render_template(
+            'image_tasks.html',
+            tasks=tasks,
+            statuses=[s.status for s in statuses],
+            sources=[s.source for s in sources],
+            current_filters={
+                'status': status,
+                'source': source,
+                'car_id': car_id
+            }
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Error in image_tasks_view: {str(e)}")
+        return render_template('error.html', error="Failed to load image tasks"), 500
 
 
 @app.route('/admin/')

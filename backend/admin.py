@@ -24,7 +24,7 @@ from wtforms.widgets.core import HiddenInput
 from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
 
 # Update imports to use relative imports consistently
-from .models import Role, User, CarImage, BrandSynonym, Currency, CarType
+from .models import Role, User, CarImage, BrandSynonym, Currency, CarType, ImageTask
 from .models import db, Car, Category, Brand, Country
 
 # Папка для изображений автомобилей
@@ -402,13 +402,19 @@ class CarAdmin(SecureModelView):
         car = image.car
         logger.info(f"🔍 Starting AI image generation for car ID={car.id} from image ID={id}")
 
-        # Create a new ImageTask record
+        # Create a new ImageTask record with a unique task_id
+        import time
+        task_id = f"img_task_{car.id}_{int(time.time())}"
+        
         image_task = ImageTask(
+            task_id=task_id,
             car_id=car.id,
             source='gallery_ai',
             status='processing',
             source_image_id=image.id,
-            source_url=image.url
+            source_url=image.url,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
         )
         db.session.add(image_task)
         db.session.commit()
@@ -746,9 +752,11 @@ class BrandAdmin(SecureModelView):
     
     @expose('/edit/', methods=['GET', 'POST'])
     @expose('/edit/<int:id>', methods=['GET', 'POST'])
-    def edit_view(self, id=None):
-        # Use the standard edit_view but with our enhanced template
-        return super().edit_view(id)
+    def edit_view(self, *args, **kwargs):
+        # Call the parent class's edit_view with the proper arguments
+        if hasattr(super(), 'edit_view'):
+            return super().edit_view(*args, **kwargs)
+        return super().edit_view()
     
     @expose('/add_synonym/<int:id>', methods=['POST'])
     def add_synonym(self, id):
@@ -824,6 +832,45 @@ class CurrencyAdmin(SecureModelView):
     column_sortable_list = ('id', 'code', 'name', 'locale')
 
 
+class ImageTaskAdmin(SecureModelView):
+    """Admin interface for managing image generation tasks"""
+    column_list = ['id', 'task_id', 'car', 'source', 'status', 'created_at', 'updated_at']
+    column_searchable_list = ['task_id', 'status', 'source']
+    column_filters = ['status', 'source', 'created_at']
+    column_default_sort = ('created_at', True)
+    can_create = False
+    can_edit = False
+    can_delete = True
+    page_size = 20
+    
+    column_labels = {
+        'task_id': 'ID задачи',
+        'car': 'Автомобиль',
+        'source': 'Источник',
+        'status': 'Статус',
+        'created_at': 'Создано',
+        'updated_at': 'Обновлено',
+        'source_image': 'Исходное изображение',
+        'result_image': 'Результат',
+        'prompt': 'Промпт',
+        'error': 'Ошибка'
+    }
+    
+    column_formatters = {
+        'car': lambda v, c, m, p: f"{m.car.brand.name} {m.car.model} (ID: {m.car_id})" if m.car else '—',
+        'created_at': lambda v, c, m, p: m.created_at.strftime('%b %d, %Y %H:%M:%S') if m.created_at else '—',
+        'updated_at': lambda v, c, m, p: m.updated_at.strftime('%b %d, %Y %H:%M:%S') if m.updated_at else '—',
+    }
+    
+    def get_query(self):
+        return super().get_query().options(
+            db.joinedload(ImageTask.car).joinedload(Car.brand)
+        )
+    
+    def get_count_query(self):
+        return self.session.query(db.func.count(ImageTask.id))
+
+
 def init_admin(app):
     admin = Admin(
         app,
@@ -854,16 +901,88 @@ def init_admin(app):
         def is_visible(self):
             return True
 
-    admin.add_view(CarImageAdmin(CarImage, db.session, name='Фото машин'))
-    admin.add_view(CarAdmin(Car, db.session, name='Автомобили'))
-    admin.add_view(CategoryAdmin(Category, db.session, name='Категории'))
-    admin.add_view(BrandAdmin(Brand, db.session, name='Марки'))
-    admin.add_view(CountryAdmin(Country, db.session, name='Страны'))
-    admin.add_view(UserAdmin(User, db.session, name='Пользователи'))
-    admin.add_view(CarTypeAdmin(CarType, db.session, name='Типы авто'))
-    admin.add_view(CurrencyAdmin(Currency, db.session, name='Currencies'))
+    # ===== Автомобили =====
+    admin.add_view(CarAdmin(Car, db.session, name='Автомобили', category='Автомобили'))
+    admin.add_view(CarImageAdmin(CarImage, db.session, name='Фотографии', category='Автомобили'))
+    admin.add_view(ImageTaskAdmin(ImageTask, db.session, name='Задачи генерации', category='Автомобили'))
+    
+    # ===== Каталог =====
+    admin.add_view(BrandAdmin(Brand, db.session, name='Марки', category='Каталог'))
+    admin.add_view(CategoryAdmin(Category, db.session, name='Категории', category='Каталог'))
+    admin.add_view(CarTypeAdmin(CarType, db.session, name='Типы кузова', category='Каталог'))
+    
+    # ===== Пользователи =====
+    admin.add_view(UserAdmin(User, db.session, name='Пользователи', category='Пользователи'))
+    
+    class RoleAdmin(SecureModelView):
+        column_list = ['name', 'description', 'user_count']
+        column_searchable_list = ['name', 'description']
+        column_sortable_list = ['name']  # Only allow sorting by name
+        column_labels = {
+            'name': 'Название',
+            'description': 'Описание',
+            'user_count': 'Кол-во пользователей'
+        }
+        form_columns = ['name', 'description']
+        
+        def get_query(self):
+            # Get the user count for each role
+            from sqlalchemy import func, or_
+            from .models import user_roles
+            
+            # Only modify the list view query
+            if not self.is_edit_view() and not self.is_create_view():
+                return (db.session.query(
+                    Role,
+                    func.count(user_roles.c.user_id).label('user_count')
+                )
+                .select_from(Role)
+                .outerjoin(user_roles, Role.id == user_roles.c.role_id)
+                .group_by(Role.id))
+            return super().get_query()
+        
+        def is_edit_view(self):
+            from flask import request
+            return request.endpoint and 'edit' in request.endpoint
+            
+        def is_create_view(self):
+            from flask import request
+            return request.endpoint and 'create' in request.endpoint
+        
+        def get_count_query(self):
+            return self.session.query(db.func.count(Role.id))
+        
+        def get_pk_value(self, model):
+            # Handle both SQLAlchemy Row objects and plain model instances
+            if hasattr(model, '_asdict'):  # It's a Row object
+                role = model[0] if len(model) > 1 else model
+                return role.id
+            return model.id
+            
+        # Format the user count for display
+        def _user_count_formatter(view, context, model, name):
+            # The model here is a SQLAlchemy Row object
+            if hasattr(model, '_asdict'):
+                return model[1] if len(model) > 1 else 0
+            return 0
+            
+        column_formatters = {
+            'user_count': _user_count_formatter,
+            'name': lambda v, c, m, p: m[0].name if hasattr(m, '_asdict') and len(m) > 1 else m.name,
+            'description': lambda v, c, m, p: m[0].description if hasattr(m, '_asdict') and len(m) > 1 else (m.description or '')
+        }
+        
+        def get_one(self, id):
+            # Ensure we return a plain Role instance for edit view
+            return self.session.get(Role, id)
+        
+    admin.add_view(RoleAdmin(Role, db.session, name='Роли', category='Пользователи'))
+    
+    # ===== Настройки =====
+    admin.add_view(CountryAdmin(Country, db.session, name='Страны', category='Настройки'))
+    admin.add_view(CurrencyAdmin(Currency, db.session, name='Валюты', category='Настройки'))
 
-    # Add tool views
+    # ===== Инструменты =====
     admin.add_view(ApiDocsView(name='API Документация', category='Инструменты'))
     admin.add_view(LogsView(name='Логи', category='Инструменты'))
 
