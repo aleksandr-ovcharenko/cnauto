@@ -115,10 +115,79 @@ class CarImage(db.Model):
     car = db.relationship('Car', back_populates='gallery_images')
 
 
+class Specification(db.Model):
+    """Model to store complete car specifications that can be reused across multiple cars"""
+    __tablename__ = 'specifications'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False, unique=True)  # e.g., "BMW 3 Series G20 320i"
+    brand_id = db.Column(db.Integer, db.ForeignKey('brands.id'), nullable=False)
+    model_name = db.Column(db.String(100), nullable=False)  # e.g., "3 Series"
+    generation = db.Column(db.String(50))  # e.g., "G20"
+    modification = db.Column(db.String(100))  # e.g., "320i"
+    
+    # Engine specs
+    engine_code = db.Column(db.String(50))  # e.g., "B48B20"
+    engine_type = db.Column(db.String(50))  # e.g., "gasoline"
+    displacement_cc = db.Column(db.Integer)  # e.g., 1998
+    power_hp = db.Column(db.Integer)  # e.g., 184
+    power_kw = db.Column(db.Integer)  # e.g., 135
+    torque_nm = db.Column(db.Integer)  # e.g., 300
+    cylinders = db.Column(db.Integer)  # e.g., 4
+    valves_per_cylinder = db.Column(db.Integer)  # e.g., 4
+    fuel_system = db.Column(db.String(100))  # e.g., "Direct Injection"
+    fuel_type = db.Column(db.String(50))  # e.g., "Petrol (95 RON)"
+    
+    # Performance
+    acceleration_0_100 = db.Column(db.Float)  # seconds
+    top_speed_kmh = db.Column(db.Integer)
+    fuel_consumption_urban = db.Column(db.Float)  # l/100km
+    fuel_consumption_extra_urban = db.Column(db.Float)  # l/100km
+    fuel_consumption_combined = db.Column(db.Float)  # l/100km
+    co2_emissions = db.Column(db.Integer)  # g/km
+    emission_standard = db.Column(db.String(20))  # e.g., "Euro 6d"
+    
+    # Dimensions and weight
+    length_mm = db.Column(db.Integer)
+    width_mm = db.Column(db.Integer)
+    height_mm = db.Column(db.Integer)
+    wheelbase_mm = db.Column(db.Integer)
+    front_track_mm = db.Column(db.Integer)
+    rear_track_mm = db.Column(db.Integer)
+    curb_weight_kg = db.Column(db.Integer)
+    max_weight_kg = db.Column(db.Integer)
+    trunk_volume_l = db.Column(db.Integer)
+    fuel_tank_volume_l = db.Column(db.Integer)
+    
+    # Transmission and drivetrain
+    transmission_type = db.Column(db.String(50))  # e.g., "automatic"
+    transmission_name = db.Column(db.String(100))  # e.g., "8-Steptronic"
+    gears = db.Column(db.Integer)
+    drive_type = db.Column(db.String(50))  # e.g., "rear_wheel_drive"
+    
+    # Wheels and tires
+    front_tires = db.Column(db.String(50))  # e.g., "225/45 R18"
+    rear_tires = db.Column(db.String(50))  # e.g., "255/40 R18"
+    front_brakes = db.Column(db.String(100))  # e.g., "Ventilated Discs"
+    rear_brakes = db.Column(db.String(100))  # e.g., "Discs"
+    
+    # Additional specifications in JSON format
+    specifications = db.Column(db.JSON)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    brand = db.relationship('Brand', backref='specifications')
+    
+    def __str__(self):
+        return f"{self.brand.name} {self.model_name} {self.generation} {self.modification}"
+
+
 class Car(db.Model):
     __tablename__ = 'cars'
     form_columns = ['model', 'price', 'currency', 'image', 'brand_logo', 'description', 'in_stock', 'category', 'brand',
-                    'car_type']
+                    'car_type', 'specification']
     id = db.Column(db.Integer, primary_key=True)
     model = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
@@ -148,10 +217,88 @@ class Car(db.Model):
     car_type_id = db.Column(db.Integer, db.ForeignKey('car_types.id'))
     car_type = db.relationship('CarType', backref='cars')
     car_type_slug = db.Column(db.String(50))
+    
+    # Specification relationship
+    specification_id = db.Column(db.Integer, db.ForeignKey('specifications.id'), nullable=True)
+    specification = db.relationship('Specification', backref='cars')
 
     modification = db.Column(db.String(100))
     trim = db.Column(db.String(100))
 
+    def apply_specification(self, specification):
+        """Apply specification data to this car."""
+        if not specification:
+            return
+            
+        self.specification_id = specification.id
+        self.specification = specification
+        self.model = specification.model_name
+        self.modification = specification.modification
+        
+        # Update engine information
+        if specification.engine_code or specification.power_hp:
+            engine_parts = []
+            if specification.displacement_cc:
+                engine_parts.append(f"{specification.displacement_cc/1000:.1f}L")
+            if specification.engine_code:
+                engine_parts.append(specification.engine_code)
+            if specification.power_hp:
+                engine_parts.append(f"{specification.power_hp}hp")
+                
+            self.engine = ' '.join(engine_parts)
+            
+        # Update description if empty
+        if not self.description and specification.fuel_type and specification.power_hp:
+            self.description = (
+                f"{specification.fuel_type} {specification.cylinders if specification.cylinders else ''}-cylinder "
+                f"engine producing {specification.power_hp}hp. "
+                f"Accelerates 0-100 km/h in {specification.acceleration_0_100}s. "
+                f"Fuel consumption: {specification.fuel_consumption_combined}L/100km (combined)."
+            )
+            
+        # Update year from production years if available
+        if not self.year and specification.generation:
+            # Try to extract year from generation name or use current year
+            import re
+            year_match = re.search(r'\b(19|20\d{2})\b', specification.generation)
+            if year_match:
+                self.year = year_match.group(0)
+                
+        # Update car type if not set
+        if not self.car_type_id and self.model:
+            # Try to determine car type from model name
+            car_type_map = {
+                '1 Series': 'Hatchback',
+                '2 Series': 'Coupe',
+                '3 Series': 'Sedan',
+                '4 Series': 'Coupe',
+                '5 Series': 'Sedan',
+                '6 Series': 'Coupe',
+                '7 Series': 'Sedan',
+                '8 Series': 'Coupe',
+                'X1': 'SUV',
+                'X2': 'SUV',
+                'X3': 'SUV',
+                'X4': 'SUV',
+                'X5': 'SUV',
+                'X6': 'SUV',
+                'X7': 'SUV',
+                'Z4': 'Roadster',
+                'i3': 'Hatchback',
+                'i4': 'Sedan',
+                'i7': 'Sedan',
+                'iX': 'SUV',
+                'iX3': 'SUV',
+            }
+            
+            for model_pattern, type_name in car_type_map.items():
+                if model_pattern in self.model:
+                    car_type = CarType.query.filter_by(name=type_name).first()
+                    if car_type:
+                        self.car_type = car_type
+                        self.car_type_slug = car_type.slug
+                    break
+    
     def __str__(self):
         # Display as: Brand Model Modification Trim (Price ₽)
         brand = self.brand.name if self.brand else ''
